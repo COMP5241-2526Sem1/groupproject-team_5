@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}{{ course.name }} - 课堂互动平台{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2><i class="bi bi-book"></i> {{ course.name }}</h2>
+        <p class="text-muted mb-0">{{ course.semester }} | 教师：{{ course.instructor.name }}</p>
+    </div>
+    {% if current_user.role in ['admin', 'instructor'] and (current_user.role == 'admin' or course.instructor_id == current_user.id) %}
+    <div class="btn-group">
+        <a href="{{ url_for('activities.export_course_activities', course_id=course.id) }}" class="btn btn-success">
+            <i class="bi bi-download"></i> Export All Activities
+        </a>
+        <a href="{{ url_for('courses.import_students', course_id=course.id) }}" class="btn btn-outline-primary">
+            <i class="bi bi-upload"></i> Import Students
+        </a>
+        <a href="{{ url_for('activities.create_activity', course_id=course.id) }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Create Activity
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+{% if course.description %}
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">课程描述</h5>
+        <p class="card-text">{{ course.description }}</p>
+    </div>
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-chat-dots"></i> 课程活动</h5>
+            </div>
+            <div class="card-body">
+                {% if activities %}
+                    {% for activity in activities %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="card-title">
+                                        <a href="{{ url_for('activities.activity_detail', activity_id=activity.id) }}" class="text-decoration-none">
+                                            {{ activity.title }}
+                                        </a>
+                                        {% if activity.is_active %}
+                                            <span class="badge bg-success status-badge">进行中</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary status-badge">已结束</span>
+                                        {% endif %}
+                                    </h6>
+                                    <p class="card-text text-muted">{{ activity.question[:100] }}{% if activity.question|length > 100 %}...{% endif %}</p>
+                                    <small class="text-muted">
+                                        <i class="bi bi-tag"></i> {{ activity.type }} | 
+                                        <i class="bi bi-clock"></i> {{ activity.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                    </small>
+                                </div>
+                                {% if current_user.role in ['admin', 'instructor'] and (current_user.role == 'admin' or course.instructor_id == current_user.id) %}
+                                <div class="btn-group-vertical">
+                                    <a href="{{ url_for('activities.activity_results', activity_id=activity.id) }}" class="btn btn-sm btn-outline-info">
+                                        <i class="bi bi-graph-up"></i> 结果
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-chat-dots display-1 text-muted"></i>
+                        <h5 class="text-muted mt-3">暂无活动</h5>
+                        {% if current_user.role in ['admin', 'instructor'] and (current_user.role == 'admin' or course.instructor_id == current_user.id) %}
+                        <p class="text-muted">创建第一个活动开始互动吧！</p>
+                        <a href="{{ url_for('activities.create_activity', course_id=course.id) }}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> 创建活动
+                        </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-people"></i> 学生列表</h5>
+            </div>
+            <div class="card-body">
+                {% if enrollments %}
+                    <div class="list-group list-group-flush">
+                        {% for enrollment in enrollments %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ enrollment.student.name }}</strong>
+                                {% if enrollment.student.student_id %}
+                                <br><small class="text-muted">{{ enrollment.student.student_id }}</small>
+                                {% endif %}
+                            </div>
+                            <small class="text-muted">{{ enrollment.enrolled_at.strftime('%m-%d') }}</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">暂无学生</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5><i class="bi bi-info-circle"></i> 课程信息</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4>{{ activities|length }}</h4>
+                        <small class="text-muted">活动数</small>
+                    </div>
+                    <div class="col-6">
+                        <h4>{{ enrollments|length }}</h4>
+                        <small class="text-muted">学生数</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

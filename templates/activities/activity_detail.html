@@ -1,0 +1,421 @@
+{% extends "base.html" %}
+
+{% block title %}{{ activity.title }} - 课堂互动平台{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2><i class="bi bi-chat-dots"></i> {{ activity.title }}</h2>
+        <p class="text-muted mb-0">{{ activity.course.name }} | {{ activity.type }}</p>
+    </div>
+    {% if current_user.role in ['admin', 'instructor'] and (current_user.role == 'admin' or activity.course.instructor_id == current_user.id) %}
+    <div class="btn-group">
+        {% if activity.is_active %}
+        <button id="stop-activity" class="btn btn-danger">
+            <i class="bi bi-stop-circle"></i> 结束活动
+        </button>
+        {% else %}
+        <button id="start-activity" class="btn btn-success">
+            <i class="bi bi-play-circle"></i> 开始活动
+        </button>
+        {% endif %}
+        <a href="{{ url_for('activities.activity_results', activity_id=activity.id) }}" class="btn btn-outline-info">
+            <i class="bi bi-graph-up"></i> 查看结果
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-question-circle"></i> 问题</h5>
+            </div>
+            <div class="card-body">
+                <p class="lead">{{ activity.question }}</p>
+                
+                {% if activity.type == 'poll' and activity.options %}
+                <div class="mt-4">
+                    <h6>Options:</h6>
+                    <ul class="list-group">
+                        {% for option in activity.options.split('\n') %}
+                        {% if option.strip() %}
+                        <li class="list-group-item">{{ option.strip() }}</li>
+                        {% endif %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% elif activity.type == 'quiz' %}
+                <div class="mt-4">
+                    <h6>Quiz Type: {{ activity.quiz_type.replace('_', ' ').title() }}</h6>
+                    {% if activity.options %}
+                    <h6>Options:</h6>
+                    <ul class="list-group">
+                        {% for option in activity.options.split('\n') %}
+                        {% if option.strip() %}
+                        <li class="list-group-item">{{ option.strip() }}</li>
+                        {% endif %}
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+                {% elif activity.type == 'word_cloud' %}
+                <div class="mt-4">
+                    <h6>Word Cloud Activity</h6>
+                    <p class="text-muted">Students can submit words or phrases that will be displayed as a word cloud.</p>
+                </div>
+                {% elif activity.type == 'memory_game' %}
+                <div class="mt-4">
+                    <h6>Memory Game</h6>
+                    <p class="text-muted">Students will see a sequence of items and need to remember and reproduce them in order.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if current_user.role == 'student' %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5><i class="bi bi-pencil"></i> 我的回答</h5>
+            </div>
+            <div class="card-body">
+                {% if activity.is_active %}
+                    {% if my_response %}
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle"></i> 您已提交答案
+                    </div>
+                    <div class="card">
+                        <div class="card-body">
+                            <h6>您的答案：</h6>
+                            <p>{{ my_response.answer }}</p>
+                            <small class="text-muted">提交时间：{{ my_response.submitted_at.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+                        </div>
+                    </div>
+                    {% else %}
+                    <form id="response-form">
+                        <div class="mb-3">
+                            <label for="answer" class="form-label">Your Answer:</label>
+                            {% if activity.type == 'poll' %}
+                            <select id="answer" class="form-select" required>
+                                <option value="">Please select an answer</option>
+                                {% for option in activity.options.split('\n') %}
+                                {% if option.strip() %}
+                                <option value="{{ option.strip() }}">{{ option.strip() }}</option>
+                                {% endif %}
+                                {% endfor %}
+                            </select>
+                            {% elif activity.type == 'quiz' %}
+                                {% if activity.quiz_type == 'multiple_choice' %}
+                                <select id="answer" class="form-select" required>
+                                    <option value="">Please select an answer</option>
+                                    {% for option in activity.options.split('\n') %}
+                                    {% if option.strip() %}
+                                    <option value="{{ option.strip() }}">{{ option.strip() }}</option>
+                                    {% endif %}
+                                    {% endfor %}
+                                </select>
+                                {% elif activity.quiz_type == 'true_false' %}
+                                <select id="answer" class="form-select" required>
+                                    <option value="">Please select an answer</option>
+                                    <option value="True">True</option>
+                                    <option value="False">False</option>
+                                </select>
+                                {% else %}
+                                <input type="text" id="answer" class="form-control" placeholder="Enter your answer..." required>
+                                {% endif %}
+                            {% elif activity.type == 'word_cloud' %}
+                            <input type="text" id="answer" class="form-control" placeholder="Enter words or phrases (separated by commas)..." required>
+                            {% elif activity.type == 'memory_game' %}
+                            <div id="memory-game-container">
+                                <div class="alert alert-info">
+                                    <h6>Memory Game Instructions:</h6>
+                                    <p>You will see a sequence of items. Remember the order and reproduce them when prompted.</p>
+                                    <button type="button" id="start-memory-game" class="btn btn-primary">Start Game</button>
+                                </div>
+                                <div id="memory-game-display" style="display: none;">
+                                    <div id="sequence-display" class="mb-3"></div>
+                                    <div id="input-section" style="display: none;">
+                                        <label class="form-label">Enter the sequence (comma-separated):</label>
+                                        <input type="text" id="answer" class="form-control" placeholder="Enter the sequence in order..." required>
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <textarea id="answer" class="form-control" rows="4" placeholder="Enter your answer..." required></textarea>
+                            {% endif %}
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-send"></i> 提交答案
+                        </button>
+                    </form>
+                    {% endif %}
+                {% else %}
+                <div class="alert alert-secondary">
+                    <i class="bi bi-pause-circle"></i> 活动未开始或已结束
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-info-circle"></i> 活动信息</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 id="response-count">{{ activity.responses|length }}</h4>
+                        <small class="text-muted">回答数</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 id="activity-status">
+                            {% if activity.is_active %}
+                                <span class="text-success">进行中</span>
+                            {% else %}
+                                <span class="text-muted">已结束</span>
+                            {% endif %}
+                        </h4>
+                        <small class="text-muted">状态</small>
+                    </div>
+                </div>
+                <hr>
+                <p><strong>创建时间：</strong>{{ activity.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                {% if activity.started_at %}
+                <p><strong>开始时间：</strong>{{ activity.started_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                {% endif %}
+                {% if activity.ended_at %}
+                <p><strong>结束时间：</strong>{{ activity.ended_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if current_user.role == 'student' %}
+<script>
+// Initialize Socket.IO connection
+const socket = io();
+
+// Join activity room for real-time updates
+socket.emit('join_activity', {activity_id: {{ activity.id }}});
+
+// Listen for activity updates
+socket.on('activity_update', function(data) {
+    if (data.activity_id === {{ activity.id }}) {
+        const statusElement = document.getElementById('activity-status');
+        if (data.data.is_active) {
+            statusElement.innerHTML = '<span class="text-success">Active</span>';
+        } else {
+            statusElement.innerHTML = '<span class="text-muted">Ended</span>';
+        }
+    }
+});
+
+// Listen for new responses
+socket.on('response_added', function(data) {
+    if (data.activity_id === {{ activity.id }}) {
+        document.getElementById('response-count').textContent = data.response_count;
+    }
+});
+
+document.getElementById('response-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const answer = document.getElementById('answer').value.trim();
+    if (!answer) {
+        alert('Please enter an answer');
+        return;
+    }
+    
+    fetch('{{ url_for("activities.submit_response", activity_id=activity.id) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({answer: answer})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Answer submitted successfully!');
+            location.reload();
+        } else {
+            alert('Submission failed: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Submission failed, please try again');
+    });
+});
+
+// Fallback polling (every 10 seconds instead of 3)
+setInterval(function() {
+    fetch('{{ url_for("activities.activity_status", activity_id=activity.id) }}')
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            console.error(data.error);
+            return;
+        }
+        
+        const statusElement = document.getElementById('activity-status');
+        if (data.is_active) {
+            statusElement.innerHTML = '<span class="text-success">Active</span>';
+        } else {
+            statusElement.innerHTML = '<span class="text-muted">Ended</span>';
+        }
+        
+        if (data.response_count !== undefined) {
+            document.getElementById('response-count').textContent = data.response_count;
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}, 10000);
+</script>
+{% endif %}
+
+{% if current_user.role in ['admin', 'instructor'] and (current_user.role == 'admin' or activity.course.instructor_id == current_user.id) %}
+<script>
+// Initialize Socket.IO connection
+const socket = io();
+
+// Join activity room for real-time updates
+socket.emit('join_activity', {activity_id: {{ activity.id }}});
+
+// Listen for activity updates
+socket.on('activity_update', function(data) {
+    if (data.activity_id === {{ activity.id }}) {
+        const statusElement = document.getElementById('activity-status');
+        if (data.data.is_active) {
+            statusElement.innerHTML = '<span class="text-success">Active</span>';
+        } else {
+            statusElement.innerHTML = '<span class="text-muted">Ended</span>';
+        }
+    }
+});
+
+// Listen for new responses
+socket.on('response_added', function(data) {
+    if (data.activity_id === {{ activity.id }}) {
+        document.getElementById('response-count').textContent = data.response_count;
+    }
+});
+
+document.getElementById('start-activity').addEventListener('click', function() {
+    fetch('{{ url_for("activities.start_activity", activity_id=activity.id) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Activity started!');
+            location.reload();
+        } else {
+            alert('Operation failed: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Operation failed, please try again');
+    });
+});
+
+document.getElementById('stop-activity').addEventListener('click', function() {
+    fetch('{{ url_for("activities.stop_activity", activity_id=activity.id) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Activity ended!');
+            location.reload();
+        } else {
+            alert('Operation failed: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Operation failed, please try again');
+    });
+});
+
+// Fallback polling (every 10 seconds)
+setInterval(function() {
+    fetch('{{ url_for("activities.activity_status", activity_id=activity.id) }}')
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            console.error(data.error);
+            return;
+        }
+        
+        const statusElement = document.getElementById('activity-status');
+        if (data.is_active) {
+            statusElement.innerHTML = '<span class="text-success">Active</span>';
+        } else {
+            statusElement.innerHTML = '<span class="text-muted">Ended</span>';
+        }
+        
+        if (data.response_count !== undefined) {
+            document.getElementById('response-count').textContent = data.response_count;
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}, 10000);
+</script>
+{% endif %}
+
+{% if activity.type == 'memory_game' %}
+<script>
+// Memory game functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const startBtn = document.getElementById('start-memory-game');
+    if (startBtn) {
+        startBtn.addEventListener('click', function() {
+            const items = ['Apple', 'Banana', 'Cherry', 'Date', 'Elderberry'];
+            const sequence = [];
+            
+            // Generate random sequence of 3-5 items
+            const length = Math.floor(Math.random() * 3) + 3;
+            for (let i = 0; i < length; i++) {
+                const randomItem = items[Math.floor(Math.random() * items.length)];
+                if (!sequence.includes(randomItem)) {
+                    sequence.push(randomItem);
+                }
+            }
+            
+            // Display sequence
+            const display = document.getElementById('sequence-display');
+            display.innerHTML = '<h6>Remember this sequence:</h6><div class="d-flex gap-2 mb-3">';
+            sequence.forEach((item, index) => {
+                display.innerHTML += `<span class="badge bg-primary" style="font-size: 1.2em;">${item}</span>`;
+            });
+            display.innerHTML += '</div>';
+            
+            document.getElementById('memory-game-display').style.display = 'block';
+            
+            // Show sequence for 3 seconds, then hide
+            setTimeout(() => {
+                display.innerHTML = '<h6>Now enter the sequence in order:</h6>';
+                document.getElementById('input-section').style.display = 'block';
+                
+                // Store the correct sequence for validation
+                document.getElementById('answer').setAttribute('data-correct-sequence', sequence.join(','));
+            }, 3000);
+        });
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

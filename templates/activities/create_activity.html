@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}创建活动 - {{ course.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="bi bi-plus-circle"></i> 在 {{ course.name }} 中创建活动</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.title.label(class="form-label") }}
+                        {{ form.title(class="form-control") }}
+                        {% if form.title.errors %}
+                            <div class="text-danger">
+                                {% for error in form.title.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.type.label(class="form-label") }}
+                        {{ form.type(class="form-select") }}
+                        {% if form.type.errors %}
+                            <div class="text-danger">
+                                {% for error in form.type.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.question.label(class="form-label") }}
+                        {{ form.question(class="form-control", rows="4") }}
+                        {% if form.question.errors %}
+                            <div class="text-danger">
+                                {% for error in form.question.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3" id="options-field" style="display: none;">
+                        {{ form.options.label(class="form-label") }}
+                        {{ form.options(class="form-control", rows="4", placeholder="每行一个选项") }}
+                        {% if form.options.errors %}
+                            <div class="text-danger">
+                                {% for error in form.options.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3" id="quiz-fields" style="display: none;">
+                        <label class="form-label">Quiz Type</label>
+                        <select id="quiz-type" class="form-select">
+                            <option value="multiple_choice">Multiple Choice</option>
+                            <option value="true_false">True/False</option>
+                            <option value="fill_blank">Fill in the Blank</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3" id="correct-answer-field" style="display: none;">
+                        <label class="form-label">Correct Answer</label>
+                        <input type="text" id="correct-answer" class="form-control" placeholder="Enter correct answer">
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        {{ form.submit(class="btn btn-primary") }}
+                        <a href="{{ url_for('courses.course_detail', course_id=course.id) }}" class="btn btn-secondary">取消</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5><i class="bi bi-robot"></i> AI 辅助生成题目</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="ai-text" class="form-label">粘贴教学文本</label>
+                    <textarea id="ai-text" class="form-control" rows="4" placeholder="粘贴您的教学文本，AI 将为您生成相关问题..."></textarea>
+                </div>
+                <button id="generate-questions" class="btn btn-outline-primary">
+                    <i class="bi bi-robot"></i> 生成题目
+                </button>
+                
+                <div id="generated-questions" class="mt-3" style="display: none;">
+                    <h6>生成的题目：</h6>
+                    <div id="questions-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('type').addEventListener('change', function() {
+    const optionsField = document.getElementById('options-field');
+    const quizFields = document.getElementById('quiz-fields');
+    const correctAnswerField = document.getElementById('correct-answer-field');
+    
+    // Hide all fields first
+    optionsField.style.display = 'none';
+    quizFields.style.display = 'none';
+    correctAnswerField.style.display = 'none';
+    
+    if (this.value === 'poll') {
+        optionsField.style.display = 'block';
+    } else if (this.value === 'quiz') {
+        quizFields.style.display = 'block';
+        correctAnswerField.style.display = 'block';
+    } else if (this.value === 'word_cloud') {
+        // Word cloud doesn't need additional fields
+    }
+});
+
+document.getElementById('generate-questions').addEventListener('click', function() {
+    const text = document.getElementById('ai-text').value.trim();
+    if (!text) {
+        alert('请输入教学文本');
+        return;
+    }
+    
+    this.disabled = true;
+    this.innerHTML = '<i class="bi bi-hourglass-split"></i> 生成中...';
+    
+    fetch('{{ url_for("activities.generate_questions_route") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({text: text})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const questionsList = document.getElementById('questions-list');
+            questionsList.innerHTML = '';
+            
+            data.questions.forEach((question, index) => {
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'card mb-2';
+                questionDiv.innerHTML = `
+                    <div class="card-body">
+                        <p class="card-text">${question}</p>
+                        <button class="btn btn-sm btn-outline-primary use-question" data-question="${question}">
+                            使用此题
+                        </button>
+                    </div>
+                `;
+                questionsList.appendChild(questionDiv);
+            });
+            
+            document.getElementById('generated-questions').style.display = 'block';
+        } else {
+            alert('生成失败：' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('生成失败，请重试');
+    })
+    .finally(() => {
+        this.disabled = false;
+        this.innerHTML = '<i class="bi bi-robot"></i> 生成题目';
+    });
+});
+
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('use-question')) {
+        const question = e.target.getAttribute('data-question');
+        document.querySelector('textarea[name="question"]').value = question;
+        document.getElementById('generated-questions').style.display = 'none';
+    }
+});
+</script>
+{% endblock %}
