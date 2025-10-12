@@ -14,72 +14,94 @@
         .status-badge { font-size: 0.8rem; }
         .word-cloud { line-height: 2; }
         .word-cloud .badge { margin: 2px; }
+
+        /* 全局统一的 logo-highlight（来自 index） */
+        .logo-highlight{
+          display:flex;
+          align-items:center;
+          gap:18px;
+          padding:12px;
+          border-radius:10px;
+          background: linear-gradient(90deg, rgba(240,255,255,0.90), rgba(255,255,255,0.82));
+          box-shadow: 0 6px 18px rgba(12,45,80,0.04);
+          margin-bottom: 16px;
+          position: relative;
+          z-index: 1000;
+        }
+        .logo-highlight .brand { display:flex; align-items:center; gap:12px; }
+        .logo-highlight .logo { width:56px;height:56px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:#fff;box-shadow:0 6px 20px rgba(12,45,80,0.05); }
+        .logo-highlight .wordmark { font-size:22px;font-weight:800;color:#1187d6; }
+
+        .logo-highlight .nav-links { display:flex; gap:14px; align-items:center; margin-left:18px; }
+        .logo-highlight .nav-links a { color:#1565c0; text-decoration:none; font-weight:600; padding:8px 12px; border-radius:8px; }
+        .logo-highlight .nav-links a:hover { background: rgba(255,255,255,0.14); }
+
+        /* 保证右侧 login/register 或 用户下拉不换行 */
+        .logo-highlight .navbar-nav {
+          display:flex;
+          gap:8px;
+          align-items:center;
+          margin:0;
+          padding:0;
+          list-style:none;
+          flex-wrap:nowrap;
+          white-space:nowrap;
+        }
+        .logo-highlight .navbar-nav li { display:inline-flex; align-items:center; }
+        .logo-highlight .navbar-nav .nav-link { display:inline-flex; padding:6px 10px; color:#1565c0; text-decoration:none; }
+
+        /* 其他全局小修正（若需覆盖页面内样式） */
+        .logo-highlight a { color: inherit; }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('main.dashboard') }}">
-                <i class="bi bi-mortarboard"></i> Classroom Platform
-            </a>
-            
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
+    <!-- 顶部：使用统一的 logo-highlight（与各页面样式一致） -->
+    <div class="logo-highlight">
+        <div class="container d-flex align-items-center" style="gap:18px;">
+            <div class="brand d-flex align-items-center" aria-hidden="false" style="gap:12px;">
+                <div class="logo" aria-hidden="true" style="width:56px;height:56px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:#fff;box-shadow:0 6px 20px rgba(12,45,80,0.05);">
+                    <svg width="40" height="40" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                      <rect x="0" y="0" width="64" height="64" rx="10" fill="#ffffff"/>
+                      <path d="M14 38c6-8 14-8 24-8s18 0 24 8" stroke="#2d9cff" stroke-width="3" stroke-linecap="round"/>
+                      <circle cx="26" cy="20" r="6" fill="#ff9a49"/>
+                      <circle cx="40" cy="18" r="6" fill="#2d9cff"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="wordmark" style="font-size:22px;font-weight:800;color:#1187d6;">Classroom Platform</div>
+                </div>
+            </div>
+
+            <div class="nav-links ms-3" role="navigation" aria-label="main-nav" style="display:flex;gap:14px;align-items:center;">
+                <a href="{{ url_for('main.index') }}" class="text-decoration-none" style="color:#1565c0;font-weight:600;padding:8px 12px;border-radius:8px;">Home</a>
+                <a href="{{ url_for('courses.list_courses') }}" class="text-decoration-none" style="color:#1565c0;font-weight:600;padding:8px 12px;border-radius:8px;">Courses</a>
+                <a href="{{ url_for('activities.list_activities') }}" class="text-decoration-none" style="color:#1565c0;font-weight:600;padding:8px 12px;border-radius:8px;">Activities</a>
+                <a href="{{ url_for('main.leaderboard') }}" class="text-decoration-none" style="color:#1565c0;font-weight:600;padding:8px 12px;border-radius:8px;">Leaderboard</a>
+            </div>
+
+            <div class="ms-auto">
+                <ul class="navbar-nav" style="display:flex;align-items:center;gap:8px;margin:0;padding:0;list-style:none;">
                     {% if current_user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('main.dashboard') }}">
-                                <i class="bi bi-house"></i> Home
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('courses.list_courses') }}">
-                                <i class="bi bi-book"></i> Courses
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('activities.list_activities') }}">
-                                <i class="bi bi-chat-dots"></i> Activities
-                            </a>
-                        </li>
-                        {% if current_user.role in ['admin', 'instructor'] %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('main.leaderboard') }}">
-                                <i class="bi bi-trophy"></i> Leaderboard
-                            </a>
-                        </li>
-                        {% endif %}
-                    {% endif %}
-                </ul>
-                
-                <ul class="navbar-nav">
-                    {% if current_user.is_authenticated %}
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                        <li class="nav-item dropdown" style="list-style:none;">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" style="color:#1565c0;font-weight:700;">
                                 <i class="bi bi-person-circle"></i> {{ current_user.name }}
                                 <span class="badge bg-light text-dark ms-1">{{ current_user.role }}</span>
                             </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">
-                                    <i class="bi bi-box-arrow-right"></i> Logout
-                                </a></li>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                               
+                                <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Log out</a></li>
                             </ul>
                         </li>
                     {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.register') }}">Register</a>
-                        </li>
+                        <div style="display: flex; gap: 8px;">
+                            <li style="list-style:none;"><a class="nav-link" href="{{ url_for('auth.login') }}">Login</a></li>
+                            <li style="list-style:none;"><a class="nav-link" href="{{ url_for('auth.register') }}">Register</a></li>
+                        </div>
                     {% endif %}
                 </ul>
             </div>
         </div>
-    </nav>
+    </div>
 
     <main class="container mt-4">
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -98,7 +120,7 @@
 
     <footer class="bg-light mt-5 py-4">
         <div class="container text-center">
-            <p class="text-muted mb-0">&copy; 2024 Classroom Platform. Built with Flask.</p>
+            <p class="text-muted mb-0">&copy; 2025 Classroom Platform. Built with Flask.</p>
         </div>
     </footer>
 

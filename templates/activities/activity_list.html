@@ -3,49 +3,166 @@
 {% block title %}Activity List - Classroom Platform{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="bi bi-chat-dots"></i> Activity List</h2>
-</div>
+<style>
+/* 与 create_course / course_list 视觉保持一致（仅样式，不改功能） */
+/* 删除局部隐藏全局顶部的规则，顶部由 base.html 渲染 */
+/* header, .navbar, .site-header, .topbar, .navbar-default { display: none !important; } */
 
-<div class="row">
-    {% for activity in activities %}
-    <div class="col-md-6 col-lg-4 mb-4">
-        <div class="card h-100 activity-card">
-            <div class="card-body">
-                <h5 class="card-title">
-                    <a href="{{ url_for('activities.activity_detail', activity_id=activity.id) }}" class="text-decoration-none">
-                        {{ activity.title }}
-                    </a>
-                    {% if activity.is_active %}
-                        <span class="badge bg-success status-badge">Active</span>
-                    {% else %}
-                        <span class="badge bg-secondary status-badge">Ended</span>
-                    {% endif %}
-                </h5>
-                <p class="card-text text-muted">{{ activity.course.name }}</p>
-                <p class="card-text">{{ activity.question[:100] }}{% if activity.question|length > 100 %}...{% endif %}</p>
-                <div class="d-flex justify-content-between align-items-center">
-                    <small class="text-muted">
-                        <i class="bi bi-tag"></i> {{ activity.type }} | 
-                        <i class="bi bi-clock"></i> {{ activity.created_at.strftime('%m-%d %H:%M') }}
-                    </small>
-                    {% if current_user.role in ['admin', 'instructor'] and (current_user.role == 'admin' or activity.course.instructor_id == current_user.id) %}
-                    <a href="{{ url_for('activities.activity_results', activity_id=activity.id) }}" class="btn btn-sm btn-outline-info">
-                        <i class="bi bi-graph-up"></i> Results
-                    </a>
-                    {% endif %}
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg,#1e88e5 0%, #6ab7ff 50%, #6dd3c9 100%);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  box-sizing: border-box;
+  background-attachment: fixed;
+}
+
+/* 主容器与白卡 */
+.body-hero {
+  padding: 12px 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+}
+.main-panel {
+  width: calc(100vw - 32px);
+  max-width: none;
+  margin: 18px auto;
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 24px 32px;
+  box-shadow: 0 40px 90px rgba(8,35,70,0.12);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+
+/* logo 高亮行 */
+.logo-highlight {
+  display:flex;
+  align-items:center;
+  gap:18px;
+  padding:12px;
+  border-radius:10px;
+  background: linear-gradient(90deg, rgba(240,255,255,0.90), rgba(255,255,255,0.82));
+  box-shadow: 0 6px 18px rgba(12,45,80,0.04);
+  margin-bottom: 16px;
+}
+
+/* 顶部品牌与导航 */
+.brand { display:flex; align-items:center; gap:14px; }
+.brand .logo { width:56px; height:56px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:#fff; box-shadow: 0 6px 20px rgba(12,45,80,0.05); }
+.brand .wordmark { font-size:22px; font-weight:800; color:#1187d6; }
+
+.nav-links { display:flex; gap:14px; align-items:center; margin-left:18px; }
+.nav-links a {
+  color:#1565c0;
+  text-decoration:none;
+  font-weight:600;
+  font-size:15px;
+  padding:8px 12px;
+  border-radius:8px;
+  background: transparent;
+  border:1px solid rgba(0,0,0,0.02);
+}
+.nav-links a:hover { background: rgba(255,255,255,0.14); }
+
+/* 右侧用户信息/下拉 */
+.user-area { margin-left:auto; display:flex; align-items:center; gap:12px; }
+.dropdown-toggle { color:#1565c0; font-weight:700; background:transparent; border:none; }
+
+/* 页面标题区 */
+.page-header { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:8px 0 18px; }
+.page-header h2 { margin:0; font-weight:800; color:#153d5a; }
+
+/* 活动卡样式：底色更明显以区分背景 */
+.activity-card {
+  background: linear-gradient(180deg,#ffffff,#f3fbff);
+  border-radius: 12px;
+  border: 1px solid rgba(12,45,80,0.04);
+  box-shadow: 0 8px 24px rgba(12,45,80,0.04);
+}
+.activity-card .card-body { padding:18px; }
+.status-badge { margin-left:8px; font-size:0.8rem; }
+
+/* 结果按钮样式 */
+.btn-outline-info { border-radius:8px; }
+
+/* 空状态居中 */
+.text-center.py-5 { padding:48px 0; }
+
+/* 布局小调整 */
+.row { margin-left:-12px; margin-right:-12px; }
+.col-md-6, .col-lg-4 { padding-left:12px; padding-right:12px; }
+
+@media (max-width: 992px) {
+  .main-panel { padding:18px; width: calc(100vw - 28px); }
+  .logo-highlight { flex-direction:column; align-items:flex-start; gap:10px; }
+  .nav-links { margin-left:0; flex-wrap:wrap; }
+}
+@media (max-width: 576px) {
+  .main-panel { padding:14px; width: calc(100vw - 20px); }
+}
+</style>
+
+<div class="body-hero">
+  <div class="main-panel">
+
+    <!-- 顶部由 base.html 的 logo-highlight 统一渲染，页面内不再重复输出 -->
+    
+    <!-- 标题 -->
+    <div class="page-header">
+      <h2><i class="bi bi-chat-dots"></i> Activity List</h2>
+    </div>
+
+    <!-- 活动列表（保留原有逻辑与所有功能） -->
+    <div class="row">
+        {% for activity in activities %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 activity-card">
+                <div class="card-body">
+                    <h5 class="card-title mb-2">
+                        <a href="{{ url_for('activities.activity_detail', activity_id=activity.id) }}" class="text-decoration-none">
+                            {{ activity.title }}
+                        </a>
+                        {% if activity.is_active %}
+                            <span class="badge bg-success status-badge">Active</span>
+                        {% else %}
+                            <span class="badge bg-secondary status-badge">Ended</span>
+                        {% endif %}
+                    </h5>
+                    <p class="card-text text-muted mb-2">{{ activity.course.name }}</p>
+                    <p class="card-text mb-3">{{ activity.question[:120] }}{% if activity.question|length > 120 %}...{% endif %}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="bi bi-tag"></i> {{ activity.type }} &nbsp;|&nbsp; 
+                            <i class="bi bi-clock"></i> {{ activity.created_at.strftime('%m-%d %H:%M') }}
+                        </small>
+                        {% if current_user.role in ['admin', 'instructor'] and (current_user.role == 'admin' or activity.course.instructor_id == current_user.id) %}
+                        <a href="{{ url_for('activities.activity_results', activity_id=activity.id) }}" class="btn btn-sm btn-outline-info">
+                            <i class="bi bi-graph-up"></i> Results
+                        </a>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    {% else %}
-    <div class="col-12">
-        <div class="text-center py-5">
-            <i class="bi bi-chat-dots display-1 text-muted"></i>
-            <h4 class="text-muted mt-3">No Activities</h4>
-            <p class="text-muted">No activities yet, waiting for instructors to create them!</p>
+        {% else %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="bi bi-chat-dots display-1 text-muted"></i>
+                <h4 class="text-muted mt-3">No Activities</h4>
+                <p class="text-muted">No activities yet, waiting for instructors to create them!</p>
+            </div>
         </div>
+        {% endfor %}
     </div>
-    {% endfor %}
+
+  </div>
 </div>
 {% endblock %}
