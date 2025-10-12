@@ -3,61 +3,143 @@
 {% block title %}Login - Classroom Platform{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header text-center">
-                <h4><i class="bi bi-box-arrow-in-right"></i> User Login</h4>
-            </div>
-            <div class="card-body">
-                <form method="POST">
-                    {{ form.hidden_tag() }}
-                    
-                    <div class="mb-3">
-                        {{ form.email.label(class="form-label") }}
-                        {{ form.email(class="form-control") }}
-                        {% if form.email.errors %}
-                            <div class="text-danger">
-                                {% for error in form.email.errors %}
-                                    <small>{{ error }}</small>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-3">
-                        {{ form.password.label(class="form-label") }}
-                        {{ form.password(class="form-control") }}
-                        {% if form.password.errors %}
-                            <div class="text-danger">
-                                {% for error in form.password.errors %}
-                                    <small>{{ error }}</small>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="d-grid">
-                        {{ form.submit(class="btn btn-primary") }}
-                    </div>
-                </form>
-                
-                <div class="text-center mt-3">
-                    <p class="mb-0">Don't have an account? <a href="{{ url_for('auth.register') }}">Register Now</a></p>
+<style>
+/* 与 register.html / index.html 统一的视觉样式（仅样式，不改功能） */
+/* 删除隐藏全局横条的规则，顶部由 base.html 渲染 */
+/* header, .navbar, .site-header, .topbar, .navbar-default { display: none !important; } */
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg,#1e88e5 0%, #6ab7ff 50%, #6dd3c9 100%);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  box-sizing: border-box;
+}
+
+.body-hero {
+  padding: 12px 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.main-panel {
+  width: calc(100vw - 48px);
+  max-width: 1000px;
+  margin: 18px auto;
+  background: linear-gradient(180deg, rgba(255,255,255,0.995), #ffffff);
+  border-radius: 14px;
+  padding: 36px 44px;
+  box-shadow: 0 40px 90px rgba(8,35,70,0.16);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+
+/* 替换：不在页面内渲染 hero-top，统一使用 base.html 的 logo-highlight */
+/* 与 index 保持一致的 logo-highlight 样式（保证与 base 渲染一致但不会重复 HTML） */
+.logo-highlight {
+  display:flex;
+  align-items:center;
+  gap:18px;
+  padding:12px;
+  border-radius:10px;
+  background: linear-gradient(90deg, rgba(240,255,255,0.90), rgba(255,255,255,0.82));
+  box-shadow: 0 6px 18px rgba(12,45,80,0.04);
+  margin-bottom: 16px;
+}
+
+/* 表单卡片样式（与 register.html 保持一致） */
+.form-wrap { width:100%; max-width:720px; margin:0 auto; display:block; }
+.form-card {
+  background: rgba(255,255,255,1);
+  border-radius: 12px;
+  padding: 22px;
+  box-shadow: 0 8px 30px rgba(12,45,80,0.04);
+  border: 1px solid rgba(0,0,0,0.03);
+}
+
+/* 次要信息卡（测试账号），样式统一 */
+.info-card {
+  background: rgba(255,255,255,0.98);
+  border-radius: 12px;
+  padding: 18px;
+  margin-top: 18px;
+  box-shadow: 0 6px 20px rgba(12,45,80,0.04);
+  border: 1px solid rgba(0,0,0,0.03);
+}
+
+.card-header { background: transparent; border-bottom: none; padding-bottom: 8px; }
+.card-body { padding-top: 0; }
+
+@media (max-width: 768px) {
+  .main-panel { width: calc(100vw - 28px); padding: 20px; }
+  .logo-highlight { flex-direction:column; align-items:flex-start; gap:10px; }
+  .form-wrap { max-width: 100%; }
+}
+</style>
+
+<div class="body-hero">
+  <div class="main-panel">
+
+    <!-- 顶部 logo / 导航 由 base.html 的 logo-highlight 负责渲染，避免重复 -->
+    <!-- 与 index 与 course_list 保持一致：不要在页面内再次渲染 logo 行 -->
+  
+    <div class="form-wrap">
+      <div class="form-card">
+        <div class="card-header text-center">
+          <h4><i class="bi bi-box-arrow-in-right"></i> User Login</h4>
+        </div>
+        <div class="card-body">
+          <form method="POST">
+            {{ form.hidden_tag() }}
+
+            <div class="mb-3">
+              {{ form.email.label(class="form-label") }}
+              {{ form.email(class="form-control") }}
+              {% if form.email.errors %}
+                <div class="text-danger">
+                  {% for error in form.email.errors %}<small>{{ error }}</small>{% endfor %}
                 </div>
+              {% endif %}
             </div>
-        </div>
-        
-        <div class="card mt-3">
-            <div class="card-body">
-                <h6 class="card-title">Test Accounts</h6>
-                <p class="card-text small">
-                    <strong>Admin:</strong> admin@example.com / admin123<br>
-                    <strong>Instructor:</strong> Register and select instructor role<br>
-                    <strong>Student:</strong> Register and select student role
-                </p>
+
+            <div class="mb-3">
+              {{ form.password.label(class="form-label") }}
+              {{ form.password(class="form-control") }}
+              {% if form.password.errors %}
+                <div class="text-danger">
+                  {% for error in form.password.errors %}<small>{{ error }}</small>{% endfor %}
+                </div>
+              {% endif %}
             </div>
+
+            <div class="d-grid">
+              {{ form.submit(class="btn btn-primary btn-lg") }}
+            </div>
+          </form>
+
+          <div class="text-center mt-3">
+            <p class="mb-0">Don't have an account? <a href="{{ url_for('auth.register') }}">Register Now</a></p>
+          </div>
         </div>
+      </div>
+
+      <div class="info-card">
+        <h6 class="mb-2">Test Accounts</h6>
+        <p class="small mb-0">
+          <strong>Admin:</strong> admin@example.com / admin123<br>
+          <strong>Instructor:</strong> Register and select instructor role<br>
+          <strong>Student:</strong> Register and select student role
+        </p>
+      </div>
     </div>
+
+  </div>
 </div>
 {% endblock %}

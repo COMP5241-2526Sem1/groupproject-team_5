@@ -3,99 +3,178 @@
 {% block title %}Register - Classroom Platform{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header text-center">
-                <h4><i class="bi bi-person-plus"></i> User Registration</h4>
-            </div>
-            <div class="card-body">
-                <form method="POST">
-                    {{ form.hidden_tag() }}
-                    
-                    <div class="mb-3">
-                        {{ form.name.label(class="form-label") }}
-                        {{ form.name(class="form-control") }}
-                        {% if form.name.errors %}
-                            <div class="text-danger">
-                                {% for error in form.name.errors %}
-                                    <small>{{ error }}</small>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-3">
-                        {{ form.email.label(class="form-label") }}
-                        {{ form.email(class="form-control") }}
-                        {% if form.email.errors %}
-                            <div class="text-danger">
-                                {% for error in form.email.errors %}
-                                    <small>{{ error }}</small>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-3">
-                        {{ form.password.label(class="form-label") }}
-                        {{ form.password(class="form-control") }}
-                        {% if form.password.errors %}
-                            <div class="text-danger">
-                                {% for error in form.password.errors %}
-                                    <small>{{ error }}</small>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-3">
-                        {{ form.password2.label(class="form-label") }}
-                        {{ form.password2(class="form-control") }}
-                        {% if form.password2.errors %}
-                            <div class="text-danger">
-                                {% for error in form.password2.errors %}
-                                    <small>{{ error }}</small>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-3">
-                        {{ form.role.label(class="form-label") }}
-                        {{ form.role(class="form-select") }}
-                        {% if form.role.errors %}
-                            <div class="text-danger">
-                                {% for error in form.role.errors %}
-                                    <small>{{ error }}</small>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-3" id="student-id-field" style="display: none;">
-                        {{ form.student_id.label(class="form-label") }}
-                        {{ form.student_id(class="form-control") }}
-                        {% if form.student_id.errors %}
-                            <div class="text-danger">
-                                {% for error in form.student_id.errors %}
-                                    <small>{{ error }}</small>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="d-grid">
-                        {{ form.submit(class="btn btn-primary") }}
-                    </div>
-                </form>
-                
-                <div class="text-center mt-3">
-                    <p class="mb-0">Already have an account? <a href="{{ url_for('auth.login') }}">Login Now</a></p>
-                </div>
-            </div>
+<style>
+/* 与 index.html 保持一致的视觉风格（仅样式，不改功能） */
+/* 不要在局部页面隐藏全局 header（已移除 header, .navbar ... display:none 规则） */
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg,#1e88e5 0%, #6ab7ff 50%, #6dd3c9 100%);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  box-sizing: border-box;
+}
+
+.body-hero {
+  padding: 12px 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.main-panel {
+  width: calc(100vw - 48px);
+  max-width: 1000px;
+  margin: 18px auto;
+  background: linear-gradient(180deg, rgba(255,255,255,0.995), #ffffff);
+  border-radius: 14px;
+  padding: 36px 44px;
+  box-shadow: 0 40px 90px rgba(8,35,70,0.16);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+
+/* 顶部品牌行，和首页保持一致 */
+.hero-top {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:18px;
+  margin-bottom:20px;
+}
+.brand { display:flex; align-items:center; gap:14px; }
+.brand .logo { width:56px; height:56px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:#fff; box-shadow: 0 8px 24px rgba(12,45,80,0.06); }
+.brand .wordmark { font-size:24px; font-weight:800; color:#1187d6; }
+
+/* 登录链接与样式 */
+.auth-links { display:flex; gap:12px; align-items:center; }
+.auth-links a { color:#1565c0; text-decoration:none; font-weight:700; padding:8px 12px; border-radius:8px; background: rgba(255,255,255,0.12); border:1px solid rgba(0,0,0,0.03); }
+.auth-links a:hover { background: rgba(255,255,255,0.2); }
+
+/* 表单容器：居中并放大，与首页风格统一 */
+.form-wrap {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  background: transparent;
+  display: block;
+}
+
+/* 卡片样式（更扁平） */
+.form-card {
+  background: rgba(255,255,255,1);
+  border-radius: 12px;
+  padding: 22px;
+  box-shadow: 0 8px 30px rgba(12,45,80,0.04);
+  border: 1px solid rgba(0,0,0,0.03);
+}
+
+/* 表单内控件样式保持一致（使用 Bootstrap 类） */
+.card-header { background: transparent; border-bottom: none; padding-bottom: 8px; }
+.card-body { padding-top: 0; }
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .main-panel { width: calc(100vw - 28px); padding: 20px; }
+  .brand .wordmark { font-size:20px; }
+  .form-wrap { max-width: 100%; }
+}
+</style>
+
+<div class="body-hero">
+  <div class="main-panel">
+
+    <!-- 顶部由 base.html 的 logo-highlight 统一渲染，页面内不再重复输出 -->
+
+    <div class="form-wrap">
+      <div class="form-card">
+        <div class="card-header text-center">
+          <h4><i class="bi bi-person-plus"></i> User Registration</h4>
         </div>
+        <div class="card-body">
+          <form method="POST" novalidate>
+            {{ form.hidden_tag() }}
+
+            <div class="mb-3">
+              {{ form.name.label(class="form-label") }}
+              {{ form.name(class="form-control") }}
+              {% if form.name.errors %}
+                <div class="text-danger">
+                  {% for error in form.name.errors %}<small>{{ error }}</small>{% endfor %}
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              {{ form.email.label(class="form-label") }}
+              {{ form.email(class="form-control") }}
+              {% if form.email.errors %}
+                <div class="text-danger">
+                  {% for error in form.email.errors %}<small>{{ error }}</small>{% endfor %}
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                {{ form.password.label(class="form-label") }}
+                {{ form.password(class="form-control") }}
+                {% if form.password.errors %}
+                  <div class="text-danger">
+                    {% for error in form.password.errors %}<small>{{ error }}</small>{% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+              <div class="col-md-6 mb-3">
+                {{ form.password2.label(class="form-label") }}
+                {{ form.password2(class="form-control") }}
+                {% if form.password2.errors %}
+                  <div class="text-danger">
+                    {% for error in form.password2.errors %}<small>{{ error }}</small>{% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="mb-3">
+              {{ form.role.label(class="form-label") }}
+              {{ form.role(class="form-select", id="role") }}
+              {% if form.role.errors %}
+                <div class="text-danger">
+                  {% for error in form.role.errors %}<small>{{ error }}</small>{% endfor %}
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3" id="student-id-field" style="display: none;">
+              {{ form.student_id.label(class="form-label") }}
+              {{ form.student_id(class="form-control") }}
+              {% if form.student_id.errors %}
+                <div class="text-danger">
+                  {% for error in form.student_id.errors %}<small>{{ error }}</small>{% endfor %}
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="d-grid">
+              {{ form.submit(class="btn btn-primary btn-lg") }}
+            </div>
+          </form>
+
+          <div class="text-center mt-3">
+            <p class="mb-0">Already have an account? <a href="{{ url_for('auth.login') }}">Login Now</a></p>
+          </div>
+        </div>
+      </div>
     </div>
+
+  </div>
 </div>
 
 <script>

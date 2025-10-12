@@ -29,7 +29,7 @@ python create_test_data.py
 
 ### 4. 启动应用
 ```bash
-python start.py
+python run.py
 ```
 
 ### 5. 访问应用

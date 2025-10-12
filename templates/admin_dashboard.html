@@ -3,127 +3,261 @@
 {% block title %}Admin Dashboard - Classroom Platform{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="bi bi-speedometer2"></i> Admin Dashboard</h2>
-</div>
+<style>
+/* 与 index.html 保持一致的视觉风格（仅样式，不改功能） */
+header, .navbar, .site-header, .topbar, .navbar-default { display: none !important; }
 
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card bg-primary text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ stats.total_courses }}</h4>
-                        <p class="mb-0">Total Courses</p>
-                    </div>
-                    <i class="bi bi-book display-4"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-success text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ stats.total_activities }}</h4>
-                        <p class="mb-0">Total Activities</p>
-                    </div>
-                    <i class="bi bi-chat-dots display-4"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-warning text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ stats.total_students }}</h4>
-                        <p class="mb-0">Total Students</p>
-                    </div>
-                    <i class="bi bi-people display-4"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-info text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ stats.total_instructors }}</h4>
-                        <p class="mb-0">Total Instructors</p>
-                    </div>
-                    <i class="bi bi-person-gear display-4"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg,#1e88e5 0%, #6ab7ff 50%, #6dd3c9 100%);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  box-sizing: border-box;
+  background-attachment: fixed;
+}
 
-<div class="row">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="bi bi-book"></i> All Courses</h5>
-            </div>
-            <div class="card-body">
-                {% if courses %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Course Name</th>
-                                    <th>Semester</th>
-                                    <th>Instructor</th>
-                                    <th>Activities</th>
-                                    <th>Created</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for course in courses %}
-                                <tr>
-                                    <td>
-                                        <a href="{{ url_for('courses.course_detail', course_id=course.id) }}" class="text-decoration-none">
-                                            {{ course.name }}
-                                        </a>
-                                    </td>
-                                    <td>{{ course.semester }}</td>
-                                    <td>{{ course.instructor.name }}</td>
-                                    <td>{{ course.activities|length }}</td>
-                                    <td>{{ course.created_at.strftime('%Y-%m-%d') }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <p class="text-muted">No courses available</p>
-                {% endif %}
-            </div>
-        </div>
+/* 容器和白卡（与 index 一致） */
+.body-hero {
+  padding: 12px 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+}
+.main-panel {
+  width: calc(100vw - 32px);
+  max-width: none;
+  margin: 18px auto;
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 36px 44px;
+  box-shadow: 0 40px 90px rgba(8,35,70,0.18);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  max-height: calc(100vh - 36px);
+}
+
+/* 顶部品牌行（与 index 保持一致） */
+.hero-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+.brand { display: flex; align-items: center; gap: 14px; }
+.brand .logo { width: 64px; height: 64px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: #fff; box-shadow: 0 8px 24px rgba(12,45,80,0.06); }
+.brand .wordmark { font-size: 28px; font-weight: 800; color: #1187d6; }
+
+/* 导航链接样式 */
+.nav-links {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+.nav-links a {
+  color: #1565c0;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 16px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(0,0,0,0.03);
+}
+.nav-links a:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+/* Admin Dashboard 副标题 */
+.dashboard-title {
+  margin-top: 8px;
+  font-size: 20px;
+  color: #6c757d;
+  text-align: left;
+}
+
+/* KPI 概览卡片样式：更扁平，保留颜色提示 */
+.kpi-row { display: flex; gap: 18px; margin-bottom: 20px; }
+.kpi-card {
+  flex: 1;
+  border-radius: 12px;
+  padding: 18px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 8px 24px rgba(12,45,80,0.04);
+}
+
+/* 保持原有色彩（可以使用 bootstrap 背景类或覆盖色） */
+.kpi-card.bg-primary { background: linear-gradient(90deg,#2a82e6,#1e61d6); }
+.kpi-card.bg-success { background: linear-gradient(90deg,#2fa56a,#1f8b5b); }
+.kpi-card.bg-warning { background: linear-gradient(90deg,#f6b24a,#f09a2a); }
+.kpi-card.bg-info { background: linear-gradient(90deg,#45c3d8,#1aa0c0); }
+
+.kpi-card h4 { margin: 0; font-size: 28px; font-weight: 800; }
+.kpi-card p { margin: 0; opacity: 0.92; }
+
+/* 表格与右侧快捷操作：保证在白卡内部有足够内边距 */
+.content-row { display: flex; gap: 22px; width: 100%; align-items: flex-start; }
+.content-left { flex: 2; }
+.content-right { flex: 1; min-width: 260px; }
+
+/* 卡片样式（表格区 & 快捷操作区） */
+.card { border-radius: 12px; box-shadow: 0 8px 30px rgba(12,45,80,0.04); border: 1px solid rgba(0,0,0,0.03); overflow: hidden; }
+.card .card-header { background: transparent; border-bottom: none; padding: 18px 22px; }
+.card .card-body { padding: 18px 22px; }
+
+/* 表格响应式处理 */
+.table-responsive { max-height: calc(100vh - 360px); overflow: auto; }
+
+/* 快捷操作按钮样式对齐 */
+.d-grid .btn { border-radius: 8px; }
+
+/* 底部留白微调 */
+.footer-space { height: 8px; }
+
+/* 响应式 */
+@media (max-width: 992px) {
+  .content-row { flex-direction: column; }
+  .kpi-row { flex-direction: column; gap: 12px; }
+  .main-panel { padding: 24px; width: calc(100vw - 28px); }
+}
+</style>
+
+<div class="body-hero">
+  <div class="main-panel">
+    <!-- 顶部由 base.html 的 logo-highlight 统一渲染，页面内不再重复输出 hero-top -->
+
+    <div class="dashboard-title">
+      <h5><i class="bi bi-speedometer2"></i> Admin Dashboard</h5>
     </div>
-    
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="bi bi-tools"></i> Quick Actions</h5>
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="{{ url_for('courses.list_courses') }}" class="btn btn-outline-primary">
-                        <i class="bi bi-list"></i> View All Courses
-                    </a>
-                    <a href="{{ url_for('activities.list_activities') }}" class="btn btn-outline-success">
-                        <i class="bi bi-chat-dots"></i> View All Activities
-                    </a>
-                    <a href="{{ url_for('main.leaderboard') }}" class="btn btn-outline-warning">
-                        <i class="bi bi-trophy"></i> View Leaderboard
-                    </a>
-                </div>
-            </div>
+
+    <!-- KPI 概览行 -->
+    <div class="kpi-row">
+      <div class="kpi-card bg-primary">
+        <div>
+          <h4>{{ stats.total_courses }}</h4>
+          <p>Total Courses</p>
         </div>
+        <div>
+          <i class="bi bi-book" style="font-size:38px; opacity:0.95;"></i>
+        </div>
+      </div>
+
+      <div class="kpi-card bg-success">
+        <div>
+          <h4>{{ stats.total_activities }}</h4>
+          <p>Total Activities</p>
+        </div>
+        <div>
+          <i class="bi bi-chat-dots" style="font-size:38px; opacity:0.95;"></i>
+        </div>
+      </div>
+
+      <div class="kpi-card bg-warning">
+        <div>
+          <h4>{{ stats.total_students }}</h4>
+          <p>Total Students</p>
+        </div>
+        <div>
+          <i class="bi bi-people" style="font-size:38px; opacity:0.95;"></i>
+        </div>
+      </div>
+
+      <div class="kpi-card bg-info">
+        <div>
+          <h4>{{ stats.total_instructors }}</h4>
+          <p>Total Instructors</p>
+        </div>
+        <div>
+          <i class="bi bi-person-gear" style="font-size:38px; opacity:0.95;"></i>
+        </div>
+      </div>
     </div>
+
+    <!-- 主要内容区：左表格、右快捷操作 -->
+    <div class="content-row">
+      <div class="content-left">
+        <div class="card">
+          <div class="card-header">
+            <h5><i class="bi bi-book"></i> All Courses</h5>
+          </div>
+          <div class="card-body">
+            {% if courses %}
+              <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                  <thead>
+                    <tr>
+                      <th>Course Name</th>
+                      <th>Semester</th>
+                      <th>Instructor</th>
+                      <th>Activities</th>
+                      <th>Created</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for course in courses %}
+                    <tr>
+                      <td>
+                        <a href="{{ url_for('courses.course_detail', course_id=course.id) }}" class="text-decoration-none">
+                          {{ course.name }}
+                        </a>
+                      </td>
+                      <td>{{ course.semester }}</td>
+                      <td>{{ course.instructor.name }}</td>
+                      <td>{{ course.activities|length }}</td>
+                      <td>{{ course.created_at.strftime('%Y-%m-%d') }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <p class="text-muted mb-0">No courses available</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="content-right">
+        <div class="card">
+          <div class="card-header">
+            <h5><i class="bi bi-tools"></i> Quick Actions</h5>
+          </div>
+          <div class="card-body">
+            <div class="d-grid gap-2">
+              <a href="{{ url_for('courses.list_courses') }}" class="btn btn-outline-primary">
+                <i class="bi bi-list"></i> View All Courses
+              </a>
+              <a href="{{ url_for('activities.list_activities') }}" class="btn btn-outline-success">
+                <i class="bi bi-chat-dots"></i> View All Activities
+              </a>
+              <a href="{{ url_for('main.leaderboard') }}" class="btn btn-outline-warning">
+                <i class="bi bi-trophy"></i> View Leaderboard
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mt-3">
+          <div class="card-header">
+            <h6><i class="bi bi-info-circle"></i> Notes</h6>
+          </div>
+          <div class="card-body">
+            <p class="small mb-0">This dashboard uses the same visual layout as the home page. UI changes are purely presentational.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-space"></div>
+  </div>
 </div>
 {% endblock %}

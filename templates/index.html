@@ -3,81 +3,259 @@
 {% block title %}Home - Classroom Platform{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="text-center mb-5">
-            <h1 class="display-4 text-primary">
-                <i class="bi bi-mortarboard"></i> Classroom Platform
-            </h1>
-            <p class="lead">Make classrooms more interactive, make learning more efficient</p>
-        </div>
+<style>
+/* 隐藏顶部全局蓝色横条（只样式隐藏） */
+/* header, .navbar, .site-header, .topbar, .navbar-default { display: none !important; } */
 
-        <div class="row">
-            <div class="col-md-4 mb-4">
-                <div class="card h-100 text-center">
-                    <div class="card-body">
-                        <i class="bi bi-person-check display-4 text-success"></i>
-                        <h5 class="card-title mt-3">Student</h5>
-                        <p class="card-text">Participate in classroom activities, submit answers, view learning progress</p>
-                        <a href="{{ url_for('auth.register') }}" class="btn btn-success">Register Student Account</a>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-4 mb-4">
-                <div class="card h-100 text-center">
-                    <div class="card-body">
-                        <div style="font-size: 3rem; color: #ffc107; margin-bottom: 1rem;">👨‍🏫</div>
-                        <h5 class="card-title mt-3">Instructor</h5>
-                        <p class="card-text">Create courses and activities, manage students, view result analysis</p>
-                        <a href="{{ url_for('auth.register') }}" class="btn btn-warning">Register Instructor Account</a>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-4 mb-4">
-                <div class="card h-100 text-center">
-                    <div class="card-body">
-                        <i class="bi bi-shield-check display-4 text-danger"></i>
-                        <h5 class="card-title mt-3">Administrator</h5>
-                        <p class="card-text">Manage the entire platform, view global data and statistics</p>
-                        <a href="{{ url_for('auth.login') }}" class="btn btn-danger">Admin Login</a>
-                    </div>
-                </div>
-            </div>
-        </div>
+/* 全局背景保持铺满视口 */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg,#1e88e5 0%, #6ab7ff 50%, #6dd3c9 100%);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
 
-        <div class="text-center mt-5">
-            <h3>Features</h3>
-            <div class="row mt-4">
-                <div class="col-md-3 mb-3">
-                    <i class="bi bi-chat-dots-fill text-primary" style="font-size: 2rem;"></i>
-                    <h6>Real-time Interaction</h6>
-                    <small class="text-muted">Real-time poll and short answer submission</small>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <i class="bi bi-graph-up text-success" style="font-size: 2rem;"></i>
-                    <h6>Data Analysis</h6>
-                    <small class="text-muted">Smart statistics and word frequency analysis</small>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <i class="bi bi-robot text-info" style="font-size: 2rem;"></i>
-                    <h6>AI Generation</h6>
-                    <small class="text-muted">AI-assisted classroom question generation</small>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <i class="bi bi-trophy text-warning" style="font-size: 2rem;"></i>
-                    <h6>Leaderboard</h6>
-                    <small class="text-muted">Learning participation ranking</small>
-                </div>
-            </div>
-        </div>
+/* 主容器：靠上排列，顶部/底部只留很窄的空白（去掉大片底部空白） */
+.body-hero {
+  padding: 12px 0;               /* 缩小上下空白 */
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;       /* 顶部对齐，避免主面板垂直居中产生空白 */
+  width: 100%;
+  box-sizing: border-box;
+}
 
-        <div class="text-center mt-4">
-            <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">
-                <i class="bi bi-box-arrow-in-right"></i> Login Now
-            </a>
+/* 白色主面板：放大宽度并缩短高度，不再占满整个视口高度，留下窄边距 */
+.main-panel {
+  width: calc(100vw - 32px);     /* 更窄的左右边距，覆盖更多蓝色底色 */
+  max-width: none;
+  height: auto;                  /* 自动高度，避免底部留白 */
+  margin: 18px auto;             /* 顶部保留小距离，页面更短 */
+  background: linear-gradient(180deg, rgba(255,255,255,0.995), #ffffff);
+  border-radius: 14px;
+  padding: 40px 48px;            /* 放大内部留白以显得更大气 */
+  box-shadow: 0 40px 90px rgba(8,35,70,0.18);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;              /* 防止出现下方多余空白滚动条 */
+  max-height: calc(100vh - 36px);/* 保证在小屏时不超出视口过多 */
+}
+
+/* 顶部：logo + 登录/注册并排 */
+.hero-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 26px;
+  flex-shrink: 0;
+}
+.brand { display:flex; align-items:center; gap:14px; }
+.brand .logo { width:64px; height:64px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:#fff; box-shadow: 0 8px 24px rgba(12,45,80,0.06); }
+.brand .wordmark { font-size:28px; font-weight:800; color:#1187d6; }
+
+/* 登录/注册链接 */
+.auth-links { display:flex; gap:12px; align-items:center; }
+.auth-links a {
+  color:#1565c0; text-decoration:none; font-weight:700;
+  padding:10px 14px; border-radius:8px;
+  background: rgba(255,255,255,0.12); border:1px solid rgba(0,0,0,0.03);
+}
+.auth-links a:hover { background: rgba(255,255,255,0.2); }
+
+/* 三个模块区域：增加间隙、圆角、放大视觉比例 */
+.showcase {
+  display:flex;
+  gap: 32px;                      /* 增大卡片间隙 */
+  margin-bottom: 30px;
+  width: 100%;
+  align-items: stretch;
+}
+.showcase .card {
+  flex: 1;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  padding: 32px;                  /* 加大卡片内边距 */
+  box-sizing:border-box;
+  border-radius: 14px;            /* 卡片圆角 */
+  color: #213142;
+  min-height: 300px;              /* 稍微增高，视觉更大 */
+  box-shadow: 0 8px 30px rgba(12,45,80,0.04);
+  border: 1px solid rgba(0,0,0,0.03);
+}
+
+/* 各卡片浅色背景 */
+.showcase .card.student { background: #f3fbff; }
+.showcase .card.instructor { background: #fff7f0; }
+.showcase .card.admin { background: #f6fff5; }
+
+/* 图标与文字更大 */
+.card .icon { width:80px; height:80px; display:flex; align-items:center; justify-content:center; margin-bottom:12px; }
+.card h5 { margin:0; font-size:22px; font-weight:800; color:#153d5a; }
+.card small { display:block; color:#4f6b7a; margin-top:10px; font-size:15px; }
+
+/* 卡片底部按钮靠右 */
+.card .meta { display:flex; justify-content:space-between; align-items:center; margin-top:18px; }
+.card .meta .btn { min-width:110px; }
+
+/* 功能特性行 - 缩小占用高度 */
+.features-row { display:flex; gap:18px; margin-top:28px; justify-content:space-between; padding: 0 6%; box-sizing:border-box; }
+.feature { flex:1; text-align:center; }
+.feature h6 { margin:6px 0 4px; font-size:14px; }
+.feature small { font-size:12px; color:#6b7f8f; }
+
+/* 底部登录按钮 */
+.cta { text-align:center; margin-top:26px; }
+.cta .btn { padding:10px 28px; font-size:16px; }
+
+/* 新增：与 course_detail / course_list 一致的 logo 高亮行样式（由 base.html 渲染 HTML） */
+.logo-highlight {
+  display:flex;
+  align-items:center;
+  gap:18px;
+  padding:12px;
+  border-radius:10px;
+  background: linear-gradient(90deg, rgba(240,255,255,0.90), rgba(255,255,255,0.82));
+  box-shadow: 0 6px 18px rgba(12,45,80,0.04);
+  margin-bottom: 16px;
+}
+
+/* Ensure login/register appear in one line on the right */
+.logo-highlight .navbar-nav {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  flex-wrap: nowrap;        /* 不换行 */
+  white-space: nowrap;      /* 防止内部换行 */
+}
+.logo-highlight .navbar-nav li {
+  display: inline-flex;
+  align-items: center;
+}
+.logo-highlight .navbar-nav .nav-link {
+  display: inline-flex;
+  padding: 6px 10px;
+  color: #1565c0;
+  text-decoration: none;
+}
+/* 若仍受 Bootstrap 样式影响，可以加强选择器（按需取消注释） */
+/* .logo-highlight .navbar-nav .nav-link { white-space: nowrap; } */
+
+/* 响应式调整 */
+@media (max-width: 1200px) {
+  .main-panel { width: calc(100vw - 28px); padding: 34px; }
+  .showcase .card { min-height: 260px; padding: 26px; }
+}
+@media (max-width: 992px) {
+  .main-panel { width: calc(100vw - 24px); padding: 22px; }
+  .showcase { flex-direction: column; gap: 18px; }
+  .features-row { padding: 0 4%; flex-wrap:wrap; }
+  .brand .wordmark { font-size:20px; }
+}
+@media (max-width: 576px) {
+  .main-panel { width: calc(100vw - 20px); padding:16px; }
+  .hero-top { flex-direction:column; align-items:flex-start; gap:10px; }
+  .auth-links { align-self:flex-end; }
+  .features-row { flex-direction:column; gap:10px; padding: 0 4%; }
+}
+</style>
+
+<div class="body-hero">
+  <div class="main-panel">
+    <!-- 顶部 logo / 导航 由 base.html 的 logo-highlight 负责渲染，避免重复 -->
+    <!-- 若需要在首页显示不同的副标题或额外操作，放在这里 -->
+
+    <div class="showcase" aria-hidden="false">
+      <div class="card student">
+        <div>
+          <div class="icon" aria-hidden="true">
+            <svg width="56" height="56" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="30" cy="18" r="7" fill="#2d9cff"/>
+              <path d="M12 44c6-10 36-10 40 0" stroke="#2d9cff" stroke-width="3" stroke-linecap="round"/>
+              <rect x="8" y="46" width="20" height="8" rx="2" fill="#cfeeff"/>
+            </svg>
+          </div>
+          <h5>Student</h5>
+          <small>Participate in classroom activities, submit answers</small>
         </div>
+        <div class="meta">
+          <div></div>
+          <div><a href="{{ url_for('auth.register') }}" class="btn btn-success">Register</a></div>
+        </div>
+      </div>
+
+      <div class="card instructor">
+        <div>
+          <div class="icon" aria-hidden="true">
+            <svg width="56" height="56" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="34" cy="16" r="7" fill="#ff9a49"/>
+              <path d="M14 38h36" stroke="#ff9a49" stroke-width="3" stroke-linecap="round"/>
+              <rect x="10" y="40" width="44" height="10" rx="3" fill="#fff2e6"/>
+            </svg>
+          </div>
+          <h5>Instructor</h5>
+          <small>Create courses and activities, manage students</small>
+        </div>
+        <div class="meta">
+          <div></div>
+          <div><a href="{{ url_for('auth.register') }}" class="btn btn-warning">Register</a></div>
+        </div>
+      </div>
+
+      <div class="card admin">
+        <div>
+          <div class="icon" aria-hidden="true">
+            <svg width="56" height="56" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M32 6l18 8v12c0 14-18 22-18 22s-18-8-18-22V14l18-8z" fill="#a8f0c3"/>
+              <circle cx="32" cy="26" r="4" fill="#39c46b"/>
+            </svg>
+          </div>
+          <h5>Administrator</h5>
+          <small>Manage platform, view statistics</small>
+        </div>
+        <div class="meta">
+          <div></div>
+          <div><a href="{{ url_for('auth.login') }}" class="btn btn-danger">Login</a></div>
+        </div>
+      </div>
     </div>
+
+    <div class="features-row" aria-hidden="false">
+      <div class="feature">
+        <i class="bi bi-chat-dots-fill text-primary" style="font-size:1.4rem;"></i>
+        <h6>Real-time Interaction</h6>
+        <small class="text-muted">Real-time poll and short answer submission</small>
+      </div>
+      <div class="feature">
+        <i class="bi bi-graph-up text-success" style="font-size:1.4rem;"></i>
+        <h6>Data Analysis</h6>
+        <small class="text-muted">Smart statistics and word frequency analysis</small>
+      </div>
+      <div class="feature">
+        <i class="bi bi-robot text-info" style="font-size:1.4rem;"></i>
+        <h6>AI Generation</h6>
+        <small class="text-muted">AI-assisted question generation</small>
+      </div>
+      <div class="feature">
+        <i class="bi bi-trophy text-warning" style="font-size:1.4rem;"></i>
+        <h6>Leaderboard</h6>
+        <small class="text-muted">Learning participation ranking</small>
+      </div>
+    </div>
+
+    <div class="cta">
+      <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">
+        <i class="bi bi-box-arrow-in-right"></i> Login Now
+      </a>
+    </div>
+  </div>
 </div>
 {% endblock %}
