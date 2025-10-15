@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}创建课程 - 课堂互动平台{% endblock %}
+{% block title %}Create Course - Classroom Interaction Platform{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="card">
             <div class="card-header">
-                <h4><i class="bi bi-plus-circle"></i> 创建新课程</h4>
+                <h4><i class="bi bi-plus-circle"></i> Create New Course</h4>
             </div>
             <div class="card-body">
                 <form method="POST">
@@ -27,7 +27,7 @@
                     
                     <div class="mb-3">
                         {{ form.semester.label(class="form-label") }}
-                        {{ form.semester(class="form-control", placeholder="例如：2024春季") }}
+                        {{ form.semester(class="form-control", placeholder="e.g., Spring 2024") }}
                         {% if form.semester.errors %}
                             <div class="text-danger">
                                 {% for error in form.semester.errors %}
@@ -39,7 +39,7 @@
                     
                     <div class="mb-3">
                         {{ form.description.label(class="form-label") }}
-                        {{ form.description(class="form-control", rows="4", placeholder="课程描述（可选）") }}
+                        {{ form.description(class="form-control", rows="4", placeholder="Course description (optional)") }}
                         {% if form.description.errors %}
                             <div class="text-danger">
                                 {% for error in form.description.errors %}
@@ -51,7 +51,7 @@
                     
                     <div class="d-flex gap-2">
                         {{ form.submit(class="btn btn-primary") }}
-                        <a href="{{ url_for('courses.list_courses') }}" class="btn btn-secondary">取消</a>
+                        <a href="{{ url_for('courses.list_courses') }}" class="btn btn-secondary">Cancel</a>
                     </div>
                 </form>
             </div>

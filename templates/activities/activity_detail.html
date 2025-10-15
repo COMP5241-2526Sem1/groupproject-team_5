@@ -1,39 +1,203 @@
 {% extends "base.html" %}
 
-{% block title %}{{ activity.title }} - 课堂互动平台{% endblock %}
+{% block title %}{{ activity.title }} - {{ activity.course.name }}{% endblock %}
 
 {% block content %}
+<style>
+/* 动画效果 */
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { transform: translateX(-20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.activity-header {
+    background: linear-gradient(135deg, #ffffff20, #ffffff10);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.activity-card {
+    border: none;
+    border-radius: 15px;
+    background: #fff;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.activity-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+}
+
+.response-update {
+    animation: pulse 1s ease-in-out;
+}
+
+.status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+.question-text {
+    font-size: 1.2rem;
+    line-height: 1.8;
+    color: #2c3e50;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #f8f9fa, #fff);
+    border-radius: 12px;
+    margin-bottom: 2rem;
+}
+
+.option-item {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1rem;
+    border-left: 4px solid transparent;
+    transition: all 0.3s ease;
+    animation: slideIn 0.5s ease-out forwards;
+}
+
+.option-item:hover {
+    background: linear-gradient(135deg, #f8f9fa, #fff);
+    border-left-color: #0d6efd;
+    transform: translateX(10px);
+}
+
+.activity-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.stat-item {
+    background: linear-gradient(135deg, #f8f9fa, #fff);
+    padding: 1rem;
+    border-radius: 12px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.stat-number {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #0d6efd;
+    margin-bottom: 0.5rem;
+}
+
+.response-section {
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.response-form {
+    background: linear-gradient(135deg, #f8f9fa, #fff);
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-top: 1rem;
+}
+
+.response-input {
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    padding: 1rem;
+    transition: all 0.3s ease;
+}
+
+.response-input:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+    background: #f0f7ff;
+    transform: translateX(5px);
+}
+
+.statistics-card {
+    background: linear-gradient(135deg, #fff, #f8f9fa);
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.statistics-card:hover {
+    background: linear-gradient(135deg, #f8f9fa, #fff);
+    transform: translateY(-3px);
+}
+
+.counter-number {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #0d6efd;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+</style>
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h2><i class="bi bi-chat-dots"></i> {{ activity.title }}</h2>
-        <p class="text-muted mb-0">{{ activity.course.name }} | {{ activity.type }}</p>
+        <h2 class="d-flex align-items-center gap-2">
+            <i class="bi bi-chat-dots text-primary"></i> 
+            <span>{{ activity.title }}</span>
+        </h2>
+        <div class="d-flex align-items-center mt-2">
+            <a href="{{ url_for('courses.course_detail', course_id=activity.course.id) }}" 
+               class="text-decoration-none me-3">
+                <i class="bi bi-book text-primary"></i>
+                <span class="text-muted">{{ activity.course.name }}</span>
+            </a>
+            <span class="badge bg-light text-dark px-3 py-2">
+                <i class="bi bi-tag"></i> {{ activity.type }}
+            </span>
+            {% if activity.is_active %}
+                <span class="badge bg-success-subtle text-success ms-2 px-3 py-2">Active</span>
+            {% else %}
+                <span class="badge bg-secondary-subtle text-secondary ms-2 px-3 py-2">Ended</span>
+            {% endif %}
+        </div>
     </div>
     {% if current_user.role in ['admin', 'instructor'] and (current_user.role == 'admin' or activity.course.instructor_id == current_user.id) %}
-    <div class="btn-group">
+    <div class="d-flex gap-2">
         {% if activity.is_active %}
         <button id="stop-activity" class="btn btn-danger">
-            <i class="bi bi-stop-circle"></i> 结束活动
+            <i class="bi bi-stop-circle"></i> End Activity
         </button>
         {% else %}
         <button id="start-activity" class="btn btn-success">
-            <i class="bi bi-play-circle"></i> 开始活动
+            <i class="bi bi-play-circle"></i> Start Activity
         </button>
         {% endif %}
-        <a href="{{ url_for('activities.activity_results', activity_id=activity.id) }}" class="btn btn-outline-info">
-            <i class="bi bi-graph-up"></i> 查看结果
+        <a href="{{ url_for('activities.activity_results', activity_id=activity.id) }}" 
+           class="btn btn-outline-primary">
+            <i class="bi bi-graph-up"></i> View Results
         </a>
     </div>
     {% endif %}
 </div>
 
-<div class="row">
+<div class="row g-4">
     <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="bi bi-question-circle"></i> 问题</h5>
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 d-flex align-items-center">
+                    <i class="bi bi-question-circle text-primary me-2"></i> Question
+                </h5>
             </div>
             <div class="card-body">
-                <p class="lead">{{ activity.question }}</p>
+                <p class="lead mb-0">{{ activity.question }}</p>
                 
                 {% if activity.type == 'poll' and activity.options %}
                 <div class="mt-4">
@@ -77,19 +241,19 @@
         {% if current_user.role == 'student' %}
         <div class="card mt-4">
             <div class="card-header">
-                <h5><i class="bi bi-pencil"></i> 我的回答</h5>
+                <h5><i class="bi bi-pencil"></i> My Answer </h5>
             </div>
             <div class="card-body">
                 {% if activity.is_active %}
                     {% if my_response %}
                     <div class="alert alert-success">
-                        <i class="bi bi-check-circle"></i> 您已提交答案
+                        <i class="bi bi-check-circle"></i> You have submitted your answer
                     </div>
                     <div class="card">
                         <div class="card-body">
-                            <h6>您的答案：</h6>
+                            <h6> Your Answer:</h6>
                             <p>{{ my_response.answer }}</p>
-                            <small class="text-muted">提交时间：{{ my_response.submitted_at.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+                            <small class="text-muted"> Submission time: {{ my_response.submitted_at.strftime('%Y-%m-%d %H:%M:%S') }}</small>
                         </div>
                     </div>
                     {% else %}
@@ -146,13 +310,13 @@
                             {% endif %}
                         </div>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-send"></i> 提交答案
+                            <i class="bi bi-send"></i> Submit Answer
                         </button>
                     </form>
                     {% endif %}
                 {% else %}
                 <div class="alert alert-secondary">
-                    <i class="bi bi-pause-circle"></i> 活动未开始或已结束
+                    <i class="bi bi-pause-circle"></i> The event has not started or has ended
                 </div>
                 {% endif %}
             </div>
@@ -163,32 +327,32 @@
     <div class="col-md-4">
         <div class="card">
             <div class="card-header">
-                <h5><i class="bi bi-info-circle"></i> 活动信息</h5>
+                <h5><i class="bi bi-info-circle"></i> Activity Information </h5>
             </div>
             <div class="card-body">
                 <div class="row text-center">
                     <div class="col-6">
                         <h4 id="response-count">{{ activity.responses|length }}</h4>
-                        <small class="text-muted">回答数</small>
+                        <small class="text-muted"> Number of answers </small>
                     </div>
                     <div class="col-6">
                         <h4 id="activity-status">
                             {% if activity.is_active %}
-                                <span class="text-success">进行中</span>
+                                <span class="text-success"> Ongoing </span>
                             {% else %}
-                                <span class="text-muted">已结束</span>
+                                <span class="text-muted"> Completed </span>
                             {% endif %}
                         </h4>
-                        <small class="text-muted">状态</small>
+                        <small class="text-muted"> Status </small>
                     </div>
                 </div>
                 <hr>
-                <p><strong>创建时间：</strong>{{ activity.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                <p><strong> Created time:</strong>{{ activity.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
                 {% if activity.started_at %}
-                <p><strong>开始时间：</strong>{{ activity.started_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                <p><strong> Start time: </strong>{{ activity.started_at.strftime('%Y-%m-%d %H:%M') }}</p>
                 {% endif %}
                 {% if activity.ended_at %}
-                <p><strong>结束时间：</strong>{{ activity.ended_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                <p><strong> End Time: </strong>{{ activity.ended_at.strftime('%Y-%m-%d %H:%M') }}</p>
                 {% endif %}
             </div>
         </div>
@@ -198,27 +362,32 @@
 {% if current_user.role == 'student' %}
 <script>
 // Initialize Socket.IO connection
-const socket = io();
+window.socket = window.socket || io();
+const socket = window.socket;
 
 // Join activity room for real-time updates
-socket.emit('join_activity', {activity_id: {{ activity.id }}});
+socket.emit('join_activity', {activity_id: '{{ activity.id }}'});
 
 // Listen for activity updates
 socket.on('activity_update', function(data) {
-    if (data.activity_id === {{ activity.id }}) {
+    if (data.activity_id === '{{ activity.id }}') {
         const statusElement = document.getElementById('activity-status');
         if (data.data.is_active) {
-            statusElement.innerHTML = '<span class="text-success">Active</span>';
+            statusElement.innerHTML = '<span class="badge bg-success-subtle text-success px-3 py-2">Active</span>';
         } else {
-            statusElement.innerHTML = '<span class="text-muted">Ended</span>';
+            statusElement.innerHTML = '<span class="badge bg-secondary-subtle text-secondary px-3 py-2">Ended</span>';
         }
     }
 });
 
 // Listen for new responses
 socket.on('response_added', function(data) {
-    if (data.activity_id === {{ activity.id }}) {
-        document.getElementById('response-count').textContent = data.response_count;
+    if (data.activity_id === '{{ activity.id }}') {
+        const countElement = document.getElementById('response-count');
+        countElement.textContent = data.response_count;
+        // Add animation effect
+        countElement.classList.add('response-update');
+        setTimeout(() => countElement.classList.remove('response-update'), 1000);
     }
 });
 
@@ -282,27 +451,36 @@ setInterval(function() {
 {% if current_user.role in ['admin', 'instructor'] and (current_user.role == 'admin' or activity.course.instructor_id == current_user.id) %}
 <script>
 // Initialize Socket.IO connection
-const socket = io();
+window.socket = window.socket || io();
+const socket = window.socket;
 
 // Join activity room for real-time updates
-socket.emit('join_activity', {activity_id: {{ activity.id }}});
+socket.emit('join_activity', {activity_id: '{{ activity.id }}'});
 
 // Listen for activity updates
 socket.on('activity_update', function(data) {
-    if (data.activity_id === {{ activity.id }}) {
+    if (data.activity_id === '{{ activity.id }}') {
         const statusElement = document.getElementById('activity-status');
         if (data.data.is_active) {
-            statusElement.innerHTML = '<span class="text-success">Active</span>';
+            statusElement.innerHTML = '<span class="badge bg-success-subtle text-success px-3 py-2">Active</span>';
         } else {
-            statusElement.innerHTML = '<span class="text-muted">Ended</span>';
+            statusElement.innerHTML = '<span class="badge bg-secondary-subtle text-secondary px-3 py-2">Ended</span>';
         }
+        
+        // Animate status change
+        statusElement.classList.add('status-update');
+        setTimeout(() => statusElement.classList.remove('status-update'), 1000);
     }
 });
 
 // Listen for new responses
 socket.on('response_added', function(data) {
-    if (data.activity_id === {{ activity.id }}) {
-        document.getElementById('response-count').textContent = data.response_count;
+    if (data.activity_id === '{{ activity.id }}') {
+        const countElement = document.getElementById('response-count');
+        countElement.textContent = data.response_count;
+        // Add animation effect
+        countElement.classList.add('response-update');
+        setTimeout(() => countElement.classList.remove('response-update'), 1000);
     }
 });
 
