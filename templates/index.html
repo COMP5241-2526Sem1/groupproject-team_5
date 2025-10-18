@@ -4,78 +4,116 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8">
+    <div class="col-md-10">
         <div class="text-center mb-5">
-            <h1 class="display-4 text-primary">
+            <h1 class="display-3 text-primary fw-bold">
                 <i class="bi bi-mortarboard"></i> Classroom Platform
             </h1>
             <p class="lead">Make classrooms more interactive, make learning more efficient</p>
         </div>
 
-        <div class="row">
-            <div class="col-md-4 mb-4">
-                <div class="card h-100 text-center">
-                    <div class="card-body">
-                        <i class="bi bi-person-check display-4 text-success"></i>
-                        <h5 class="card-title mt-3">Student</h5>
-                        <p class="card-text">Participate in classroom activities, submit answers, view learning progress</p>
-                        <a href="{{ url_for('auth.register') }}" class="btn btn-success">Register Student Account</a>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 text-center role-card student">
+                    <div class="card-body d-flex flex-column justify-content-between">
+                        <div>
+                            <div class="role-icon">
+                                <i class="bi bi-person-check display-4 text-success"></i>
+                            </div>
+                            <h4 class="card-title">Student</h4>
+                            <div class="badge bg-success mb-3">Learning Made Easy</div>
+                        </div>
+                        <p class="card-text flex-grow-1 my-3">Participate in classroom activities, submit answers, view learning progress</p>
+                        <div class="mt-auto">
+                            <a href="{{ url_for('auth.register') }}" class="btn btn-success btn-lg w-100 rounded-pill">
+                                <i class="bi bi-arrow-right-circle"></i> Join as Student
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
             
-            <div class="col-md-4 mb-4">
-                <div class="card h-100 text-center">
-                    <div class="card-body">
-                        <div style="font-size: 3rem; color: #ffc107; margin-bottom: 1rem;">👨‍🏫</div>
-                        <h5 class="card-title mt-3">Instructor</h5>
-                        <p class="card-text">Create courses and activities, manage students, view result analysis</p>
-                        <a href="{{ url_for('auth.register') }}" class="btn btn-warning">Register Instructor Account</a>
+            <div class="col-md-4">
+                <div class="card h-100 text-center role-card instructor">
+                    <div class="card-body d-flex flex-column justify-content-between">
+                        <div>
+                            <div class="role-icon">
+                                <span style="font-size: 3rem;">👨‍🏫</span>
+                            </div>
+                            <h4 class="card-title">Instructor</h4>
+                            <div class="badge bg-warning text-dark mb-3">Teaching Simplified</div>
+                        </div>
+                        <p class="card-text flex-grow-1 my-3">Create courses and activities, manage students, view result analysis</p>
+                        <div class="mt-auto">
+                            <a href="{{ url_for('auth.register') }}" class="btn btn-warning btn-lg w-100 rounded-pill">
+                                <i class="bi bi-arrow-right-circle"></i> Teach with Us
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
             
-            <div class="col-md-4 mb-4">
-                <div class="card h-100 text-center">
-                    <div class="card-body">
-                        <i class="bi bi-shield-check display-4 text-danger"></i>
-                        <h5 class="card-title mt-3">Administrator</h5>
-                        <p class="card-text">Manage the entire platform, view global data and statistics</p>
-                        <a href="{{ url_for('auth.login') }}" class="btn btn-danger">Admin Login</a>
+            <div class="col-md-4">
+                <div class="card h-100 text-center role-card admin">
+                    <div class="card-body d-flex flex-column justify-content-between">
+                        <div>
+                            <div class="role-icon">
+                                <i class="bi bi-shield-check display-4 text-danger"></i>
+                            </div>
+                            <h4 class="card-title">Administrator</h4>
+                            <div class="badge bg-danger mb-3">Platform Control</div>
+                        </div>
+                        <p class="card-text flex-grow-1 my-3">Manage the entire platform, view global data and statistics</p>
+                        <div class="mt-auto">
+                            <a href="{{ url_for('auth.login') }}" class="btn btn-danger btn-lg w-100 rounded-pill">
+                                <i class="bi bi-arrow-right-circle"></i> Admin Access
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-5 py-4">
+            <h3 class="mb-4">Features</h3>
+            <div class="row g-4">
+                <div class="col-md-3">
+                    <div class="feature-card p-3 rounded-3 h-100">
+                        <i class="bi bi-chat-dots-fill text-primary mb-3" style="font-size: 2.5rem;"></i>
+                        <h5>Real-time Interaction</h5>
+                        <small class="text-muted">Real-time poll and short answer submission</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="feature-card p-3 rounded-3 h-100">
+                        <i class="bi bi-graph-up text-success mb-3" style="font-size: 2.5rem;"></i>
+                        <h5>Data Analysis</h5>
+                        <small class="text-muted">Smart statistics and word frequency analysis</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="feature-card p-3 rounded-3 h-100">
+                        <i class="bi bi-robot text-info mb-3" style="font-size: 2.5rem;"></i>
+                        <h5>AI Generation</h5>
+                        <small class="text-muted">AI-assisted classroom question generation</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="feature-card p-3 rounded-3 h-100">
+                        <i class="bi bi-trophy text-warning mb-3" style="font-size: 2.5rem;"></i>
+                        <h5>Leaderboard</h5>
+                        <small class="text-muted">Learning participation ranking</small>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="text-center mt-5">
-            <h3>Features</h3>
-            <div class="row mt-4">
-                <div class="col-md-3 mb-3">
-                    <i class="bi bi-chat-dots-fill text-primary" style="font-size: 2rem;"></i>
-                    <h6>Real-time Interaction</h6>
-                    <small class="text-muted">Real-time poll and short answer submission</small>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <i class="bi bi-graph-up text-success" style="font-size: 2rem;"></i>
-                    <h6>Data Analysis</h6>
-                    <small class="text-muted">Smart statistics and word frequency analysis</small>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <i class="bi bi-robot text-info" style="font-size: 2rem;"></i>
-                    <h6>AI Generation</h6>
-                    <small class="text-muted">AI-assisted classroom question generation</small>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <i class="bi bi-trophy text-warning" style="font-size: 2rem;"></i>
-                    <h6>Leaderboard</h6>
-                    <small class="text-muted">Learning participation ranking</small>
-                </div>
-            </div>
-        </div>
-
-        <div class="text-center mt-4">
-            <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">
+            <a href="{{ url_for('auth.login') }}" class="btn btn-lg px-5 me-3" style="background: linear-gradient(45deg, #0d6efd, #0099ff); color: white; border: none;">
                 <i class="bi bi-box-arrow-in-right"></i> Login Now
+            </a>
+            <a href="{{ url_for('auth.register') }}" class="btn btn-lg px-5" style="background: linear-gradient(45deg, #28a745, #34ce57); color: white; border: none;">
+                <i class="bi bi-person-plus"></i> Register Now
             </a>
         </div>
     </div>
