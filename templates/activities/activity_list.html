@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Activity List - Classroom Platform{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-chat-dots"></i> Activity List</h2>
+</div>
+
+<div class="row">
+    {% for activity in activities %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 activity-card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <a href="{{ url_for('activities.activity_detail', activity_id=activity.id) }}" class="text-decoration-none">
+                        {{ activity.title }}
+                    </a>
+                    {% if activity.is_active %}
+                        <span class="badge bg-success status-badge">Active</span>
+                    {% else %}
+                        <span class="badge bg-secondary status-badge">Ended</span>
+                    {% endif %}
+                </h5>
+                <p class="card-text text-muted">{{ activity.course.name }}</p>
+                <p class="card-text">{{ activity.question[:100] }}{% if activity.question|length > 100 %}...{% endif %}</p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">
+                        <i class="bi bi-tag"></i> {{ activity.type }} | 
+                        <i class="bi bi-clock"></i> {{ activity.created_at.strftime('%m-%d %H:%M') }}
+                    </small>
+                    {% if current_user.role in ['admin', 'instructor'] and (current_user.role == 'admin' or activity.course.instructor_id == current_user.id) %}
+                    <a href="{{ url_for('activities.activity_results', activity_id=activity.id) }}" class="btn btn-sm btn-outline-info">
+                        <i class="bi bi-graph-up"></i> Results
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="text-center py-5">
+            <i class="bi bi-chat-dots display-1 text-muted"></i>
+            <h4 class="text-muted mt-3">No Activities</h4>
+            <p class="text-muted">No activities yet, waiting for instructors to create them!</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

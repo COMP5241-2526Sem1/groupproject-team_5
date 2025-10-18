@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}提问 - {{ course.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">在 "{{ course.name }}" 中提问</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="form-group">
+                            <label for="title">问题标题 <span class="text-danger">*</span></label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="title" 
+                                   name="title" 
+                                   placeholder="请输入问题标题" 
+                                   required
+                                   value="{{ request.form.get('title', '') }}">
+                            <small class="form-text text-muted">
+                                请用简洁明了的标题描述您的问题
+                            </small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="content">问题详情 <span class="text-danger">*</span></label>
+                            <textarea class="form-control" 
+                                      id="content" 
+                                      name="content" 
+                                      rows="8" 
+                                      placeholder="请详细描述您的问题..." 
+                                      required>{{ request.form.get('content', '') }}</textarea>
+                            <small class="form-text text-muted">
+                                请提供足够的背景信息和具体细节，这有助于获得更好的答案
+                            </small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>提问小贴士：</strong>
+                                <ul class="mb-0 mt-2">
+                                    <li>确保问题与课程内容相关</li>
+                                    <li>搜索已有问题，避免重复提问</li>
+                                    <li>使用清晰的语言和恰当的格式</li>
+                                    <li>如果问题得到解决，请及时反馈</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group text-right">
+                            <a href="{{ url_for('qa.course_qa_list', course_id=course.id) }}" 
+                               class="btn btn-secondary mr-2">
+                                取消
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> 发布问题
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 自动保存草稿到localStorage
+    const titleInput = document.getElementById('title');
+    const contentTextarea = document.getElementById('content');
+    const courseId = parseInt('{{ course.id }}');
+    
+    function saveDraft() {
+        const draft = {
+            title: titleInput.value,
+            content: contentTextarea.value,
+            timestamp: new Date().getTime()
+        };
+        localStorage.setItem(`qa_draft_${courseId}`, JSON.stringify(draft));
+    }
+    
+    function loadDraft() {
+        const draftKey = `qa_draft_${courseId}`;
+        const draft = localStorage.getItem(draftKey);
+        if (draft) {
+            const draftData = JSON.parse(draft);
+            // 只在字段为空时加载草稿
+            if (!titleInput.value && draftData.title) {
+                titleInput.value = draftData.title;
+            }
+            if (!contentTextarea.value && draftData.content) {
+                contentTextarea.value = draftData.content;
+            }
+        }
+    }
+    
+    // 页面加载时尝试加载草稿
+    document.addEventListener('DOMContentLoaded', loadDraft);
+    
+    // 输入时保存草稿
+    titleInput.addEventListener('input', saveDraft);
+    contentTextarea.addEventListener('input', saveDraft);
+    
+    // 表单提交时清除草稿
+    document.querySelector('form').addEventListener('submit', function() {
+        localStorage.removeItem(`qa_draft_${courseId}`);
+    });
+</script>
+{% endblock %}
