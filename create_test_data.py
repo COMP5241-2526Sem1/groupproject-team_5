@@ -111,10 +111,11 @@ def create_test_data():
                     title=title,
                     type=activity_type,
                     question=question,
+                    quiz_type=quiz_type,
                     options=options,
                     correct_answer=correct_answer,
-                    quiz_type=quiz_type,
                     course_id=course.id,
+                    instructor_id=course.instructor_id,
                     is_active=random.choice([True, False]),
                     created_at=datetime.utcnow() - timedelta(days=random.randint(1, 30))
                 )

@@ -55,10 +55,11 @@ def create_activity(course_id):
             title=form.title.data,
             type=form.type.data,
             question=form.question.data,
+            quiz_type=quiz_type,
             options=options,
             correct_answer=correct_answer,
-            quiz_type=quiz_type,
-            course_id=course_id
+            course_id=course_id,
+            instructor_id=current_user.id
         )
         db.session.add(activity)
         db.session.commit()

@@ -60,12 +60,15 @@ class Activity(db.Model):
     title = db.Column(db.String(200), nullable=False)
     question = db.Column(db.Text, nullable=False)
     type = db.Column(db.String(50), nullable=False)  # poll, short_answer, quiz, etc.
+    quiz_type = db.Column(db.String(50), nullable=True)  # multiple_choice, true_false, fill_blank
     options = db.Column(db.Text)  # JSON string for poll options
     correct_answer = db.Column(db.String(500))
     course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
     instructor_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     is_active = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    started_at = db.Column(db.DateTime, nullable=True)
+    ended_at = db.Column(db.DateTime, nullable=True)
     
     # Relationships
     responses = db.relationship('Response', backref='activity', lazy=True, cascade='all, delete-orphan')

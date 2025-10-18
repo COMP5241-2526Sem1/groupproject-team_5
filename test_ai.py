@@ -113,7 +113,7 @@ def test_ai_functions():
         ark_key = os.environ.get('ARK_API_KEY')
         openai_key = os.environ.get('OPENAI_API_KEY')
         
-        if ark_key and ark_key != 'your-bytedance-ark-api-key-here' and ark_key.startswith('ak-'):
+        if ark_key and ark_key != 'your-bytedance-ark-api-key-here' and len(ark_key) > 10:
             print("✅ Ark API密钥已配置")
             print(f"   密钥前缀: {ark_key[:10]}...")
         elif openai_key and openai_key != 'your-openai-api-key-here' and openai_key.startswith('sk-'):

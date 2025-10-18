@@ -306,48 +306,57 @@ socket.on('response_added', function(data) {
     }
 });
 
-document.getElementById('start-activity').addEventListener('click', function() {
-    fetch('{{ url_for("activities.start_activity", activity_id=activity.id) }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Activity started!');
-            location.reload();
-        } else {
-            alert('Operation failed: ' + data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Operation failed, please try again');
-    });
-});
+document.addEventListener('DOMContentLoaded', function() {
+    const startButton = document.getElementById('start-activity');
+    const stopButton = document.getElementById('stop-activity');
+    
+    if (startButton) {
+        startButton.addEventListener('click', function() {
+            fetch('{{ url_for("activities.start_activity", activity_id=activity.id) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Activity started!');
+                    location.reload();
+                } else {
+                    alert('Operation failed: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Operation failed, please try again');
+            });
+        });
+    }
 
-document.getElementById('stop-activity').addEventListener('click', function() {
-    fetch('{{ url_for("activities.stop_activity", activity_id=activity.id) }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Activity ended!');
-            location.reload();
-        } else {
-            alert('Operation failed: ' + data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Operation failed, please try again');
-    });
+    if (stopButton) {
+        stopButton.addEventListener('click', function() {
+            fetch('{{ url_for("activities.stop_activity", activity_id=activity.id) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Activity ended!');
+                    location.reload();
+                } else {
+                    alert('Operation failed: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Operation failed, please try again');
+            });
+        });
+    }
 });
 
 // Fallback polling (every 10 seconds)
