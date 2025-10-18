@@ -20,6 +20,13 @@ mail = Mail()
 def create_app():
     """Application factory pattern"""
     
+    # Load environment variables
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except ImportError:
+        print("⚠️  python-dotenv not installed, environment variables may not load properly")
+    
     # Create Flask app with correct template directory
     import os
     template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates'))

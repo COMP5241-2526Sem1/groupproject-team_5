@@ -7,13 +7,13 @@ from collections import Counter
 import json
 
 def generate_questions(text: str) -> List[str]:
-    # Check for Ark API key first, then OpenAI API key
+    # Check for valid API keys in priority order
     ark_api_key = os.environ.get('ARK_API_KEY')
     openai_api_key = os.environ.get('OPENAI_API_KEY')
     
-    if ark_api_key:
+    if ark_api_key and ark_api_key != 'your-bytedance-ark-api-key-here' and ark_api_key.startswith('ak-'):
         return generate_questions_with_ark(text, ark_api_key)
-    elif openai_api_key:
+    elif openai_api_key and openai_api_key != 'your-openai-api-key-here' and openai_api_key.startswith('sk-'):
         return generate_questions_with_openai(text, openai_api_key)
     else:
         return generate_questions_fallback(text)
@@ -110,13 +110,13 @@ def generate_questions_fallback(text: str) -> List[str]:
 
 def generate_activity_from_content(content: str, activity_type: str) -> Dict[str, Any]:
     """Generate a complete activity from teaching content"""
-    # Check for Ark API key first, then OpenAI API key
+    # Check for valid API keys in priority order
     ark_api_key = os.environ.get('ARK_API_KEY')
     openai_api_key = os.environ.get('OPENAI_API_KEY')
     
-    if ark_api_key:
+    if ark_api_key and ark_api_key != 'your-bytedance-ark-api-key-here' and ark_api_key.startswith('ak-'):
         return generate_activity_with_ark(content, activity_type, ark_api_key)
-    elif openai_api_key:
+    elif openai_api_key and openai_api_key != 'your-openai-api-key-here' and openai_api_key.startswith('sk-'):
         return generate_activity_with_openai(content, activity_type, openai_api_key)
     else:
         return generate_activity_fallback(content, activity_type)
@@ -317,13 +317,13 @@ def generate_activity_fallback(content: str, activity_type: str) -> Dict[str, An
 
 def group_answers(answers: List[str]) -> Dict[str, Any]:
     """Group and analyze student answers using AI"""
-    # Check for Ark API key first, then OpenAI API key
+    # Check for valid API keys in priority order
     ark_api_key = os.environ.get('ARK_API_KEY')
     openai_api_key = os.environ.get('OPENAI_API_KEY')
     
-    if ark_api_key:
+    if ark_api_key and ark_api_key != 'your-bytedance-ark-api-key-here' and ark_api_key.startswith('ak-'):
         return group_answers_with_ark(answers, ark_api_key)
-    elif openai_api_key:
+    elif openai_api_key and openai_api_key != 'your-openai-api-key-here' and openai_api_key.startswith('sk-'):
         return group_answers_with_openai(answers, openai_api_key)
     else:
         return group_answers_fallback(answers)

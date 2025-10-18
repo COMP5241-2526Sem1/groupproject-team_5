@@ -11,6 +11,13 @@ import json
 # 添加项目路径
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+# 加载环境变量
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    print("⚠️  python-dotenv未安装，环境变量可能无法加载")
+
 def test_ai_functions():
     """测试AI功能"""
     try:
@@ -106,10 +113,10 @@ def test_ai_functions():
         ark_key = os.environ.get('ARK_API_KEY')
         openai_key = os.environ.get('OPENAI_API_KEY')
         
-        if ark_key:
+        if ark_key and ark_key != 'your-bytedance-ark-api-key-here' and ark_key.startswith('ak-'):
             print("✅ Ark API密钥已配置")
             print(f"   密钥前缀: {ark_key[:10]}...")
-        elif openai_key:
+        elif openai_key and openai_key != 'your-openai-api-key-here' and openai_key.startswith('sk-'):
             print("✅ OpenAI API密钥已配置") 
             print(f"   密钥前缀: {openai_key[:10]}...")
         else:
