@@ -75,6 +75,19 @@
                         <input type="text" id="correct-answer" class="form-control" placeholder="Enter correct answer">
                     </div>
                     
+                    <div class="mb-3">
+                        {{ form.duration_minutes.label(class="form-label") }}
+                        {{ form.duration_minutes(class="form-select") }}
+                        <div class="form-text">学生回答问题的时间限制</div>
+                        {% if form.duration_minutes.errors %}
+                            <div class="text-danger">
+                                {% for error in form.duration_minutes.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
                     <div class="d-flex gap-2">
                         {{ form.submit(class="btn btn-primary") }}
                         <a href="{{ url_for('courses.course_detail', course_id=course.id) }}" class="btn btn-secondary">取消</a>

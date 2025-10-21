@@ -4,11 +4,12 @@ from app import db, socketio
 from app.models import Course, Activity, Response, User, Enrollment
 from app.forms import ActivityForm, AIQuestionForm
 from app.ai_utils import generate_questions, generate_activity_from_content, group_answers
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import re
 import csv
 import io
+import time
 from collections import Counter
 from flask import make_response
 
@@ -27,6 +28,46 @@ def list_activities():
         activities = Activity.query.filter(Activity.course_id.in_(course_ids)).order_by(Activity.created_at.desc()).all()
     
     return render_template('activities/activity_list.html', activities=activities)
+
+def auto_end_activity(activity_id, duration_seconds):
+    """后台任务：自动结束活动"""
+    print(f"Starting timer for activity {activity_id}, will end in {duration_seconds} seconds")
+    time.sleep(duration_seconds)
+    
+    try:
+        # 使用全局的db和socketio，避免循环导入
+        from app import db, socketio
+        from app.models import Activity
+        from datetime import datetime
+        
+        # 不需要app_context，因为我们在同一个应用进程中
+        activity = Activity.query.get(activity_id)
+        if activity and activity.is_active:
+            print(f"Auto-ending activity {activity_id}")
+            activity.is_active = False
+            activity.ended_at = datetime.utcnow()
+            db.session.commit()
+            
+            print(f"Activity {activity_id} ended at {activity.ended_at}")
+            
+            # 通知所有用户活动已结束
+            socketio.emit('activity_update', {
+                'activity_id': activity_id,
+                'update_type': 'auto_ended',
+                'data': {
+                    'is_active': False,
+                    'ended_at': activity.ended_at.isoformat(),
+                    'message': 'Activity has ended automatically'
+                }
+            }, room=f'activity_{activity_id}')
+            
+            print(f"Notification sent for activity {activity_id}")
+        else:
+            print(f"Activity {activity_id} not found or already ended")
+    except Exception as e:
+        print(f"Error in auto_end_activity: {e}")
+        import traceback
+        traceback.print_exc()
 
 @bp.route('/courses/<int:course_id>/activities/create', methods=['GET', 'POST'])
 @login_required
@@ -59,7 +100,8 @@ def create_activity(course_id):
             options=options,
             correct_answer=correct_answer,
             course_id=course_id,
-            instructor_id=current_user.id
+            instructor_id=current_user.id,
+            duration_minutes=form.duration_minutes.data
         )
         db.session.add(activity)
         db.session.commit()
@@ -98,7 +140,16 @@ def start_activity(activity_id):
     
     activity.is_active = True
     activity.started_at = datetime.utcnow()
+    # 清除之前的结束时间，活动现在是活跃的
+    activity.ended_at = None
     db.session.commit()
+    
+    # 计算预计结束时间（仅用于显示）
+    from datetime import timedelta
+    will_end_at = activity.started_at + timedelta(minutes=activity.duration_minutes)
+    
+    # 启动后台任务，在指定时间后自动结束活动 (暂时禁用)
+    # socketio.start_background_task(target=auto_end_activity, activity_id=activity_id, duration_seconds=activity.duration_minutes * 60)
     
     # Broadcast to all users in the activity room
     socketio.emit('activity_update', {
@@ -106,11 +157,18 @@ def start_activity(activity_id):
         'update_type': 'started',
         'data': {
             'is_active': True,
-            'started_at': activity.started_at.isoformat()
+            'started_at': activity.started_at.isoformat(),
+            'duration_minutes': activity.duration_minutes,
+            'will_end_at': will_end_at.isoformat()
         }
     }, room=f'activity_{activity_id}')
     
-    return jsonify({'success': True, 'message': 'Activity started'})
+    return jsonify({
+        'success': True, 
+        'message': f'Activity started for {activity.duration_minutes} minutes',
+        'duration_minutes': activity.duration_minutes,
+        'will_end_at': will_end_at.isoformat()
+    })
 
 @bp.route('/activities/<int:activity_id>/stop', methods=['POST'])
 @login_required
@@ -136,6 +194,36 @@ def stop_activity(activity_id):
     
     return jsonify({'success': True, 'message': 'Activity ended'})
 
+@bp.route('/activities/<int:activity_id>/reset', methods=['POST'])
+@login_required
+def reset_activity(activity_id):
+    activity = Activity.query.get_or_404(activity_id)
+    
+    if current_user.role not in ['admin', 'instructor'] or (current_user.role == 'instructor' and activity.course.instructor_id != current_user.id):
+        return jsonify({'success': False, 'message': 'Insufficient permissions'})
+    
+    # 重置活动状态
+    activity.is_active = False
+    activity.started_at = None
+    activity.ended_at = None
+    
+    # 清除所有学生的回答记录 (可选)
+    Response.query.filter_by(activity_id=activity_id).delete()
+    
+    db.session.commit()
+    
+    # Broadcast to all users in the activity room
+    socketio.emit('activity_update', {
+        'activity_id': activity_id,
+        'update_type': 'reset',
+        'data': {
+            'is_active': False,
+            'message': 'Activity has been reset'
+        }
+    }, room=f'activity_{activity_id}')
+    
+    return jsonify({'success': True, 'message': 'Activity reset successfully'})
+
 @bp.route('/activities/<int:activity_id>/submit', methods=['POST'])
 @login_required
 def submit_response(activity_id):
@@ -157,26 +245,16 @@ def submit_response(activity_id):
     if not answer:
         return jsonify({'success': False, 'message': 'Answer cannot be empty'})
     
-    # Check if answer is correct for quiz type
-    is_correct = None
-    score = 0.0
-    if activity.type == 'quiz' and activity.correct_answer:
-        is_correct = (answer.strip().lower() == activity.correct_answer.strip().lower())
-        score = 1.0 if is_correct else 0.0
-    
+    # Check if there's already a response
     existing_response = Response.query.filter_by(student_id=current_user.id, activity_id=activity_id).first()
     if existing_response:
         existing_response.answer = answer
-        existing_response.is_correct = is_correct
-        existing_response.score = score
         existing_response.submitted_at = datetime.utcnow()
     else:
         response = Response(
             student_id=current_user.id,
             activity_id=activity_id,
-            answer=answer,
-            is_correct=is_correct,
-            score=score
+            answer=answer
         )
         db.session.add(response)
     
