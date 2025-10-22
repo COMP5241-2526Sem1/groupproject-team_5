@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
 Q&A Education Platform - Final Integrated Version
-教育问答平台 - 集成版
 
 Features:
 - User registration with email verification
@@ -28,10 +27,10 @@ def main():
     
     # Check if test data needs to be created
     if len(sys.argv) > 1 and sys.argv[1] == '--init-db':
-        print("🔄 Initializing database and creating test data...")
+        print("Initializing database and creating test data...")
         from scripts.init_data import create_initial_data
         create_initial_data()
-        print("✅ Database initialized successfully!")
+        print("Database initialized successfully!")
         return
     
     # Run application
