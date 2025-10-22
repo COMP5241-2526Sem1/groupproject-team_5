@@ -3,46 +3,126 @@
 {% block title %}Student Dashboard - Classroom Platform{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="bi bi-speedometer2"></i> Student Dashboard</h2>
+<style>
+.student-dashboard-header {
+    background: linear-gradient(135deg, #ffffff20, #ffffff10);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.stat-card {
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0));
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover::before {
+    opacity: 1;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 25px rgba(0,0,0,0.1);
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+.stat-label {
+    font-size: 1rem;
+    opacity: 0.9;
+    letter-spacing: 0.5px;
+}
+
+.stat-icon {
+    font-size: 3rem;
+    opacity: 0.8;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover .stat-icon {
+    transform: scale(1.1) rotate(5deg);
+    opacity: 1;
+}
+
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+}
+
+.floating-icon {
+    animation: float 3s ease-in-out infinite;
+}
+</style>
+
+<div class="student-dashboard-header">
+    <div class="d-flex align-items-center gap-3">
+        <i class="bi bi-mortarboard-fill text-primary floating-icon" style="font-size: 2.5rem;"></i>
+        <div>
+            <h2 class="mb-0">Student Dashboard</h2>
+            <p class="text-muted mb-0">Track your academic progress and activities</p>
+        </div>
+    </div>
 </div>
 
-<div class="row mb-4">
+<div class="row g-4">
     <div class="col-md-4">
-        <div class="card bg-primary text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
+        <div class="card stat-card bg-primary text-white h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h4>{{ stats.enrolled_courses }}</h4>
-                        <p class="mb-0">Enrolled Courses</p>
+                        <div class="stat-number">{{ stats.enrolled_courses }}</div>
+                        <p class="stat-label mb-0">Enrolled Courses</p>
                     </div>
-                    <i class="bi bi-book display-4"></i>
+                    <i class="bi bi-book stat-icon"></i>
                 </div>
             </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card bg-success text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
+        <div class="card stat-card bg-success text-white h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h4>{{ stats.active_activities }}</h4>
-                        <p class="mb-0">Active Activities</p>
+                        <div class="stat-number">{{ stats.active_activities }}</div>
+                        <p class="stat-label mb-0">Active Activities</p>
                     </div>
-                    <i class="bi bi-play-circle display-4"></i>
+                    <i class="bi bi-play-circle stat-icon"></i>
                 </div>
             </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card bg-warning text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
+        <div class="card stat-card bg-warning text-white h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h4>{{ stats.my_responses }}</h4>
-                        <p class="mb-0">My Responses</p>
+                        <div class="stat-number">{{ stats.my_responses }}</div>
+                        <p class="stat-label mb-0">My Responses</p>
                     </div>
-                    <i class="bi bi-chat-dots display-4"></i>
+                    <i class="bi bi-chat-dots stat-icon"></i>
                 </div>
             </div>
         </div>

@@ -155,7 +155,7 @@
         {% else %}
         <div class="card">
             <div class="card-header">
-                <h5><i class="bi bi-chat-text"></i> 简答题答案</h5>
+                <h5><i class="bi bi-chat-text"></i> Answers to short-answer questions </h5>
             </div>
             <div class="card-body">
                 {% if results.answers %}
@@ -167,7 +167,7 @@
                     </div>
                     {% endfor %}
                 {% else %}
-                    <p class="text-muted">暂无答案</p>
+                    <p class="text-muted"> No answer yet </p>
                 {% endif %}
             </div>
         </div>
@@ -175,7 +175,7 @@
         {% if results.word_frequency %}
         <div class="card mt-4">
             <div class="card-header">
-                <h5><i class="bi bi-cloud"></i> 词频分析</h5>
+                <h5><i class="bi bi-cloud"></i> Word frequency analysis </h5>
             </div>
             <div class="card-body">
                 <div class="word-cloud">
@@ -194,30 +194,30 @@
     <div class="col-md-4">
         <div class="card">
             <div class="card-header">
-                <h5><i class="bi bi-info-circle"></i> 统计信息</h5>
+                <h5><i class="bi bi-info-circle"></i> Statistics </h5>
             </div>
             <div class="card-body">
                 <div class="row text-center">
                     <div class="col-6">
                         <h4>{{ results.total_responses }}</h4>
-                        <small class="text-muted">总回答数</small>
+                        <small class="text-muted"> Total number of answers </small>
                     </div>
                     <div class="col-6">
                         <h4>{{ activity.course.enrollments|length }}</h4>
-                        <small class="text-muted">课程学生数</small>
+                        <small class="text-muted"> Number of students in the course </small>
                     </div>
                 </div>
                 <hr>
                 <div class="text-center">
                     <h4>{{ "%.1f"|format((results.total_responses / activity.course.enrollments|length * 100) if activity.course.enrollments|length > 0 else 0) }}%</h4>
-                    <small class="text-muted">参与率</small>
+                    <small class="text-muted"> Participation rate </small>
                 </div>
             </div>
         </div>
         
         <div class="card mt-3">
             <div class="card-header">
-                <h5><i class="bi bi-people"></i> 参与学生</h5>
+                <h5><i class="bi bi-people"></i> Participating students </h5>
             </div>
             <div class="card-body">
                 {% if responses %}
@@ -235,7 +235,7 @@
                         {% endfor %}
                     </div>
                 {% else %}
-                    <p class="text-muted">暂无参与学生</p>
+                    <p class="text-muted"> No participating students yet </p>
                 {% endif %}
             </div>
         </div>

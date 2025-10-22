@@ -15,35 +15,46 @@
 <div class="row">
     {% for course in courses %}
     <div class="col-md-6 col-lg-4 mb-4">
-        <div class="card h-100">
+        <div class="card h-100 course-card course-theme-{{ loop.index % 5 + 1 }}">
             <div class="card-body">
-                <h5 class="card-title">
+                <h5 class="card-title mb-3">
                     <a href="{{ url_for('courses.course_detail', course_id=course.id) }}" class="text-decoration-none">
                         {{ course.name }}
                     </a>
                 </h5>
-                <p class="card-text text-muted">{{ course.semester }}</p>
+                <p class="card-text">
+                    <span class="course-tag course-tag-info">{{ course.semester }}</span>
+                </p>
                 {% if course.description %}
-                <p class="card-text">{{ course.description[:100] }}{% if course.description|length > 100 %}...{% endif %}</p>
+                <p class="card-text text-muted mt-3">{{ course.description[:100] }}{% if course.description|length > 100 %}...{% endif %}</p>
                 {% endif %}
-                <div class="row text-center">
+                <div class="row text-center mt-4">
                     <div class="col-4">
-                        <small class="text-muted">Instructor</small><br>
-                        <strong>{{ course.instructor.name }}</strong>
+                        <i class="bi bi-person-gear text-primary mb-2" style="font-size: 1.2rem;"></i>
+                        <div>
+                            <small class="text-muted d-block">Instructor</small>
+                            <strong>{{ course.instructor.name }}</strong>
+                        </div>
                     </div>
                     <div class="col-4">
-                        <small class="text-muted">Activities</small><br>
-                        <strong>{{ course.activities|length }}</strong>
+                        <i class="bi bi-chat-dots text-success mb-2" style="font-size: 1.2rem;"></i>
+                        <div>
+                            <small class="text-muted d-block">Activities</small>
+                            <strong>{{ course.activities|length }}</strong>
+                        </div>
                     </div>
                     <div class="col-4">
-                        <small class="text-muted">Students</small><br>
-                        <strong>{{ course.enrollments|length }}</strong>
+                        <i class="bi bi-people text-warning mb-2" style="font-size: 1.2rem;"></i>
+                        <div>
+                            <small class="text-muted d-block">Students</small>
+                            <strong>{{ course.enrollments|length }}</strong>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="card-footer">
+            <div class="card-footer bg-transparent text-center">
                 <small class="text-muted">
-                    Created {{ course.created_at.strftime('%Y-%m-%d') }}
+                    <i class="bi bi-calendar-event"></i> Created {{ course.created_at.strftime('%Y-%m-%d') }}
                 </small>
             </div>
         </div>

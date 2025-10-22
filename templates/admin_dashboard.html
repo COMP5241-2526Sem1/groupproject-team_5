@@ -3,95 +3,107 @@
 {% block title %}Admin Dashboard - Classroom Platform{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="bi bi-speedometer2"></i> Admin Dashboard</h2>
-</div>
-
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card bg-primary text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ stats.total_courses }}</h4>
-                        <p class="mb-0">Total Courses</p>
-                    </div>
-                    <i class="bi bi-book display-4"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-success text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ stats.total_activities }}</h4>
-                        <p class="mb-0">Total Activities</p>
-                    </div>
-                    <i class="bi bi-chat-dots display-4"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-warning text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ stats.total_students }}</h4>
-                        <p class="mb-0">Total Students</p>
-                    </div>
-                    <i class="bi bi-people display-4"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-info text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ stats.total_instructors }}</h4>
-                        <p class="mb-0">Total Instructors</p>
-                    </div>
-                    <i class="bi bi-person-gear display-4"></i>
-                </div>
-            </div>
-        </div>
+<div class="page-title-card d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-0"><i class="bi bi-speedometer2 text-primary"></i> Admin Dashboard</h2>
+        <p class="text-muted mb-0">Platform overview and management</p>
     </div>
 </div>
 
-<div class="row">
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card dashboard-stat h-100" style="background: linear-gradient(135deg, #0d6efd, #0099ff);">
+            <div class="card-body p-4">
+                <div class="d-flex flex-column h-100">
+                    <div class="stat-icon text-white mb-3">
+                        <i class="bi bi-book"></i>
+                    </div>
+                    <div class="stat-value text-white">{{ stats.total_courses }}</div>
+                    <div class="stat-label text-white">Total Courses</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card dashboard-stat h-100" style="background: linear-gradient(135deg, #198754, #28a745);">
+            <div class="card-body p-4">
+                <div class="d-flex flex-column h-100">
+                    <div class="stat-icon text-white mb-3">
+                        <i class="bi bi-chat-dots"></i>
+                    </div>
+                    <div class="stat-value text-white">{{ stats.total_activities }}</div>
+                    <div class="stat-label text-white">Total Activities</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card dashboard-stat h-100" style="background: linear-gradient(135deg, #ffc107, #ffca2c);">
+            <div class="card-body p-4">
+                <div class="d-flex flex-column h-100">
+                    <div class="stat-icon text-white mb-3">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <div class="stat-value text-white">{{ stats.total_students }}</div>
+                    <div class="stat-label text-white">Total Students</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card dashboard-stat h-100" style="background: linear-gradient(135deg, #0dcaf0, #39d4ff);">
+            <div class="card-body p-4">
+                <div class="d-flex flex-column h-100">
+                    <div class="stat-icon text-white mb-3">
+                        <i class="bi bi-person-gear"></i>
+                    </div>
+                    <div class="stat-value text-white">{{ stats.total_instructors }}</div>
+                    <div class="stat-label text-white">Total Instructors</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
     <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="bi bi-book"></i> All Courses</h5>
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-book text-primary"></i> All Courses
+                    </h5>
+                    <a href="{{ url_for('courses.list_courses') }}" class="btn btn-sm btn-outline-primary">
+                        View All
+                    </a>
+                </div>
             </div>
-            <div class="card-body">
+            <div class="card-body p-0">
                 {% if courses %}
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table admin-table mb-0">
                             <thead>
                                 <tr>
-                                    <th>Course Name</th>
+                                    <th class="px-4">Course Name</th>
                                     <th>Semester</th>
                                     <th>Instructor</th>
-                                    <th>Activities</th>
+                                    <th class="text-center">Activities</th>
                                     <th>Created</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for course in courses %}
                                 <tr>
-                                    <td>
-                                        <a href="{{ url_for('courses.course_detail', course_id=course.id) }}" class="text-decoration-none">
+                                    <td class="px-4">
+                                        <a href="{{ url_for('courses.course_detail', course_id=course.id) }}" class="text-decoration-none text-primary fw-medium">
                                             {{ course.name }}
                                         </a>
                                     </td>
                                     <td>{{ course.semester }}</td>
                                     <td>{{ course.instructor.name }}</td>
-                                    <td>{{ course.activities|length }}</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-light text-dark">{{ course.activities|length }}</span>
+                                    </td>
                                     <td>{{ course.created_at.strftime('%Y-%m-%d') }}</td>
                                 </tr>
                                 {% endfor %}
@@ -99,29 +111,40 @@
                         </table>
                     </div>
                 {% else %}
-                    <p class="text-muted">No courses available</p>
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox text-muted" style="font-size: 2rem;"></i>
+                        <p class="text-muted mt-2 mb-0">No courses available</p>
+                    </div>
                 {% endif %}
             </div>
         </div>
     </div>
     
     <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="bi bi-tools"></i> Quick Actions</h5>
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightning text-primary"></i> Quick Actions
+                </h5>
             </div>
             <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="{{ url_for('courses.list_courses') }}" class="btn btn-outline-primary">
-                        <i class="bi bi-list"></i> View All Courses
-                    </a>
-                    <a href="{{ url_for('activities.list_activities') }}" class="btn btn-outline-success">
-                        <i class="bi bi-chat-dots"></i> View All Activities
-                    </a>
-                    <a href="{{ url_for('main.leaderboard') }}" class="btn btn-outline-warning">
-                        <i class="bi bi-trophy"></i> View Leaderboard
-                    </a>
-                </div>
+                <a href="{{ url_for('courses.list_courses') }}" class="quick-action-btn btn d-block text-start">
+                    <i class="bi bi-list text-primary"></i>
+                    <span class="fw-medium">View All Courses</span>
+                    <small class="d-block text-muted mt-1">Browse and manage all courses</small>
+                </a>
+                
+                <a href="{{ url_for('activities.list_activities') }}" class="quick-action-btn btn d-block text-start">
+                    <i class="bi bi-chat-dots text-success"></i>
+                    <span class="fw-medium">View All Activities</span>
+                    <small class="d-block text-muted mt-1">Monitor ongoing activities</small>
+                </a>
+                
+                <a href="{{ url_for('main.leaderboard') }}" class="quick-action-btn btn d-block text-start">
+                    <i class="bi bi-trophy text-warning"></i>
+                    <span class="fw-medium">View Leaderboard</span>
+                    <small class="d-block text-muted mt-1">Check student rankings</small>
+                </a>
             </div>
         </div>
     </div>
