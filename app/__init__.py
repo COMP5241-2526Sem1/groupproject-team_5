@@ -45,7 +45,15 @@ def create_app():
     app.config['MAIL_USERNAME'] = "ruonan111421@163.com"
     app.config['MAIL_PASSWORD'] = "UNxNyYZdKXiEvH6U"
     app.config['MAIL_DEFAULT_SENDER'] = "ruonan111421@163.com"
-    
+     
+     # Email Configuration
+    app.config['MAIL_SERVER'] = "smtp.qq.com"
+    app.config['MAIL_USE_SSL'] = True
+    app.config['MAIL_PORT'] = 465
+    app.config['MAIL_USERNAME'] = "2966602258@qq.com"
+    app.config['MAIL_PASSWORD'] = "nihtjcxaseuedcdd"
+    app.config['MAIL_DEFAULT_SENDER'] = "2966602258@qq.com"
+
     # Initialize extensions
     db.init_app(app)
     login_manager.init_app(app)
