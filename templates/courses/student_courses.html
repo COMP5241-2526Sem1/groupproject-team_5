@@ -3,6 +3,20 @@
 {% block title %}My Courses - Classroom Interaction Platform{% endblock %}
 
 {% block content %}
+<style>
+.course-card {
+  background: linear-gradient(135deg, #e8f5e8 0%, #dcf0dc 50%, #d0ebd0 100%);
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.course-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+  background: linear-gradient(135deg, #dcf0dc 0%, #d0ebd0 50%, #c4e6c4 100%);
+}
+</style>
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="bi bi-book"></i> My Courses</h2>
     <a href="{{ url_for('courses.browse_courses') }}" class="btn btn-primary">
@@ -14,9 +28,9 @@
     <div class="row">
         {% for course in courses %}
         <div class="col-md-6 col-lg-4 mb-4">
-            <div class="card h-100">
+            <div class="card h-100 course-card">
                 <div class="card-body">
-                    <h5 class="card-title">{{ course.name }}</h5>
+                    <h5 class="card-title mb-3">{{ course.name }}</h5>
                     <p class="card-text">
                         <small class="text-muted">
                             <i class="bi bi-calendar"></i> {{ course.semester }} <br>
@@ -24,7 +38,7 @@
                         </small>
                     </p>
                     {% if course.description %}
-                        <p class="card-text">{{ course.description[:100] }}{% if course.description|length > 100 %}...{% endif %}</p>
+                        <p class="card-text text-muted mt-3">{{ course.description[:100] }}{% if course.description|length > 100 %}...{% endif %}</p>
                     {% endif %}
                 </div>
                 <div class="card-footer bg-transparent">

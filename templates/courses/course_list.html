@@ -4,213 +4,88 @@
 
 {% block content %}
 <style>
-/* 与其他页面视觉一致的样式 */
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  background: linear-gradient(135deg,#1e88e5 0%, #6ab7ff 50%, #6dd3c9 100%);
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
-  box-sizing: border-box;
-  background-attachment: fixed;
-}
-
-/* 容器与白卡 */
-.body-hero {
-  padding: 12px 0;
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  width: 100%;
-}
-.main-panel {
-  width: calc(100vw - 32px);
-  max-width: none;
-  margin: 18px auto;
-  background: #ffffff;
-  border-radius: 14px;
-  padding: 28px 36px;
-  box-shadow: 0 40px 90px rgba(8,35,70,0.12);
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  overflow: auto;
-}
-
-/* 页面标题区 */
-.page-header { 
-  display:flex; 
-  justify-content:space-between; 
-  align-items:center; 
-  gap:12px; 
-  margin:8px 0 18px; 
-}
-.page-header h2 { 
-  margin:0; 
-  font-weight:800; 
-  color:#153d5a;
-  font-size:24px; 
-  line-height:1.2;  
-}
-
-/* 课程卡片样式 */
-.card {
-  background: #ffffff;
-  border-radius:12px;
-  box-shadow: 0 8px 30px rgba(12,45,80,0.04);
-  border: 1px solid rgba(12,45,80,0.04);
-  overflow:hidden;
-}
-
 .course-card {
+  background: linear-gradient(135deg, #e8f5e8 0%, #dcf0dc 50%, #d0ebd0 100%);
   transition: all 0.3s ease;
   border: none;
 }
 
 .course-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 15px 40px rgba(12,45,80,0.08);
-}
-
-/* 课程主题颜色 */
-.course-theme-1 { border-left: 4px solid #007bff; }
-.course-theme-2 { border-left: 4px solid #28a745; }
-.course-theme-3 { border-left: 4px solid #ffc107; }
-.course-theme-4 { border-left: 4px solid #dc3545; }
-.course-theme-5 { border-left: 4px solid #6f42c1; }
-
-/* 课程标签 */
-.course-tag {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.course-tag-info {
-  background-color: rgba(23, 162, 184, 0.1);
-  color: #17a2b8;
-  border: 1px solid rgba(23, 162, 184, 0.2);
-}
-
-.card .card-body { 
-  padding:20px; 
-}
-
-.card .card-footer { 
-  background:transparent; 
-  border-top:none; 
-  padding:12px 20px; 
-}
-
-/* 列表区布局 */
-.row { 
-  margin-left:-12px; 
-  margin-right:-12px; 
-}
-.col-md-6, .col-lg-4 { 
-  padding-left:12px; 
-  padding-right:12px; 
-}
-
-/* 响应式 */
-@media (max-width: 992px) {
-  .main-panel { 
-    padding:20px; 
-    width: calc(100vw - 28px); 
-  }
-  .page-header { 
-    flex-direction:column; 
-    align-items:flex-start; 
-    gap:10px; 
-  }
-}
-@media (max-width: 576px) {
-  .main-panel { 
-    padding:16px; 
-    width: calc(100vw - 20px); 
-  }
+  box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+  background: linear-gradient(135deg, #dcf0dc 0%, #d0ebd0 50%, #c4e6c4 100%);
 }
 </style>
 
-<div class="body-hero">
-  <div class="main-panel">
-
-    <div class="page-header">
-      <h2><i class="bi bi-book"></i> Course List</h2>
-      {% if current_user.role in ['admin', 'instructor'] %}
-      <a href="{{ url_for('courses.create_course') }}" class="btn btn-primary">
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-book"></i> Course List</h2>
+    {% if current_user.role in ['admin', 'instructor'] %}
+    <a href="{{ url_for('courses.create_course') }}" class="btn btn-primary">
         <i class="bi bi-plus-circle"></i> Create Course
-      </a>
-      {% endif %}
-    </div>
+    </a>
+    {% endif %}
+</div>
 
-    <div class="row">
-      {% for course in courses %}
-      <div class="col-md-6 col-lg-4 mb-4">
-        <div class="card h-100 course-card course-theme-{{ loop.index % 5 + 1 }}">
-          <div class="card-body">
-            <h5 class="card-title mb-3">
-              <a href="{{ url_for('courses.course_detail', course_id=course.id) }}" class="text-decoration-none">
-                {{ course.name }}
-              </a>
-            </h5>
-            <p class="card-text">
-              <span class="course-tag course-tag-info">{{ course.semester }}</span>
-            </p>
-            {% if course.description %}
-            <p class="card-text text-muted mt-3">{{ course.description[:100] }}{% if course.description|length > 100 %}...{% endif %}</p>
-            {% endif %}
-            <div class="row text-center mt-4">
-              <div class="col-4">
-                <i class="bi bi-person-gear text-primary mb-2" style="font-size: 1.2rem;"></i>
-                <div>
-                  <small class="text-muted d-block">Instructor</small>
-                  <strong>{{ course.instructor.name }}</strong>
+<div class="row">
+    {% for course in courses %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 course-card">
+            <div class="card-body">
+                <h5 class="card-title mb-3">
+                    <a href="{{ url_for('courses.course_detail', course_id=course.id) }}" class="text-decoration-none">
+                        {{ course.name }}
+                    </a>
+                </h5>
+                <p class="card-text">
+                    <span class="course-tag course-tag-info">{{ course.semester }}</span>
+                </p>
+                {% if course.description %}
+                <p class="card-text text-muted mt-3">{{ course.description[:100] }}{% if course.description|length > 100 %}...{% endif %}</p>
+                {% endif %}
+                <div class="row text-center mt-4">
+                    <div class="col-5">
+                        <i class="bi bi-person-circle" style="font-size: 1.2rem; color: #333; margin-bottom: 8px; display: block;"></i>
+                        <div>
+                            <small class="text-muted d-block" style="white-space: nowrap; font-size: 0.75rem;">Instructor</small>
+                            <strong style="font-size: 0.85rem;">{{ course.instructor.name }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <i class="bi bi-list-task" style="font-size: 1.2rem; color: #333; margin-bottom: 8px; display: block;"></i>
+                        <div>
+                            <small class="text-muted d-block" style="white-space: nowrap; font-size: 0.75rem;">Activities</small>
+                            <strong style="font-size: 0.85rem;">{{ course.activities|length }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <i class="bi bi-people-fill" style="font-size: 1.2rem; color: #333; margin-bottom: 8px; display: block;"></i>
+                        <div>
+                            <small class="text-muted d-block" style="white-space: nowrap; font-size: 0.75rem;">Students</small>
+                            <strong style="font-size: 0.85rem;">{{ course.enrollments|length }}</strong>
+                        </div>
+                    </div>
                 </div>
-              </div>
-              <div class="col-4">
-                <i class="bi bi-chat-dots text-success mb-2" style="font-size: 1.2rem;"></i>
-                <div>
-                  <small class="text-muted d-block">Activities</small>
-                  <strong>{{ course.activities|length }}</strong>
-                </div>
-              </div>
-              <div class="col-4">
-                <i class="bi bi-people text-warning mb-2" style="font-size: 1.2rem;"></i>
-                <div>
-                  <small class="text-muted d-block">Students</small>
-                  <strong>{{ course.enrollments|length }}</strong>
-                </div>
-              </div>
             </div>
-          </div>
-          <div class="card-footer bg-transparent text-center">
-            <small class="text-muted">
-              <i class="bi bi-calendar-event"></i> Created {{ course.created_at.strftime('%Y-%m-%d') }}
-            </small>
-          </div>
+            <div class="card-footer bg-transparent text-center">
+                <small class="text-muted">
+                    <i class="bi bi-calendar-event"></i> Created {{ course.created_at.strftime('%Y-%m-%d') }}
+                </small>
+            </div>
         </div>
-      </div>
-      {% else %}
-      <div class="col-12">
-        <div class="text-center py-5">
-          <i class="bi bi-book display-1 text-muted"></i>
-          <h4 class="text-muted mt-3">No Courses Available</h4>
-          {% if current_user.role in ['admin', 'instructor'] %}
-          <p class="text-muted">Create your first course to start teaching!</p>
-          <a href="{{ url_for('courses.create_course') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Create Course
-          </a>
-          {% endif %}
-        </div>
-      </div>
-      {% endfor %}
     </div>
-
-  </div>
+    {% else %}
+    <div class="col-12">
+        <div class="text-center py-5">
+            <i class="bi bi-book display-1 text-muted"></i>
+            <h4 class="text-muted mt-3">No Courses Available</h4>
+            {% if current_user.role in ['admin', 'instructor'] %}
+            <p class="text-muted">Create your first course to start teaching!</p>
+            <a href="{{ url_for('courses.create_course') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Create Course
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
 </div>
 {% endblock %}

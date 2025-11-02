@@ -1,14 +1,6 @@
 #!/usr/bin/env python3
 """
-Q&A Education Platform - Final Integrated Version
-
-Features:
-- User registration with email verification
-- Role-based access (Student/Instructor/Admin)
-- Course management
-- Q&A system
-- Interactive activities
-- MySQL database support
+Classroom Interaction Platform - Main Entry Point
 """
 
 import os
@@ -20,27 +12,31 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from app import create_app, socketio
 
 def main():
-    """Main entry point for the application"""
+    # Set default environment variables if not provided
+    if not os.environ.get('SECRET_KEY'):
+        os.environ['SECRET_KEY'] = 'dev-secret-key-change-in-production'
+    
+    if not os.environ.get('DATABASE_URL'):
+        os.environ['DATABASE_URL'] = 'sqlite:///classroom.db'
     
     # Create application
     app = create_app()
     
     # Check if test data needs to be created
     if len(sys.argv) > 1 and sys.argv[1] == '--init-db':
-        print("Initializing database and creating test data...")
-        from scripts.init_data import create_initial_data
-        create_initial_data()
-        print("Database initialized successfully!")
+        print("Creating test data...")
+        from create_test_data import create_test_data
+        create_test_data()
+        print("Test data created successfully!")
         return
     
     # Run application
-    print("Starting Q&A Education Platform...")
-    print("Access URL: http://localhost:5003")
+    print("Starting Classroom Interaction Platform...")
+    print("Access URL: http://localhost:5001")
     print("Admin account: admin@example.com / admin123")
     print("Press Ctrl+C to stop the service")
-    print("=" * 50)
     
-    socketio.run(app, debug=True, host='0.0.0.0', port=5003)
+    socketio.run(app, debug=True, host='0.0.0.0', port=5001)
 
 if __name__ == '__main__':
     main()
