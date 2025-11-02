@@ -1,84 +1,218 @@
 {% extends "base.html" %}
 
-{% block title %}我的回复 - QA平台{% endblock %}
+{% block title %}My Replies - Q&A Platform{% endblock %}
 
 {% block content %}
+<style>
+.replies-header {
+    background: linear-gradient(135deg, #ffffff20, #ffffff10);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.reply-card {
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    background: #fff;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    margin-bottom: 1.5rem;
+}
+
+.reply-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+}
+
+.reply-card .card-header {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border: none;
+    padding: 1rem 1.5rem;
+    position: relative;
+}
+
+.answer-content {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 1rem;
+    margin: 0.5rem 0;
+    max-height: 150px;
+    overflow: hidden;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+    border-left: 4px solid #0d6efd;
+}
+
+.back-btn {
+    background: linear-gradient(135deg, #6c757d, #545c64);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    color: white;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(108, 117, 125, 0.3);
+    color: white;
+    text-decoration: none;
+}
+
+.replies-info-alert {
+    background: linear-gradient(135deg, #d1ecf1, #bee5eb);
+    border: none;
+    border-radius: 10px;
+    border-left: 4px solid #0dcaf0;
+}
+
+.best-answer-badge {
+    background: linear-gradient(135deg, #28a745, #34ce57);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.vote-stats {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.vote-item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.pagination .page-link {
+    border-radius: 8px;
+    margin: 0 2px;
+    border: none;
+    background: #f8f9fa;
+    color: #495057;
+    transition: all 0.3s ease;
+}
+
+.pagination .page-link:hover {
+    background: linear-gradient(135deg, #0d6efd, #0099ff);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, #0d6efd, #0099ff);
+    border: none;
+}
+
+.empty-state {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 15px;
+    padding: 3rem;
+    text-align: center;
+    border: none;
+}
+
+.floating-icon {
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+}
+</style>
+
 <div class="container mt-4">
     <div class="row">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>
-                    <i class="fas fa-comments text-primary"></i>
-                    我收到的回复
-                </h2>
-                <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left"></i> 返回Dashboard
+            <div class="replies-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-3">
+                    <i class="bi bi-chat-dots-fill text-primary floating-icon" style="font-size: 2.5rem;"></i>
+                    <div>
+                        <h2 class="mb-0">My Replies</h2>
+                        <p class="text-muted mb-0">Replies I received to my questions</p>
+                    </div>
+                </div>
+                <a href="{{ url_for('main.dashboard') }}" class="back-btn">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
                 </a>
             </div>
 
             {% if replies %}
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i>
-                    共找到 <strong>{{ total }}</strong> 条回复
+                <div class="replies-info-alert alert">
+                    <i class="bi bi-info-circle-fill"></i>
+                    Found <strong>{{ total }}</strong> replies
                 </div>
 
                 <div class="row">
                     {% for reply_item in replies %}
-                    <div class="col-12 mb-4">
-                        <div class="card shadow-sm">
-                            <div class="card-header bg-light">
+                    <div class="col-12">
+                        <div class="card reply-card">
+                            <div class="card-header">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <h6 class="mb-0">
-                                            <i class="fas fa-question-circle text-primary"></i>
+                                        <h6 class="mb-1">
+                                            <i class="bi bi-question-circle-fill text-primary"></i>
                                             <a href="{{ url_for('qa.question_detail', course_id=reply_item.course.id, question_id=reply_item.question.id) }}" 
                                                class="text-decoration-none">
                                                 {{ reply_item.question.title }}
                                             </a>
                                         </h6>
                                         <small class="text-muted">
-                                            课程: {{ reply_item.course.name }}
+                                            Course: {{ reply_item.course.name }}
                                         </small>
                                     </div>
-                                    <span class="badge badge-primary">
+                                    <span class="badge bg-primary">
                                         {{ reply_item.answer.created_at|local_time }}
                                     </span>
                                 </div>
                             </div>
-                            <div class="card-body">
-                                <div class="mb-2">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <strong class="text-primary">
-                                            <i class="fas fa-user"></i> {{ reply_item.answer.author.username }} 回复：
-                                        </strong>
-                                        <div class="text-muted">
-                                            {% if reply_item.answer.is_best_answer %}
-                                                <span class="badge badge-success">
-                                                    <i class="fas fa-star"></i> 最佳回答
-                                                </span>
-                                            {% endif %}
-                                            <span class="ml-2">
-                                                <i class="fas fa-thumbs-up text-success"></i> 
-                                                {{ reply_item.answer.upvotes }}
-                                                <i class="fas fa-thumbs-down text-danger ml-2"></i> 
-                                                {{ reply_item.answer.downvotes }}
+                            <div class="card-body p-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <strong class="text-primary">
+                                        <i class="bi bi-person-fill"></i> {{ reply_item.answer.author.username }} replied:
+                                    </strong>
+                                    <div class="d-flex align-items-center gap-3">
+                                        {% if reply_item.answer.is_best_answer %}
+                                            <span class="best-answer-badge">
+                                                <i class="bi bi-star-fill"></i> Best Answer
                                             </span>
+                                        {% endif %}
+                                        <div class="vote-stats">
+                                            <div class="vote-item">
+                                                <i class="bi bi-hand-thumbs-up-fill text-success"></i> 
+                                                <span>{{ reply_item.answer.upvotes }}</span>
+                                            </div>
+                                            <div class="vote-item">
+                                                <i class="bi bi-hand-thumbs-down-fill text-danger"></i> 
+                                                <span>{{ reply_item.answer.downvotes }}</span>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="answer-content">
-                                        {{ reply_item.answer.content }}
-                                    </div>
+                                </div>
+                                <div class="answer-content">
+                                    {{ reply_item.answer.content }}
                                 </div>
                             </div>
-                            <div class="card-footer bg-light">
+                            <div class="card-footer bg-white border-0">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <small class="text-muted">
-                                        <i class="fas fa-clock"></i>
-                                        回复时间: {{ reply_item.answer.created_at|local_time }}
+                                        <i class="bi bi-clock"></i>
+                                        Reply time: {{ reply_item.answer.created_at|local_time }}
                                     </small>
                                     <a href="{{ url_for('qa.question_detail', course_id=reply_item.course.id, question_id=reply_item.question.id) }}" 
                                        class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-eye"></i> 查看问题详情
+                                        <i class="bi bi-eye"></i> View Question Details
                                     </a>
                                 </div>
                             </div>
@@ -91,17 +225,17 @@
                 {% if total > per_page %}
                 <nav aria-label="回复分页">
                     <ul class="pagination justify-content-center">
-                        <!-- 上一页 -->
+                        <!-- Previous page -->
                         {% if has_prev %}
                             <li class="page-item">
                                 <a class="page-link" href="{{ url_for('main.my_replies', page=prev_num) }}">
-                                    <i class="fas fa-chevron-left"></i> 上一页
+                                    <i class="bi bi-chevron-left"></i> Previous
                                 </a>
                             </li>
                         {% else %}
                             <li class="page-item disabled">
                                 <span class="page-link">
-                                    <i class="fas fa-chevron-left"></i> 上一页
+                                    <i class="bi bi-chevron-left"></i> Previous
                                 </span>
                             </li>
                         {% endif %}
@@ -146,61 +280,42 @@
                             </li>
                         {% endif %}
 
-                        <!-- 下一页 -->
+                        <!-- Next page -->
                         {% if has_next %}
                             <li class="page-item">
                                 <a class="page-link" href="{{ url_for('main.my_replies', page=next_num) }}">
-                                    下一页 <i class="fas fa-chevron-right"></i>
+                                    Next <i class="bi bi-chevron-right"></i>
                                 </a>
                             </li>
                         {% else %}
                             <li class="page-item disabled">
                                 <span class="page-link">
-                                    下一页 <i class="fas fa-chevron-right"></i>
+                                    Next <i class="bi bi-chevron-right"></i>
                                 </span>
                             </li>
                         {% endif %}
                     </ul>
 
-                    <!-- 分页信息 -->
+                    <!-- Pagination info -->
                     <div class="text-center mt-2">
                         <small class="text-muted">
-                            第 {{ page }} 页，共 {{ total_pages }} 页，总计 {{ total }} 条回复
+                            Page {{ page }} of {{ total_pages }}, total {{ total }} replies
                         </small>
                     </div>
                 </nav>
                 {% endif %}
 
             {% else %}
-                <div class="alert alert-info text-center">
-                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                    <h4>暂无回复</h4>
-                    <p class="text-muted">还没有人回复你的问题，快去发布一些问题吧！</p>
-                    <a href="{{ url_for('qa.ask_question') }}" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> 发布问题
+                <div class="empty-state alert">
+                    <i class="bi bi-inbox floating-icon" style="font-size: 4rem; color: #6c757d; margin-bottom: 1.5rem;"></i>
+                    <h4 class="text-muted">No Replies</h4>
+                    <p class="text-muted mb-4">No one has replied to your questions yet. Go ask some questions!</p>
+                    <a href="{{ url_for('qa.ask_question') }}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-plus-circle"></i> Ask Question
                     </a>
                 </div>
             {% endif %}
         </div>
     </div>
 </div>
-
-<style>
-.answer-content {
-    max-height: 150px;
-    overflow: hidden;
-    padding: 10px 0;
-    word-wrap: break-word;
-    white-space: pre-wrap;
-}
-
-.card:hover {
-    transform: translateY(-2px);
-    transition: transform 0.2s ease-in-out;
-}
-
-.badge {
-    font-size: 0.75em;
-}
-</style>
 {% endblock %}

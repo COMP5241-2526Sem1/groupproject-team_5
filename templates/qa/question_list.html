@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ course.name }} - 课程问答{% endblock %}
+{% block title %}{{ course.name }} - Classroom Interaction Platform{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -8,12 +8,12 @@
         <div class="col-md-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h2>{{ course.name }} - 课程问答</h2>
+                    <h2>{{ course.name }} - Classroom Q&A</h2>
                     <p class="text-muted">{{ course.description }}</p>
                 </div>
                 <a href="{{ url_for('qa.ask_question', course_id=course.id) }}" 
                    class="btn btn-primary">
-                    <i class="fas fa-plus"></i> 提问
+                    <i class="fas fa-plus"></i> Ask a Question
                 </a>
             </div>
 
@@ -29,7 +29,7 @@
                                        class="text-decoration-none">
                                         {{ question.title }}
                                         {% if question.is_resolved %}
-                                            <span class="badge badge-success ml-2">已解决</span>
+                                            <span class="badge badge-success ml-2">Resolved</span>
                                         {% endif %}
                                     </a>
                                 </h5>
@@ -40,7 +40,7 @@
                                     <i class="fas fa-user"></i> {{ question.author.name }}
                                     <i class="fas fa-clock ml-2"></i> {{ question.created_at|local_time }}
                                     {% if question.answers %}
-                                        <i class="fas fa-comments ml-2"></i> {{ question.answers|length }} 个回答
+                                        <i class="fas fa-comments ml-2"></i> {{ question.answers|length }} Answers
                                     {% endif %}
                                 </small>
                             </div>
@@ -48,7 +48,7 @@
                                 <div class="d-flex flex-column align-items-end">
                                     {% if question.best_answer %}
                                         <span class="badge badge-success mb-2">
-                                            <i class="fas fa-check"></i> 最佳答案
+                                            <i class="fas fa-check"></i> Best Answer
                                         </span>
                                     {% endif %}
                                     
@@ -57,8 +57,8 @@
                                         <button class="btn btn-danger btn-sm delete-question-btn" 
                                                 data-question-id="{{ question.id }}"
                                                 data-question-title="{{ question.title }}"
-                                                title="删除此问题">
-                                            <i class="fas fa-trash"></i> 删除
+                                                title="Delete this question">
+                                            <i class="fas fa-trash"></i> Delete
                                         </button>
                                     {% endif %}
                                 </div>
@@ -70,19 +70,19 @@
 
                 <!-- 分页导航 -->
                 {% if questions.pages > 1 %}
-                <nav aria-label="问题分页">
+                <nav aria-label="Question list pagination">
                     <ul class="pagination justify-content-center">
                         <!-- 上一页 -->
                         {% if questions.has_prev %}
                             <li class="page-item">
                                 <a class="page-link" href="{{ url_for('qa.course_qa_list', course_id=course.id, page=questions.prev_num) }}">
-                                    <i class="fas fa-chevron-left"></i> 上一页
+                                    <i class="fas fa-chevron-left"></i> last page
                                 </a>
                             </li>
                         {% else %}
                             <li class="page-item disabled">
                                 <span class="page-link">
-                                    <i class="fas fa-chevron-left"></i> 上一页
+                                    <i class="fas fa-chevron-left"></i> last page
                                 </span>
                             </li>
                         {% endif %}
@@ -129,13 +129,13 @@
                         {% if questions.has_next %}
                             <li class="page-item">
                                 <a class="page-link" href="{{ url_for('qa.course_qa_list', course_id=course.id, page=questions.next_num) }}">
-                                    下一页 <i class="fas fa-chevron-right"></i>
+                                    next page <i class="fas fa-chevron-right"></i>
                                 </a>
                             </li>
                         {% else %}
                             <li class="page-item disabled">
                                 <span class="page-link">
-                                    下一页 <i class="fas fa-chevron-right"></i>
+                                    next page <i class="fas fa-chevron-right"></i>
                                 </span>
                             </li>
                         {% endif %}
@@ -144,7 +144,7 @@
                     <!-- 分页信息 -->
                     <div class="text-center mt-2">
                         <small class="text-muted">
-                            第 {{ questions.page }} 页，共 {{ questions.pages }} 页，总计 {{ questions.total }} 个问题
+                            The {{ questions.page }} page, total {{ questions.pages }} pages, {{ questions.total }} questions
                         </small>
                     </div>
                 </nav>
@@ -152,11 +152,11 @@
             {% else %}
                 <div class="text-center py-5">
                     <i class="fas fa-question-circle fa-3x text-muted mb-3"></i>
-                    <h4>还没有问题</h4>
-                    <p class="text-muted">成为第一个提问的人吧！</p>
+                    <h4>No Questions Yet</h4>
+                    <p class="text-muted">Be the first to ask a question!</p>
                     <a href="{{ url_for('qa.ask_question', course_id=course.id) }}" 
                        class="btn btn-primary">
-                        立即提问
+                        Ask a Question
                     </a>
                 </div>
             {% endif %}
@@ -172,8 +172,8 @@ document.querySelectorAll('.delete-question-btn').forEach(btn => {
     btn.addEventListener('click', function() {
         const questionId = this.dataset.questionId;
         const questionTitle = this.dataset.questionTitle;
-        
-        if (confirm(`⚠️ 警告：删除问题将同时删除所有相关回答和投票记录！\n\n确定要删除问题"${questionTitle}"吗？\n\n此操作无法撤销。`)) {
+
+        if (confirm(`Warning: Deleting this question will also delete all related answers and voting records!\n\nAre you sure you want to delete the question "${questionTitle}"?\n\nThis action cannot be undone.`)) {
             fetch(`/course/{{ course.id }}/qa/${questionId}/delete`, {
                 method: 'POST',
                 headers: {
@@ -186,12 +186,12 @@ document.querySelectorAll('.delete-question-btn').forEach(btn => {
                     alert('✅ ' + data.message);
                     location.reload(); // 重新加载页面以显示更新
                 } else {
-                    alert('❌ 删除失败: ' + data.message);
+                    alert('❌ fail to delete: ' + data.message);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('❌ 删除时发生错误');
+                alert('❌ An error occurred while deleting');
             });
         }
     });

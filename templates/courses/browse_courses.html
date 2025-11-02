@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}浏览课程 - 教室互动平台{% endblock %}
+{% block title %}Browse Courses - Classroom Interaction Platform{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="bi bi-search"></i> 浏览课程</h2>
+    <h2><i class="bi bi-search"></i> Browse Courses</h2>
     <a href="{{ url_for('courses.list_courses') }}" class="btn btn-outline-primary">
-        <i class="bi bi-arrow-left"></i> 我的课程
+        <i class="bi bi-arrow-left"></i> My Courses
     </a>
 </div>
 
@@ -31,7 +31,7 @@
                     <form method="POST" action="{{ url_for('courses.enroll_course', course_id=course.id) }}">
                         <div class="d-grid">
                             <button type="submit" class="btn btn-success">
-                                <i class="bi bi-plus-circle"></i> 选修课程
+                                <i class="bi bi-plus-circle"></i> Enroll Course
                             </button>
                         </div>
                     </form>
@@ -44,10 +44,10 @@
     <!-- 没有可选课程 -->
     <div class="text-center py-5">
         <i class="bi bi-book display-1 text-muted"></i>
-        <h3 class="text-muted mt-3">暂无可选课程</h3>
-        <p class="text-muted">没有新的课程可选修，请查看您已选修的课程</p>
+        <h3 class="text-muted mt-3">There are no available courses</h3>
+        <p class="text-muted">No new courses available for enrollment. Please check your enrolled courses.</p>
         <a href="{{ url_for('courses.list_courses') }}" class="btn btn-primary">
-            <i class="bi bi-book"></i> 查看我的课程
+            <i class="bi bi-book"></i> View My Courses
         </a>
     </div>
 {% endif %}

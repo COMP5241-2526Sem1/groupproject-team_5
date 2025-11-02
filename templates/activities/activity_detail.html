@@ -41,21 +41,21 @@
                 
                 <!-- 统一的活动计时器，通过JavaScript控制显示内容 -->
                 <div class="alert alert-info" id="activity-timer">
-                    <h6><i class="bi bi-clock"></i> <span id="timer-title">活动状态</span></h6>
-                    <div>持续时间: {{ activity.duration_minutes }} 分钟</div>
+                    <h6><i class="bi bi-clock"></i> <span id="timer-title">Statement of Activity</span></h6>
+                    <div>time of duration: {{ activity.duration_minutes }} minutes  </div>
                     <div id="countdown-display" class="fw-bold text-primary">
                         <span id="remaining-time">
                             {% if activity.is_active and activity.started_at %}
-                                计算中...
+                                Computing...
                             {% elif not activity.is_active and activity.ended_at %}
-                                活动已结束
+                                Activity has ended
                             {% else %}
-                                活动尚未开始
+                                Activity has not started
                             {% endif %}
                         </span>
                     </div>
                     {% if activity.ended_at %}
-                    <div id="end-time-display">结束时间: {{ activity.ended_at|local_time }}</div>
+                    <div id="end-time-display">End time: {{ activity.ended_at|local_time }}</div>
                     {% else %}
                     <div id="end-time-display" style="display: none;"></div>
                     {% endif %}
@@ -103,19 +103,19 @@
         {% if current_user.role == 'student' %}
         <div class="card mt-4">
             <div class="card-header">
-                <h5><i class="bi bi-pencil"></i> 我的回答</h5>
+                <h5><i class="bi bi-pencil"></i> My Answer</h5>
             </div>
             <div class="card-body">
                 {% if activity.is_active %}
                     {% if my_response %}
                     <div class="alert alert-success">
-                        <i class="bi bi-check-circle"></i> 您已提交答案
+                        <i class="bi bi-check-circle"></i> You have submitted an answer
                     </div>
                     <div class="card">
                         <div class="card-body">
-                            <h6>您的答案：</h6>
+                            <h6>Your Answer:</h6>
                             <p>{{ my_response.answer }}</p>
-                            <small class="text-muted">提交时间：{{ my_response.submitted_at|local_time }}</small>
+                            <small class="text-muted">Submission Time: {{ my_response.submitted_at|local_time }}</small>
                         </div>
                     </div>
                     {% else %}
@@ -172,13 +172,13 @@
                             {% endif %}
                         </div>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-send"></i> 提交答案
+                            <i class="bi bi-send"></i> Submit Answer
                         </button>
                     </form>
                     {% endif %}
                 {% else %}
                 <div class="alert alert-secondary">
-                    <i class="bi bi-pause-circle"></i> 活动未开始或已结束
+                    <i class="bi bi-pause-circle"></i> The activity is not currently active. You cannot submit an answer at this time.
                 </div>
                 {% endif %}
             </div>
@@ -189,32 +189,32 @@
     <div class="col-md-4">
         <div class="card">
             <div class="card-header">
-                <h5><i class="bi bi-info-circle"></i> 活动信息</h5>
+                <h5><i class="bi bi-info-circle"></i> Activity Information</h5>
             </div>
             <div class="card-body">
                 <div class="row text-center">
                     <div class="col-6">
                         <h4 id="response-count">{{ activity.responses|length }}</h4>
-                        <small class="text-muted">回答数</small>
+                        <small class="text-muted">Responses</small>
                     </div>
                     <div class="col-6">
                         <h4 id="activity-status">
                             {% if activity.is_active %}
-                                <span class="text-success">进行中</span>
+                                <span class="text-success">Active</span>
                             {% else %}
-                                <span class="text-muted">已结束</span>
+                                <span class="text-muted">Ended</span>
                             {% endif %}
                         </h4>
-                        <small class="text-muted">状态</small>
+                        <small class="text-muted">Status</small>
                     </div>
                 </div>
                 <hr>
-                <p><strong>创建时间：</strong>{{ activity.created_at|local_time }}</p>
+                <p><strong>Creation Time:</strong> {{ activity.created_at|local_time }}</p>
                 {% if activity.started_at %}
-                <p><strong>开始时间：</strong>{{ activity.started_at|local_time }}</p>
+                <p><strong>Start Time:</strong> {{ activity.started_at|local_time }}</p>
                 {% endif %}
                 {% if activity.ended_at %}
-                <p><strong>结束时间：</strong>{{ activity.ended_at|local_time }}</p>
+                <p><strong>End Time:</strong> {{ activity.ended_at|local_time }}</p>
                 {% endif %}
             </div>
         </div>
@@ -245,7 +245,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     statusElement.innerHTML = '<span class="text-muted">Ended</span>';
                     // 当活动结束时，立即更新倒计时显示
                     if (remainingTimeElement && timerElement) {
-                        remainingTimeElement.textContent = '活动已结束';
+                        remainingTimeElement.textContent = 'Activity has ended';
                         timerElement.className = 'alert alert-warning';
                     }
                 }
@@ -346,7 +346,7 @@ if (typeof io !== 'undefined') {
                 statusElement.innerHTML = '<span class="text-muted">Ended</span>';
                 // 当活动结束时，立即更新倒计时显示
                 if (remainingTimeElement && timerElement) {
-                    remainingTimeElement.textContent = '活动已结束';
+                    remainingTimeElement.textContent = 'Activity has ended';
                     timerElement.className = 'alert alert-warning';
                 }
             }
@@ -422,8 +422,8 @@ function stopActivity() {
 
 function resetActivity() {
     console.log('Reset activity function called');
-    
-    if (!confirm('确定要重置活动吗？这将清除所有学生的回答记录。')) {
+
+    if (!confirm('Are you sure you want to reset the activity? This will clear all student responses.')) {
         return;
     }
     
@@ -511,7 +511,7 @@ function initializeCountdown() {
                 
                 // 如果活动已经不活跃，显示结束状态
                 if (!data.is_active) {
-                    remainingTimeElement.textContent = '活动已结束';
+                    remainingTimeElement.textContent = 'Activity has ende';
                     timerElement.className = 'alert alert-warning';
                     return false; // 返回false表示停止倒计时
                 }
@@ -521,7 +521,7 @@ function initializeCountdown() {
                 const remainingMs = endTime.getTime() - now.getTime();
                 
                 if (remainingMs <= 0) {
-                    remainingTimeElement.textContent = '活动已结束';
+                    remainingTimeElement.textContent = 'Activity has ended';
                     timerElement.className = 'alert alert-warning';
                     return false; // 返回false表示停止倒计时
                 }
@@ -529,7 +529,7 @@ function initializeCountdown() {
                 const minutes = Math.floor(remainingMs / (1000 * 60));
                 const seconds = Math.floor((remainingMs % (1000 * 60)) / 1000);
                 
-                remainingTimeElement.textContent = `剩余时间: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+                remainingTimeElement.textContent = `Remaining Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
                 
                 // 时间少于1分钟时显示红色警告
                 if (remainingMs < 60000) {
@@ -554,15 +554,15 @@ function initializeCountdown() {
                 if (!remainingTimeElement || !timerElement) return false;
                 
                 if (remainingMs <= 0) {
-                    remainingTimeElement.textContent = '活动已结束';
+                    remainingTimeElement.textContent = 'Activity has ended';
                     timerElement.className = 'alert alert-warning';
                     return false;
                 }
                 
                 const minutes = Math.floor(remainingMs / (1000 * 60));
                 const seconds = Math.floor((remainingMs % (1000 * 60)) / 1000);
-                
-                remainingTimeElement.textContent = `剩余时间: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+                remainingTimeElement.textContent = `Remaining Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
                 return true;
             });
     }
@@ -587,7 +587,7 @@ function initializeCountdown() {
     const remainingTimeElement = document.getElementById('remaining-time');
     const timerElement = document.getElementById('activity-timer');
     if (remainingTimeElement && timerElement) {
-        remainingTimeElement.textContent = '活动未开始';
+        remainingTimeElement.textContent = 'Activity has not started';
         timerElement.className = 'alert alert-secondary';
     }
     {% endif %}

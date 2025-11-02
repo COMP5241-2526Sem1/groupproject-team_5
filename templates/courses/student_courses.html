@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}我的课程 - 教室互动平台{% endblock %}
+{% block title %}My Courses - Classroom Interaction Platform{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="bi bi-book"></i> 我的课程</h2>
+    <h2><i class="bi bi-book"></i> My Courses</h2>
     <a href="{{ url_for('courses.browse_courses') }}" class="btn btn-primary">
-        <i class="bi bi-search"></i> 浏览更多课程
+        <i class="bi bi-search"></i> Browse More Courses
     </a>
 </div>
 
@@ -30,7 +30,7 @@
                 <div class="card-footer bg-transparent">
                     <div class="d-grid gap-2">
                         <a href="{{ url_for('courses.course_detail', course_id=course.id) }}" class="btn btn-primary">
-                            <i class="bi bi-arrow-right-circle"></i> 进入课程
+                            <i class="bi bi-arrow-right-circle"></i> Enter Course
                         </a>
                     </div>
                 </div>
@@ -41,10 +41,10 @@
 {% else %}
     <div class="text-center py-5">
         <i class="bi bi-book display-1 text-muted"></i>
-        <h3 class="text-muted mt-3">您未选择任何课程</h3>
-        <p class="text-muted">浏览课程列表并选修感兴趣的课程</p>
+        <h3 class="text-muted mt-3">You have not selected any courses</h3>
+        <p class="text-muted">Browse the course list and enroll in courses of interest</p>
         <a href="{{ url_for('courses.browse_courses') }}" class="btn btn-primary">
-            <i class="bi bi-search"></i> 浏览课程
+            <i class="bi bi-search"></i> Browse Courses
         </a>
     </div>
 {% endif %}

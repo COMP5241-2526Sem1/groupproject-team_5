@@ -3,119 +3,309 @@
 {% block title %}Home - Classroom Platform{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-10">
-        <div class="text-center mb-5">
-            <h1 class="display-3 text-primary fw-bold">
-                <i class="bi bi-mortarboard"></i> Classroom Platform
-            </h1>
-            <p class="lead">Make classrooms more interactive, make learning more efficient</p>
-        </div>
+<style>
+/* 与其他页面视觉一致的样式 */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg,#1e88e5 0%, #6ab7ff 50%, #6dd3c9 100%);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  box-sizing: border-box;
+  background-attachment: fixed;
+}
 
-        <div class="row g-4">
-            <div class="col-md-4">
-                <div class="card h-100 text-center role-card student">
-                    <div class="card-body d-flex flex-column justify-content-between">
-                        <div>
-                            <div class="role-icon">
-                                <i class="bi bi-person-check display-4 text-success"></i>
-                            </div>
-                            <h4 class="card-title">Student</h4>
-                            <div class="badge bg-success mb-3">Learning Made Easy</div>
-                        </div>
-                        <p class="card-text flex-grow-1 my-3">Participate in classroom activities, submit answers, view learning progress</p>
-                        <div class="mt-auto">
-                            <a href="{{ url_for('auth.register') }}" class="btn btn-success btn-lg w-100 rounded-pill">
-                                <i class="bi bi-arrow-right-circle"></i> Join as Student
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-4">
-                <div class="card h-100 text-center role-card instructor">
-                    <div class="card-body d-flex flex-column justify-content-between">
-                        <div>
-                            <div class="role-icon">
-                                <span style="font-size: 3rem;">👨‍🏫</span>
-                            </div>
-                            <h4 class="card-title">Instructor</h4>
-                            <div class="badge bg-warning text-dark mb-3">Teaching Simplified</div>
-                        </div>
-                        <p class="card-text flex-grow-1 my-3">Create courses and activities, manage students, view result analysis</p>
-                        <div class="mt-auto">
-                            <a href="{{ url_for('auth.register') }}" class="btn btn-warning btn-lg w-100 rounded-pill">
-                                <i class="bi bi-arrow-right-circle"></i> Teach with Us
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-4">
-                <div class="card h-100 text-center role-card admin">
-                    <div class="card-body d-flex flex-column justify-content-between">
-                        <div>
-                            <div class="role-icon">
-                                <i class="bi bi-shield-check display-4 text-danger"></i>
-                            </div>
-                            <h4 class="card-title">Administrator</h4>
-                            <div class="badge bg-danger mb-3">Platform Control</div>
-                        </div>
-                        <p class="card-text flex-grow-1 my-3">Manage the entire platform, view global data and statistics</p>
-                        <div class="mt-auto">
-                            <a href="{{ url_for('auth.login') }}" class="btn btn-danger btn-lg w-100 rounded-pill">
-                                <i class="bi bi-arrow-right-circle"></i> Admin Access
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+/* 容器与白卡 */
+.body-hero {
+  padding: 12px 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+}
+.main-panel {
+  width: calc(100vw - 32px);
+  max-width: none;
+  margin: 18px auto;
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 28px 36px;
+  box-shadow: 0 40px 90px rgba(8,35,70,0.12);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
 
-        <div class="text-center mt-5 py-4">
-            <h3 class="mb-4">Features</h3>
-            <div class="row g-4">
-                <div class="col-md-3">
-                    <div class="feature-card p-3 rounded-3 h-100">
-                        <i class="bi bi-chat-dots-fill text-primary mb-3" style="font-size: 2.5rem;"></i>
-                        <h5>Real-time Interaction</h5>
-                        <small class="text-muted">Real-time poll and short answer submission</small>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="feature-card p-3 rounded-3 h-100">
-                        <i class="bi bi-graph-up text-success mb-3" style="font-size: 2.5rem;"></i>
-                        <h5>Data Analysis</h5>
-                        <small class="text-muted">Smart statistics and word frequency analysis</small>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="feature-card p-3 rounded-3 h-100">
-                        <i class="bi bi-robot text-info mb-3" style="font-size: 2.5rem;"></i>
-                        <h5>AI Generation</h5>
-                        <small class="text-muted">AI-assisted classroom question generation</small>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="feature-card p-3 rounded-3 h-100">
-                        <i class="bi bi-trophy text-warning mb-3" style="font-size: 2.5rem;"></i>
-                        <h5>Leaderboard</h5>
-                        <small class="text-muted">Learning participation ranking</small>
-                    </div>
-                </div>
-            </div>
-        </div>
+/* 首页标题样式 */
+.hero-title {
+  margin: 40px 0 60px;
+  text-align: center;
+}
 
-        <div class="text-center mt-5">
-            <a href="{{ url_for('auth.login') }}" class="btn btn-lg px-5 me-3" style="background: linear-gradient(45deg, #0d6efd, #0099ff); color: white; border: none;">
-                <i class="bi bi-box-arrow-in-right"></i> Login Now
-            </a>
-            <a href="{{ url_for('auth.register') }}" class="btn btn-lg px-5" style="background: linear-gradient(45deg, #28a745, #34ce57); color: white; border: none;">
-                <i class="bi bi-person-plus"></i> Register Now
-            </a>
-        </div>
+.hero-title h1 {
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: #153d5a;
+  margin-bottom: 20px;
+}
+
+.hero-title .lead {
+  font-size: 1.4rem;
+  color: #6c757d;
+  font-weight: 400;
+}
+
+/* 角色卡片增强样式 */
+.role-card {
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  background: #ffffff;
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(12,45,80,0.06);
+  overflow: hidden;
+  position: relative;
+}
+
+.role-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 40px rgba(12,45,80,0.12);
+}
+
+.role-card.student {
+  background: linear-gradient(135deg, #fff, #f0fff4);
+  border-top: 4px solid #28a745;
+}
+
+.role-card.instructor {
+  background: linear-gradient(135deg, #fff, #fffbf0);
+  border-top: 4px solid #ffc107;
+}
+
+.role-card.admin {
+  background: linear-gradient(135deg, #fff, #fff5f5);
+  border-top: 4px solid #dc3545;
+}
+
+.role-icon {
+  font-size: 3.5rem;
+  margin-bottom: 1.5rem;
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+
+.role-card:hover .role-icon {
+  transform: scale(1.1) rotate(5deg);
+}
+
+/* 特性卡片样式 */
+.feature-card {
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(12,45,80,0.04);
+}
+
+.feature-card:hover {
+  background: rgba(255,255,255,0.95);
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(12,45,80,0.08);
+}
+
+/* 按钮样式增强 */
+.cta-buttons {
+  margin-top: 50px;
+  text-align: center;
+}
+
+.cta-btn {
+  padding: 15px 40px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 50px;
+  transition: all 0.3s ease;
+  border: none;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.cta-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+}
+
+.cta-btn.login {
+  background: linear-gradient(135deg, #1e88e5, #1976d2);
+  color: white;
+}
+
+.cta-btn.register {
+  background: linear-gradient(135deg, #28a745, #34ce57);
+  color: white;
+}
+
+/* 特性区域样式 */
+.features-section {
+  margin-top: 60px;
+  padding: 40px 0;
+  border-top: 1px solid rgba(12,45,80,0.06);
+}
+
+.features-section h3 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #153d5a;
+  margin-bottom: 40px;
+}
+
+/* 响应式 */
+@media (max-width: 992px) {
+  .main-panel { 
+    padding:20px; 
+    width: calc(100vw - 28px); 
+  }
+  .hero-title h1 {
+    font-size: 2.8rem;
+  }
+  .hero-title .lead {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .main-panel { 
+    padding:16px; 
+    width: calc(100vw - 20px); 
+  }
+  .hero-title h1 {
+    font-size: 2.2rem;
+  }
+  .cta-btn {
+    padding: 12px 30px;
+    font-size: 1rem;
+  }
+}
+</style>
+
+<div class="body-hero">
+  <div class="main-panel">
+
+    <div class="hero-title">
+      <h1>
+        <i class="bi bi-mortarboard text-primary"></i> Classroom Platform
+      </h1>
+      <p class="lead">Make classrooms more interactive, make learning more efficient</p>
     </div>
+
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="card h-100 text-center role-card student">
+          <div class="card-body d-flex flex-column justify-content-between p-4">
+            <div>
+              <div class="role-icon">
+                <i class="bi bi-person-check text-success"></i>
+              </div>
+              <h4 class="card-title">Student</h4>
+              <div class="badge bg-success mb-3">Learning Made Easy</div>
+            </div>
+            <p class="card-text flex-grow-1 my-3">Participate in classroom activities, submit answers, view learning progress</p>
+            <div class="mt-auto">
+              <a href="{{ url_for('auth.register') }}" class="btn btn-success btn-lg w-100 rounded-pill">
+                <i class="bi bi-arrow-right-circle"></i> Join as Student
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-4">
+        <div class="card h-100 text-center role-card instructor">
+          <div class="card-body d-flex flex-column justify-content-between p-4">
+            <div>
+              <div class="role-icon">
+                <span>👨‍🏫</span>
+              </div>
+              <h4 class="card-title">Instructor</h4>
+              <div class="badge bg-warning text-dark mb-3">Teaching Simplified</div>
+            </div>
+            <p class="card-text flex-grow-1 my-3">Create courses and activities, manage students, view result analysis</p>
+            <div class="mt-auto">
+              <a href="{{ url_for('auth.register') }}" class="btn btn-warning btn-lg w-100 rounded-pill">
+                <i class="bi bi-arrow-right-circle"></i> Teach with Us
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-4">
+        <div class="card h-100 text-center role-card admin">
+          <div class="card-body d-flex flex-column justify-content-between p-4">
+            <div>
+              <div class="role-icon">
+                <i class="bi bi-shield-check text-danger"></i>
+              </div>
+              <h4 class="card-title">Administrator</h4>
+              <div class="badge bg-danger mb-3">Platform Control</div>
+            </div>
+            <p class="card-text flex-grow-1 my-3">Manage the entire platform, view global data and statistics</p>
+            <div class="mt-auto">
+              <a href="{{ url_for('auth.login') }}" class="btn btn-danger btn-lg w-100 rounded-pill">
+                <i class="bi bi-arrow-right-circle"></i> Admin Access
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="features-section">
+      <h3 class="text-center mb-4">Features</h3>
+      <div class="row g-4">
+        <div class="col-md-3">
+          <div class="feature-card p-4 h-100">
+            <i class="bi bi-chat-dots-fill text-primary mb-3" style="font-size: 2.5rem;"></i>
+            <h5>Real-time Interaction</h5>
+            <small class="text-muted">Real-time poll and short answer submission</small>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="feature-card p-4 h-100">
+            <i class="bi bi-graph-up text-success mb-3" style="font-size: 2.5rem;"></i>
+            <h5>Data Analysis</h5>
+            <small class="text-muted">Smart statistics and word frequency analysis</small>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="feature-card p-4 h-100">
+            <i class="bi bi-robot text-info mb-3" style="font-size: 2.5rem;"></i>
+            <h5>AI Generation</h5>
+            <small class="text-muted">AI-assisted classroom question generation</small>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="feature-card p-4 h-100">
+            <i class="bi bi-trophy text-warning mb-3" style="font-size: 2.5rem;"></i>
+            <h5>Leaderboard</h5>
+            <small class="text-muted">Learning participation ranking</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cta-buttons">
+      <a href="{{ url_for('auth.login') }}" class="cta-btn login me-3">
+        <i class="bi bi-box-arrow-in-right"></i> Login Now
+      </a>
+      <a href="{{ url_for('auth.register') }}" class="cta-btn register">
+        <i class="bi bi-person-plus"></i> Register Now
+      </a>
+    </div>
+
+  </div>
 </div>
 {% endblock %}
