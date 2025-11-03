@@ -3,6 +3,70 @@
 {% block title %}Course List - Classroom Platform{% endblock %}
 
 {% block content %}
+<style>
+.course-card {
+  transition: all 0.3s ease;
+  border: none;
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+.course-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+}
+
+/* 多彩渐变背景 - 基于课程循环索引 */
+.course-card.course-color-1 {
+  background: linear-gradient(135deg, #f0f9f0 0%, #e8f5e8 50%, #e0f0e0 100%);
+}
+
+.course-card.course-color-2 {
+  background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 50%, #ffd9d9 100%);
+}
+
+.course-card.course-color-3 {
+  background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 50%, #ddeeff 100%);
+}
+
+.course-card.course-color-4 {
+  background: linear-gradient(135deg, #fffef0 0%, #fffae6 50%, #fff6dc 100%);
+}
+
+.course-card.course-color-5 {
+  background: linear-gradient(135deg, #faf5ff 0%, #f5ebff 50%, #f0e1ff 100%);
+}
+
+.course-card.course-color-6 {
+  background: linear-gradient(135deg, #fff8f0 0%, #fff2e6 50%, #ffebdc 100%);
+}
+
+/* 悬停时的渐变变化 */
+.course-card.course-color-1:hover {
+  background: linear-gradient(135deg, #e8f5e8 0%, #e0f0e0 50%, #d8ebd8 100%);
+}
+
+.course-card.course-color-2:hover {
+  background: linear-gradient(135deg, #ffe8e8 0%, #ffd9d9 50%, #ffcaca 100%);
+}
+
+.course-card.course-color-3:hover {
+  background: linear-gradient(135deg, #e6f3ff 0%, #ddeeff 50%, #d4e9ff 100%);
+}
+
+.course-card.course-color-4:hover {
+  background: linear-gradient(135deg, #fffae6 0%, #fff6dc 50%, #fff2d2 100%);
+}
+
+.course-card.course-color-5:hover {
+  background: linear-gradient(135deg, #f5ebff 0%, #f0e1ff 50%, #ebd7ff 100%);
+}
+
+.course-card.course-color-6:hover {
+  background: linear-gradient(135deg, #fff2e6 0%, #ffebdc 50%, #ffe4d2 100%);
+}
+</style>
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="bi bi-book"></i> Course List</h2>
     {% if current_user.role in ['admin', 'instructor'] %}
@@ -15,35 +79,46 @@
 <div class="row">
     {% for course in courses %}
     <div class="col-md-6 col-lg-4 mb-4">
-        <div class="card h-100">
+        <div class="card h-100 course-card course-color-{{ (loop.index - 1) % 6 + 1 }}">
             <div class="card-body">
-                <h5 class="card-title">
+                <h5 class="card-title mb-3">
                     <a href="{{ url_for('courses.course_detail', course_id=course.id) }}" class="text-decoration-none">
                         {{ course.name }}
                     </a>
                 </h5>
-                <p class="card-text text-muted">{{ course.semester }}</p>
+                <p class="card-text">
+                    <span class="course-tag course-tag-info">{{ course.semester }}</span>
+                </p>
                 {% if course.description %}
-                <p class="card-text">{{ course.description[:100] }}{% if course.description|length > 100 %}...{% endif %}</p>
+                <p class="card-text text-muted mt-3">{{ course.description[:100] }}{% if course.description|length > 100 %}...{% endif %}</p>
                 {% endif %}
-                <div class="row text-center">
-                    <div class="col-4">
-                        <small class="text-muted">Instructor</small><br>
-                        <strong>{{ course.instructor.name }}</strong>
+                <div class="row text-center mt-4">
+                    <div class="col-5">
+                        <i class="bi bi-person-circle" style="font-size: 1.2rem; color: #333; margin-bottom: 8px; display: block;"></i>
+                        <div>
+                            <small class="text-muted d-block" style="white-space: nowrap; font-size: 0.75rem;">Instructor</small>
+                            <strong style="font-size: 0.85rem;">{{ course.instructor.name }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <i class="bi bi-list-task" style="font-size: 1.2rem; color: #333; margin-bottom: 8px; display: block;"></i>
+                        <div>
+                            <small class="text-muted d-block" style="white-space: nowrap; font-size: 0.75rem;">Activities</small>
+                            <strong style="font-size: 0.85rem;">{{ course.activities|length }}</strong>
+                        </div>
                     </div>
                     <div class="col-4">
-                        <small class="text-muted">Activities</small><br>
-                        <strong>{{ course.activities|length }}</strong>
-                    </div>
-                    <div class="col-4">
-                        <small class="text-muted">Students</small><br>
-                        <strong>{{ course.enrollments|length }}</strong>
+                        <i class="bi bi-people-fill" style="font-size: 1.2rem; color: #333; margin-bottom: 8px; display: block;"></i>
+                        <div>
+                            <small class="text-muted d-block" style="white-space: nowrap; font-size: 0.75rem;">Students</small>
+                            <strong style="font-size: 0.85rem;">{{ course.enrollments|length }}</strong>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="card-footer">
+            <div class="card-footer bg-transparent text-center">
                 <small class="text-muted">
-                    Created {{ course.created_at.strftime('%Y-%m-%d') }}
+                    <i class="bi bi-calendar-event"></i> Created {{ course.created_at.strftime('%Y-%m-%d') }}
                 </small>
             </div>
         </div>

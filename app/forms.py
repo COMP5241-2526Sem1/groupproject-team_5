@@ -11,6 +11,7 @@ class LoginForm(FlaskForm):
 class RegistrationForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(min=2, max=100)])
     email = StringField('Email', validators=[DataRequired(), Email()])
+    captcha = StringField('Email Verification Code', validators=[DataRequired(), Length(min=6, max=6)])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
     password2 = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
     role = SelectField('Role', choices=[('student', 'Student'), ('instructor', 'Instructor')], validators=[DataRequired()])
@@ -41,6 +42,7 @@ class ActivityForm(FlaskForm):
     type = SelectField('Activity Type', choices=[('poll', 'Poll'), ('short_answer', 'Short Answer'), ('quiz', 'Quiz'), ('word_cloud', 'Word Cloud'), ('memory_game', 'Memory Game')], validators=[DataRequired()])
     question = TextAreaField('Question', validators=[DataRequired()])
     options = TextAreaField('Options (Required for polls, one per line)')
+    duration_minutes = SelectField('Activity Duration', choices=[(1, '1 minute'), (3, '3 minutes'), (5, '5 minutes'), (10, '10 minutes'), (15, '15 minutes'), (30, '30 minutes')], coerce=int, default=5)
     submit = SubmitField('Create Activity')
 
 class AIQuestionForm(FlaskForm):

@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}创建活动 - {{ course.name }}{% endblock %}
+{% block title %}Create Activity - {{ course.name }}{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="card">
             <div class="card-header">
-                <h4><i class="bi bi-plus-circle"></i> 在 {{ course.name }} 中创建活动</h4>
+                <h4><i class="bi bi-plus-circle"></i> Create Activity in {{ course.name }}</h4>
             </div>
             <div class="card-body">
                 <form method="POST">
@@ -51,7 +51,7 @@
                     
                     <div class="mb-3" id="options-field" style="display: none;">
                         {{ form.options.label(class="form-label") }}
-                        {{ form.options(class="form-control", rows="4", placeholder="每行一个选项") }}
+                        {{ form.options(class="form-control", rows="4", placeholder="Enter options separated by new lines") }}
                         {% if form.options.errors %}
                             <div class="text-danger">
                                 {% for error in form.options.errors %}
@@ -75,9 +75,22 @@
                         <input type="text" id="correct-answer" class="form-control" placeholder="Enter correct answer">
                     </div>
                     
+                    <div class="mb-3">
+                        {{ form.duration_minutes.label(class="form-label") }}
+                        {{ form.duration_minutes(class="form-select") }}
+                        <div class="form-text">Set a time limit for student responses</div>
+                        {% if form.duration_minutes.errors %}
+                            <div class="text-danger">
+                                {% for error in form.duration_minutes.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
                     <div class="d-flex gap-2">
                         {{ form.submit(class="btn btn-primary") }}
-                        <a href="{{ url_for('courses.course_detail', course_id=course.id) }}" class="btn btn-secondary">取消</a>
+                        <a href="{{ url_for('courses.course_detail', course_id=course.id) }}" class="btn btn-secondary">Cancel</a>
                     </div>
                 </form>
             </div>
@@ -85,19 +98,19 @@
         
         <div class="card mt-4">
             <div class="card-header">
-                <h5><i class="bi bi-robot"></i> AI 辅助生成题目</h5>
+                <h5><i class="bi bi-robot"></i> AI-Assisted Question Generation</h5>
             </div>
             <div class="card-body">
                 <div class="mb-3">
-                    <label for="ai-text" class="form-label">粘贴教学文本</label>
-                    <textarea id="ai-text" class="form-control" rows="4" placeholder="粘贴您的教学文本，AI 将为您生成相关问题..."></textarea>
+                    <label for="ai-text" class="form-label">Paste Teaching Text</label>
+                    <textarea id="ai-text" class="form-control" rows="4" placeholder="Paste your teaching text here, and AI will generate related questions..."></textarea>
                 </div>
                 <button id="generate-questions" class="btn btn-outline-primary">
-                    <i class="bi bi-robot"></i> 生成题目
+                    <i class="bi bi-robot"></i> Generate Questions
                 </button>
                 
                 <div id="generated-questions" class="mt-3" style="display: none;">
-                    <h6>生成的题目：</h6>
+                    <h6>Generated Questions:</h6>
                     <div id="questions-list"></div>
                 </div>
             </div>
@@ -129,12 +142,12 @@ document.getElementById('type').addEventListener('change', function() {
 document.getElementById('generate-questions').addEventListener('click', function() {
     const text = document.getElementById('ai-text').value.trim();
     if (!text) {
-        alert('请输入教学文本');
+        alert('Please enter teaching text');
         return;
     }
     
     this.disabled = true;
-    this.innerHTML = '<i class="bi bi-hourglass-split"></i> 生成中...';
+    this.innerHTML = '<i class="bi bi-hourglass-split"></i> Generating...';
     
     fetch('{{ url_for("activities.generate_questions_route") }}', {
         method: 'POST',
@@ -156,7 +169,7 @@ document.getElementById('generate-questions').addEventListener('click', function
                     <div class="card-body">
                         <p class="card-text">${question}</p>
                         <button class="btn btn-sm btn-outline-primary use-question" data-question="${question}">
-                            使用此题
+                            Use this question
                         </button>
                     </div>
                 `;
@@ -165,16 +178,16 @@ document.getElementById('generate-questions').addEventListener('click', function
             
             document.getElementById('generated-questions').style.display = 'block';
         } else {
-            alert('生成失败：' + data.message);
+            alert('Generation failed: ' + data.message);
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('生成失败，请重试');
+        alert('Generation failed, please try again');
     })
     .finally(() => {
         this.disabled = false;
-        this.innerHTML = '<i class="bi bi-robot"></i> 生成题目';
+        this.innerHTML = '<i class="bi bi-robot"></i> Generate Questions';
     });
 });
 

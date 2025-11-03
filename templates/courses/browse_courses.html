@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Browse Courses - Classroom Interaction Platform{% endblock %}
+
+{% block content %}
+<style>
+.course-card {
+  transition: all 0.3s ease;
+  border: none;
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+.course-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+}
+
+/* 多彩渐变背景 - 基于课程循环索引 */
+.course-card.course-color-1 {
+  background: linear-gradient(135deg, #f0f9f0 0%, #e8f5e8 50%, #e0f0e0 100%);
+}
+
+.course-card.course-color-2 {
+  background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 50%, #ffd9d9 100%);
+}
+
+.course-card.course-color-3 {
+  background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 50%, #ddeeff 100%);
+}
+
+.course-card.course-color-4 {
+  background: linear-gradient(135deg, #fffef0 0%, #fffae6 50%, #fff6dc 100%);
+}
+
+.course-card.course-color-5 {
+  background: linear-gradient(135deg, #faf5ff 0%, #f5ebff 50%, #f0e1ff 100%);
+}
+
+.course-card.course-color-6 {
+  background: linear-gradient(135deg, #fff8f0 0%, #fff2e6 50%, #ffebdc 100%);
+}
+
+/* 悬停时的渐变变化 */
+.course-card.course-color-1:hover {
+  background: linear-gradient(135deg, #e8f5e8 0%, #e0f0e0 50%, #d8ebd8 100%);
+}
+
+.course-card.course-color-2:hover {
+  background: linear-gradient(135deg, #ffe8e8 0%, #ffd9d9 50%, #ffcaca 100%);
+}
+
+.course-card.course-color-3:hover {
+  background: linear-gradient(135deg, #e6f3ff 0%, #ddeeff 50%, #d4e9ff 100%);
+}
+
+.course-card.course-color-4:hover {
+  background: linear-gradient(135deg, #fffae6 0%, #fff6dc 50%, #fff2d2 100%);
+}
+
+.course-card.course-color-5:hover {
+  background: linear-gradient(135deg, #f5ebff 0%, #f0e1ff 50%, #ebd7ff 100%);
+}
+
+.course-card.course-color-6:hover {
+  background: linear-gradient(135deg, #fff2e6 0%, #ffebdc 50%, #ffe4d2 100%);
+}
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-search"></i> Browse Courses</h2>
+    <a href="{{ url_for('courses.list_courses') }}" class="btn btn-outline-primary">
+        <i class="bi bi-arrow-left"></i> My Courses
+    </a>
+</div>
+
+{% if available_courses %}
+    <div class="row">
+        {% for course in available_courses %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 course-card course-color-{{ (loop.index - 1) % 6 + 1 }}">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">{{ course.name }}</h5>
+                    <p class="card-text">
+                        <small class="text-muted">
+                            <i class="bi bi-calendar"></i> {{ course.semester }} <br>
+                            <i class="bi bi-person"></i> {{ course.instructor.name }}
+                        </small>
+                    </p>
+                    {% if course.description %}
+                        <p class="card-text text-muted mt-3">{{ course.description[:100] }}{% if course.description|length > 100 %}...{% endif %}</p>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-transparent">
+                    <form method="POST" action="{{ url_for('courses.enroll_course', course_id=course.id) }}">
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-plus-circle"></i> Enroll Course
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-book display-1 text-muted"></i>
+        <h3 class="text-muted mt-3">There are no available courses</h3>
+        <p class="text-muted">No new courses available for enrollment. Please check your enrolled courses.</p>
+        <a href="{{ url_for('courses.list_courses') }}" class="btn btn-primary">
+            <i class="bi bi-book"></i> View My Courses
+        </a>
+    </div>
+{% endif %}
+{% endblock %}

@@ -1,33 +1,29 @@
-# Tests
+# QA平台测试模块
 
-This directory contains test files for the Classroom Interaction Platform.
+这个目录包含QA教育平台的各种测试文件。
 
-## Test Files
+## 测试结构
 
-- `test_app.py` - Basic application functionality tests
-- `test_ark_api.py` - AI API integration tests
+- `test_ai_features.py` - AI功能测试
+- `test_qa_routes.py` - QA路由测试  
+- `test_models.py` - 数据模型测试
+- `test_auth.py` - 认证功能测试
 
-## Running Tests
+## 运行测试
 
-### Test Application
 ```bash
-python tests/test_app.py
+# 运行所有测试
+python -m pytest tests/
+
+# 运行特定测试
+python -m pytest tests/test_ai_features.py
+
+# 运行AI功能测试
+python tests/test_ai_features.py
 ```
 
-### Test AI API Integration
-```bash
-python tests/test_ark_api.py
-```
+## 环境要求
 
-## Test Requirements
-
-Make sure you have the required dependencies installed:
-```bash
-pip install -r requirements.txt
-```
-
-For AI API tests, configure your API keys in the `.env` file:
-```env
-ARK_API_KEY=your-bytedance-ark-api-key
-OPENAI_API_KEY=your-openai-api-key
-```
+- pytest
+- Flask-Testing
+- API密钥配置（ARK_API_KEY 或 OPENAI_API_KEY）

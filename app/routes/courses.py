@@ -126,3 +126,48 @@ def course_enrollments(course_id):
     
     enrollments = Enrollment.query.filter_by(course_id=course_id).all()
     return render_template('courses/course_enrollments.html', course=course, enrollments=enrollments)
+
+@bp.route('/courses/browse')
+@login_required
+def browse_courses():
+    """学生浏览所有可选课程"""
+    if current_user.role != 'student':
+        return redirect(url_for('courses.list_courses'))
+    
+    # 获取所有课程
+    all_courses = Course.query.all()
+    
+    # 获取学生已选课程ID
+    enrolled_course_ids = [enrollment.course_id for enrollment in current_user.enrollments]
+    
+    # 筛选出未选修的课程
+    available_courses = [course for course in all_courses if course.id not in enrolled_course_ids]
+    
+    return render_template('courses/browse_courses.html', 
+                         available_courses=available_courses)
+
+@bp.route('/courses/<int:course_id>/enroll', methods=['POST'])
+@login_required
+def enroll_course(course_id):
+    """学生选修课程"""
+    if current_user.role != 'student':
+        flash('只有学生可以选修课程', 'error')
+        return redirect(url_for('courses.list_courses'))
+    
+    course = Course.query.get_or_404(course_id)
+    
+    # 检查是否已经选修
+    existing_enrollment = Enrollment.query.filter_by(
+        student_id=current_user.id,
+        course_id=course_id
+    ).first()
+    
+    if existing_enrollment:
+        flash('您已经选修了这门课程', 'warning')
+    else:
+        enrollment = Enrollment(student_id=current_user.id, course_id=course_id)
+        db.session.add(enrollment)
+        db.session.commit()
+        flash(f'成功选修课程：{course.name}', 'success')
+    
+    return redirect(url_for('courses.browse_courses'))

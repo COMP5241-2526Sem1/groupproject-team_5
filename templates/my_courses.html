@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+
+{% block title %}My Courses - Classroom Q&A Platform{% endblock %}
+
+{% block content %}
+<style>
+.courses-header {
+    background: linear-gradient(135deg, #ffffff20, #ffffff10);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.course-card {
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    background: #fff;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    position: relative;
+}
+
+.course-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+}
+
+.course-card .card-header {
+    background: linear-gradient(135deg, #0d6efd, #0099ff);
+    border: none;
+    padding: 1rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.course-card .card-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0));
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.course-card:hover .card-header::before {
+    opacity: 1;
+}
+
+.stats-row {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 0.75rem;
+    margin: 1rem 0;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 0.5rem;
+}
+
+.stat-number {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.back-btn {
+    background: linear-gradient(135deg, #6c757d, #545c64);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    color: white;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(108, 117, 125, 0.3);
+    color: white;
+    text-decoration: none;
+}
+
+.course-info-alert {
+    background: linear-gradient(135deg, #d1ecf1, #bee5eb);
+    border: none;
+    border-radius: 10px;
+    border-left: 4px solid #0dcaf0;
+}
+
+.pagination .page-link {
+    border-radius: 8px;
+    margin: 0 2px;
+    border: none;
+    background: #f8f9fa;
+    color: #495057;
+    transition: all 0.3s ease;
+}
+
+.pagination .page-link:hover {
+    background: linear-gradient(135deg, #0d6efd, #0099ff);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, #0d6efd, #0099ff);
+    border: none;
+}
+
+.empty-state {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 15px;
+    padding: 3rem;
+    text-align: center;
+    border: none;
+}
+
+.floating-icon {
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+}
+</style>
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="courses-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-3">
+                    <i class="bi bi-book-fill text-primary floating-icon" style="font-size: 2.5rem;"></i>
+                    <div>
+                        <h2 class="mb-0">My Courses</h2>
+                        <p class="text-muted mb-0">Manage and explore your enrolled courses</p>
+                    </div>
+                </div>
+                <a href="{{ url_for('main.dashboard') }}" class="back-btn">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+
+            {% if courses %}
+                <div class="course-info-alert alert">
+                    <i class="bi bi-info-circle-fill"></i>
+                    <strong>{{ total }}</strong> courses enrolled
+                </div>
+
+                <div class="row g-4">
+                    {% for course in courses %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card course-card h-100">
+                            <div class="card-header text-white">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-book-fill"></i>
+                                    {{ course.name }}
+                                </h6>
+                            </div>
+                            <div class="card-body p-4">
+                                <p class="card-text text-muted small mb-3">
+                                    {{ course.description[:100] if course.description else 'No course description available' }}
+                                    {% if course.description and course.description|length > 100 %}...{% endif %}
+                                </p>
+                                
+                                <div class="mb-2">
+                                    <small class="text-muted">
+                                        <i class="bi bi-person-fill"></i> 
+                                        Instructor: {{ course.instructor.name if course.instructor else 'Unassigned' }}
+                                    </small>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar-event"></i>
+                                        Created at: {{ course.created_at.strftime('%Y-%m-%d') if course.created_at else 'Unknown' }}
+                                    </small>
+                                </div>
+
+                                <!-- 课程统计 -->
+                                <div class="stats-row">
+                                    <div class="row">
+                                        <div class="col-4 stat-item">
+                                            <div class="stat-number text-primary">{{ course.activities|length }}</div>
+                                            <small class="text-muted">Activities</small>
+                                        </div>
+                                        <div class="col-4 stat-item">
+                                            <div class="stat-number text-success">{{ course.questions|length }}</div>
+                                            <small class="text-muted">Questions</small>
+                                        </div>
+                                        <div class="col-4 stat-item">
+                                            <div class="stat-number text-info">{{ course.enrollments|length }}</div>
+                                            <small class="text-muted">Students</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-white border-0">
+                                <div class="d-flex justify-content-between gap-2">
+                                    <a href="{{ url_for('courses.course_detail', course_id=course.id) }}" 
+                                       class="btn btn-sm btn-outline-primary flex-fill">
+                                        <i class="bi bi-eye"></i> View Details
+                                    </a>
+                                    <a href="{{ url_for('qa.course_qa_list', course_id=course.id) }}" 
+                                       class="btn btn-sm btn-outline-success flex-fill">
+                                        <i class="bi bi-question-circle"></i> Q&A
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- 分页导航 -->
+                {% if total > per_page %}
+                <nav aria-label="Course pagination">
+                    <ul class="pagination justify-content-center">
+                        <!-- 上一页 -->
+                        {% if has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('main.my_courses', page=prev_num) }}">
+                                    <i class="fas fa-chevron-left"></i> last page
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">
+                                    <i class="fas fa-chevron-left"></i> last page
+                                </span>
+                            </li>
+                        {% endif %}
+
+                        <!-- 页码数字 -->
+                        {% set total_pages = (total + per_page - 1) // per_page %}
+                        
+                        <!-- 第一页 -->
+                        {% if page > 3 %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('main.my_courses', page=1) }}">1</a>
+                            </li>
+                            {% if page > 4 %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endif %}
+
+                        <!-- 当前页附近的页码 -->
+                        {% for page_num in range([1, page-2]|max, [total_pages, page+2]|min + 1) %}
+                            {% if page_num == page %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('main.my_courses', page=page_num) }}">{{ page_num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        <!-- 最后一页 -->
+                        {% if page < total_pages - 2 %}
+                            {% if page < total_pages - 3 %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('main.my_courses', page=total_pages) }}">{{ total_pages }}</a>
+                            </li>
+                        {% endif %}
+
+                        <!-- 下一页 -->
+                        {% if has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('main.my_courses', page=next_num) }}">
+                                    下一页 <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">
+                                    下一页 <i class="fas fa-chevron-right"></i>
+                                </span>
+                            </li>
+                        {% endif %}
+                    </ul>
+
+                    <!-- 分页信息 -->
+                    <div class="text-center mt-2">
+                        <small class="text-muted">
+                            The {{ page }} page, total {{ total_pages }} pages, total {{ total }} courses
+                        </small>
+                    </div>
+                </nav>
+                {% endif %}
+
+            {% else %}
+                <div class="empty-state alert">
+                    <i class="bi bi-book floating-icon" style="font-size: 4rem; color: #6c757d; margin-bottom: 1.5rem;"></i>
+                    <h4 class="text-muted">No Courses</h4>
+                    <p class="text-muted mb-4">You have not enrolled in any courses yet.</p>
+                    <a href="{{ url_for('courses.course_list') }}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-search"></i> Browse Courses
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

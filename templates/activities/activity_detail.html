@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ activity.title }} - 课堂互动平台{% endblock %}
+{% block title %}{{ activity.title }} - interaction activity{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -12,13 +12,17 @@
     <div class="btn-group">
         {% if activity.is_active %}
         <button id="stop-activity" class="btn btn-danger">
-            <i class="bi bi-stop-circle"></i> 结束活动
+            <i class="bi bi-stop-circle"></i> end Activity
         </button>
         {% else %}
         <button id="start-activity" class="btn btn-success">
-            <i class="bi bi-play-circle"></i> 开始活动
+            <i class="bi bi-play-circle"></i> 
+            {% if activity.started_at %}restart Activity{% else %}start Activity{% endif %}
         </button>
         {% endif %}
+        <button id="reset-activity" class="btn btn-outline-warning">
+            <i class="bi bi-arrow-clockwise"></i> reset Activity
+        </button>
         <a href="{{ url_for('activities.activity_results', activity_id=activity.id) }}" class="btn btn-outline-info">
             <i class="bi bi-graph-up"></i> 查看结果
         </a>
@@ -34,6 +38,28 @@
             </div>
             <div class="card-body">
                 <p class="lead">{{ activity.question }}</p>
+                
+                <!-- 统一的活动计时器，通过JavaScript控制显示内容 -->
+                <div class="alert alert-info" id="activity-timer">
+                    <h6><i class="bi bi-clock"></i> <span id="timer-title">Statement of Activity</span></h6>
+                    <div>time of duration: {{ activity.duration_minutes }} minutes  </div>
+                    <div id="countdown-display" class="fw-bold text-primary">
+                        <span id="remaining-time">
+                            {% if activity.is_active and activity.started_at %}
+                                Computing...
+                            {% elif not activity.is_active and activity.ended_at %}
+                                Activity has ended
+                            {% else %}
+                                Activity has not started
+                            {% endif %}
+                        </span>
+                    </div>
+                    {% if activity.ended_at %}
+                    <div id="end-time-display">End time: {{ activity.ended_at|local_time }}</div>
+                    {% else %}
+                    <div id="end-time-display" style="display: none;"></div>
+                    {% endif %}
+                </div>
                 
                 {% if activity.type == 'poll' and activity.options %}
                 <div class="mt-4">
@@ -77,19 +103,19 @@
         {% if current_user.role == 'student' %}
         <div class="card mt-4">
             <div class="card-header">
-                <h5><i class="bi bi-pencil"></i> 我的回答</h5>
+                <h5><i class="bi bi-pencil"></i> My Answer</h5>
             </div>
             <div class="card-body">
                 {% if activity.is_active %}
                     {% if my_response %}
                     <div class="alert alert-success">
-                        <i class="bi bi-check-circle"></i> 您已提交答案
+                        <i class="bi bi-check-circle"></i> You have submitted an answer
                     </div>
                     <div class="card">
                         <div class="card-body">
-                            <h6>您的答案：</h6>
+                            <h6>Your Answer:</h6>
                             <p>{{ my_response.answer }}</p>
-                            <small class="text-muted">提交时间：{{ my_response.submitted_at.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+                            <small class="text-muted">Submission Time: {{ my_response.submitted_at|local_time }}</small>
                         </div>
                     </div>
                     {% else %}
@@ -146,13 +172,13 @@
                             {% endif %}
                         </div>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-send"></i> 提交答案
+                            <i class="bi bi-send"></i> Submit Answer
                         </button>
                     </form>
                     {% endif %}
                 {% else %}
                 <div class="alert alert-secondary">
-                    <i class="bi bi-pause-circle"></i> 活动未开始或已结束
+                    <i class="bi bi-pause-circle"></i> The activity is not currently active. You cannot submit an answer at this time.
                 </div>
                 {% endif %}
             </div>
@@ -163,32 +189,32 @@
     <div class="col-md-4">
         <div class="card">
             <div class="card-header">
-                <h5><i class="bi bi-info-circle"></i> 活动信息</h5>
+                <h5><i class="bi bi-info-circle"></i> Activity Information</h5>
             </div>
             <div class="card-body">
                 <div class="row text-center">
                     <div class="col-6">
                         <h4 id="response-count">{{ activity.responses|length }}</h4>
-                        <small class="text-muted">回答数</small>
+                        <small class="text-muted">Responses</small>
                     </div>
                     <div class="col-6">
                         <h4 id="activity-status">
                             {% if activity.is_active %}
-                                <span class="text-success">进行中</span>
+                                <span class="text-success">Active</span>
                             {% else %}
-                                <span class="text-muted">已结束</span>
+                                <span class="text-muted">Ended</span>
                             {% endif %}
                         </h4>
-                        <small class="text-muted">状态</small>
+                        <small class="text-muted">Status</small>
                     </div>
                 </div>
                 <hr>
-                <p><strong>创建时间：</strong>{{ activity.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                <p><strong>Creation Time:</strong> {{ activity.created_at|local_time }}</p>
                 {% if activity.started_at %}
-                <p><strong>开始时间：</strong>{{ activity.started_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                <p><strong>Start Time:</strong> {{ activity.started_at|local_time }}</p>
                 {% endif %}
                 {% if activity.ended_at %}
-                <p><strong>结束时间：</strong>{{ activity.ended_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                <p><strong>End Time:</strong> {{ activity.ended_at|local_time }}</p>
                 {% endif %}
             </div>
         </div>
@@ -197,29 +223,47 @@
 
 {% if current_user.role == 'student' %}
 <script>
-// Initialize Socket.IO connection
-const socket = io();
+// Initialize Socket.IO connection (with safety check)
+let socket;
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof io !== 'undefined') {
+        socket = io();
+        
+        // Join activity room for real-time updates
+        socket.emit('join_activity', {activity_id: {{ activity.id }}});
+        
+        // Listen for activity updates
+        socket.on('activity_update', function(data) {
+            if (data.activity_id === {{ activity.id }}) {
+                const statusElement = document.getElementById('activity-status');
+                const remainingTimeElement = document.getElementById('remaining-time');
+                const timerElement = document.getElementById('activity-timer');
+                
+                if (data.data.is_active) {
+                    statusElement.innerHTML = '<span class="text-success">Active</span>';
+                } else {
+                    statusElement.innerHTML = '<span class="text-muted">Ended</span>';
+                    // 当活动结束时，立即更新倒计时显示
+                    if (remainingTimeElement && timerElement) {
+                        remainingTimeElement.textContent = 'Activity has ended';
+                        timerElement.className = 'alert alert-warning';
+                    }
+                }
+            }
+        });
 
-// Join activity room for real-time updates
-socket.emit('join_activity', {activity_id: {{ activity.id }}});
-
-// Listen for activity updates
-socket.on('activity_update', function(data) {
-    if (data.activity_id === {{ activity.id }}) {
-        const statusElement = document.getElementById('activity-status');
-        if (data.data.is_active) {
-            statusElement.innerHTML = '<span class="text-success">Active</span>';
-        } else {
-            statusElement.innerHTML = '<span class="text-muted">Ended</span>';
-        }
+        // Listen for new responses
+        socket.on('response_added', function(data) {
+            if (data.activity_id === {{ activity.id }}) {
+                document.getElementById('response-count').textContent = data.response_count;
+            }
+        });
+    } else {
+        console.warn('Socket.IO not available');
     }
-});
-
-// Listen for new responses
-socket.on('response_added', function(data) {
-    if (data.activity_id === {{ activity.id }}) {
-        document.getElementById('response-count').textContent = data.response_count;
-    }
+    
+    // 初始化倒计时 (学生端)
+    initializeCountdown();
 });
 
 document.getElementById('response-form').addEventListener('submit', function(e) {
@@ -281,100 +325,298 @@ setInterval(function() {
 
 {% if current_user.role in ['admin', 'instructor'] and (current_user.role == 'admin' or activity.course.instructor_id == current_user.id) %}
 <script>
-// Initialize Socket.IO connection
-const socket = io();
-
-// Join activity room for real-time updates
-socket.emit('join_activity', {activity_id: {{ activity.id }}});
-
-// Listen for activity updates
-socket.on('activity_update', function(data) {
-    if (data.activity_id === {{ activity.id }}) {
-        const statusElement = document.getElementById('activity-status');
-        if (data.data.is_active) {
-            statusElement.innerHTML = '<span class="text-success">Active</span>';
-        } else {
-            statusElement.innerHTML = '<span class="text-muted">Ended</span>';
+// Initialize Socket.IO connection (with safety check)
+let socket;
+if (typeof io !== 'undefined') {
+    socket = io();
+    
+    // Join activity room for real-time updates
+    socket.emit('join_activity', {activity_id: {{ activity.id }}});
+    
+    // Listen for activity updates
+    socket.on('activity_update', function(data) {
+        if (data.activity_id === {{ activity.id }}) {
+            const statusElement = document.getElementById('activity-status');
+            const remainingTimeElement = document.getElementById('remaining-time');
+            const timerElement = document.getElementById('activity-timer');
+            
+            if (data.data.is_active) {
+                statusElement.innerHTML = '<span class="text-success">Active</span>';
+            } else {
+                statusElement.innerHTML = '<span class="text-muted">Ended</span>';
+                // 当活动结束时，立即更新倒计时显示
+                if (remainingTimeElement && timerElement) {
+                    remainingTimeElement.textContent = 'Activity has ended';
+                    timerElement.className = 'alert alert-warning';
+                }
+            }
         }
-    }
-});
+    });
 
-// Listen for new responses
-socket.on('response_added', function(data) {
-    if (data.activity_id === {{ activity.id }}) {
-        document.getElementById('response-count').textContent = data.response_count;
-    }
-});
+    // Listen for new responses
+    socket.on('response_added', function(data) {
+        if (data.activity_id === {{ activity.id }}) {
+            document.getElementById('response-count').textContent = data.response_count;
+        }
+    });
+} else {
+    console.warn('Socket.IO not available');
+}
 
-document.getElementById('start-activity').addEventListener('click', function() {
+// 简化版本的开始活动功能
+function startActivity() {
+    console.log('Start activity function called');
+    
     fetch('{{ url_for("activities.start_activity", activity_id=activity.id) }}', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response received:', response);
+        return response.json();
+    })
     .then(data => {
+        console.log('Data received:', data);
         if (data.success) {
-            alert('Activity started!');
+            alert('Activity started successfully!');
             location.reload();
         } else {
-            alert('Operation failed: ' + data.message);
+            alert('Failed to start activity: ' + (data.message || 'Unknown error'));
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('Operation failed, please try again');
+        console.error('Fetch error:', error);
+        alert('Network error: ' + error.message);
     });
-});
+}
 
-document.getElementById('stop-activity').addEventListener('click', function() {
+function stopActivity() {
+    console.log('Stop activity function called');
+    
     fetch('{{ url_for("activities.stop_activity", activity_id=activity.id) }}', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response received:', response);
+        return response.json();
+    })
     .then(data => {
+        console.log('Data received:', data);
         if (data.success) {
-            alert('Activity ended!');
+            alert('Activity stopped successfully!');
             location.reload();
         } else {
-            alert('Operation failed: ' + data.message);
+            alert('Failed to stop activity: ' + (data.message || 'Unknown error'));
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('Operation failed, please try again');
+        console.error('Fetch error:', error);
+        alert('Network error: ' + error.message);
     });
-});
+}
 
-// Fallback polling (every 10 seconds)
-setInterval(function() {
-    fetch('{{ url_for("activities.activity_status", activity_id=activity.id) }}')
-    .then(response => response.json())
-    .then(data => {
-        if (data.error) {
-            console.error(data.error);
-            return;
-        }
-        
-        const statusElement = document.getElementById('activity-status');
-        if (data.is_active) {
-            statusElement.innerHTML = '<span class="text-success">Active</span>';
-        } else {
-            statusElement.innerHTML = '<span class="text-muted">Ended</span>';
-        }
-        
-        if (data.response_count !== undefined) {
-            document.getElementById('response-count').textContent = data.response_count;
+function resetActivity() {
+    console.log('Reset activity function called');
+
+    if (!confirm('Are you sure you want to reset the activity? This will clear all student responses.')) {
+        return;
+    }
+    
+    fetch('{{ url_for("activities.reset_activity", activity_id=activity.id) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
         }
     })
-    .catch(error => console.error('Error:', error));
-}, 10000);
+    .then(response => {
+        console.log('Response received:', response);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Data received:', data);
+        if (data.success) {
+            alert('Activity reset successfully!');
+            location.reload();
+        } else {
+            alert('Failed to reset activity: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+        alert('Network error: ' + error.message);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const startButton = document.getElementById('start-activity');
+    const stopButton = document.getElementById('stop-activity');
+    const resetButton = document.getElementById('reset-activity');
+    
+    if (startButton) {
+        console.log('Start button found, adding click listener');
+        startButton.addEventListener('click', startActivity);
+    } else {
+        console.log('Start button not found');
+    }
+    
+    if (stopButton) {
+        console.log('Stop button found, adding click listener');
+        stopButton.addEventListener('click', stopActivity);
+    } else {
+        console.log('Stop button not found');
+    }
+    
+    if (resetButton) {
+        console.log('Reset button found, adding click listener');
+        resetButton.addEventListener('click', resetActivity);
+    } else {
+        console.log('Reset button not found');
+    }
+    
+    // 初始化倒计时
+    initializeCountdown();
+});
 </script>
 {% endif %}
+
+<!-- 公共倒计时功能 - 学生和教师都可以使用 -->
+<script>
+// 倒计时功能
+function initializeCountdown() {
+    {% if activity.started_at and activity.duration_minutes %}
+    // 处理UTC时间，确保时区正确
+    const startTime = new Date('{{ activity.started_at.isoformat() }}Z'); // 添加Z表示UTC时间
+    const durationMs = {{ activity.duration_minutes }} * 60 * 1000;
+    const endTime = new Date(startTime.getTime() + durationMs);
+    
+    console.log('Activity start time:', startTime);
+    console.log('Activity duration:', {{ activity.duration_minutes }}, 'minutes');
+    console.log('Activity end time:', endTime);
+    console.log('Current time:', new Date());
+    
+    function updateCountdown() {
+        // 首先检查服务器端的活动状态
+        return fetch('{{ url_for("activities.activity_status", activity_id=activity.id) }}')
+            .then(response => response.json())
+            .then(data => {
+                const remainingTimeElement = document.getElementById('remaining-time');
+                const timerElement = document.getElementById('activity-timer');
+                
+                if (!remainingTimeElement || !timerElement) return;
+                
+                // 如果活动已经不活跃，显示结束状态
+                if (!data.is_active) {
+                    remainingTimeElement.textContent = 'Activity has ende';
+                    timerElement.className = 'alert alert-warning';
+                    return false; // 返回false表示停止倒计时
+                }
+                
+                // 如果活动仍然活跃，继续计算剩余时间
+                const now = new Date();
+                const remainingMs = endTime.getTime() - now.getTime();
+                
+                if (remainingMs <= 0) {
+                    remainingTimeElement.textContent = 'Activity has ended';
+                    timerElement.className = 'alert alert-warning';
+                    return false; // 返回false表示停止倒计时
+                }
+                
+                const minutes = Math.floor(remainingMs / (1000 * 60));
+                const seconds = Math.floor((remainingMs % (1000 * 60)) / 1000);
+                
+                remainingTimeElement.textContent = `Remaining Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                // 时间少于1分钟时显示红色警告
+                if (remainingMs < 60000) {
+                    timerElement.className = 'alert alert-danger';
+                } else if (remainingMs < 180000) { // 少于3分钟时显示警告
+                    timerElement.className = 'alert alert-warning';
+                } else {
+                    timerElement.className = 'alert alert-info';
+                }
+                
+                return true; // 返回true表示继续倒计时
+            })
+            .catch(error => {
+                console.error('Failed to check activity status:', error);
+                // 如果网络错误，回退到本地时间计算
+                const now = new Date();
+                const remainingMs = endTime.getTime() - now.getTime();
+                
+                const remainingTimeElement = document.getElementById('remaining-time');
+                const timerElement = document.getElementById('activity-timer');
+                
+                if (!remainingTimeElement || !timerElement) return false;
+                
+                if (remainingMs <= 0) {
+                    remainingTimeElement.textContent = 'Activity has ended';
+                    timerElement.className = 'alert alert-warning';
+                    return false;
+                }
+                
+                const minutes = Math.floor(remainingMs / (1000 * 60));
+                const seconds = Math.floor((remainingMs % (1000 * 60)) / 1000);
+
+                remainingTimeElement.textContent = `Remaining Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+                return true;
+            });
+    }
+    
+    // 立即执行一次
+    updateCountdown();
+    
+    // 设置定时器，每秒更新倒计时
+    const countdownInterval = setInterval(async () => {
+        try {
+            const shouldContinue = await updateCountdown();
+            if (!shouldContinue) {
+                clearInterval(countdownInterval);
+            }
+        } catch (error) {
+            console.error('Countdown update error:', error);
+            // 如果更新失败，继续尝试
+        }
+    }, 1000);
+    {% else %}
+    // 如果活动没有开始时间或持续时间，显示未开始状态
+    const remainingTimeElement = document.getElementById('remaining-time');
+    const timerElement = document.getElementById('activity-timer');
+    if (remainingTimeElement && timerElement) {
+        remainingTimeElement.textContent = 'Activity has not started';
+        timerElement.className = 'alert alert-secondary';
+    }
+    {% endif %}
+}
+
+// Fallback polling (every 30 seconds, less frequent)
+// setInterval(function() {
+//     fetch('{{ url_for("activities.activity_status", activity_id=activity.id) }}')
+//     .then(response => response.json())
+//     .then(data => {
+//         if (data.error) {
+//             console.error(data.error);
+//             return;
+//         }
+//         
+//         const statusElement = document.getElementById('activity-status');
+//         if (data.is_active) {
+//             statusElement.innerHTML = '<span class="text-success">Active</span>';
+//         } else {
+//             statusElement.innerHTML = '<span class="text-muted">Ended</span>';
+//         }
+//         
+//         if (data.response_count !== undefined) {
+//             document.getElementById('response-count').textContent = data.response_count;
+//         }
+//     })
+//     .catch(error => console.error('Error:', error));
+// }, 30000);
+</script>
 
 {% if activity.type == 'memory_game' %}
 <script>

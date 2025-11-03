@@ -32,11 +32,11 @@ def main():
     
     # Run application
     print("Starting Classroom Interaction Platform...")
-    print("Access URL: http://localhost:5000")
+    print("Access URL: http://localhost:5001")
     print("Admin account: admin@example.com / admin123")
     print("Press Ctrl+C to stop the service")
     
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000)
+    socketio.run(app, debug=True, host='0.0.0.0', port=5001)
 
 if __name__ == '__main__':
     main()

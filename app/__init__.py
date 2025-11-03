@@ -1,44 +1,104 @@
+"""
+Q&A Education Platform - Application Factory
+"""
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_socketio import SocketIO
+from flask_mail import Mail
 from werkzeug.security import generate_password_hash
 import os
+from datetime import datetime, timezone, timedelta
 
+# Initialize extensions
 db = SQLAlchemy()
 login_manager = LoginManager()
 socketio = SocketIO()
+mail = Mail()
 
 def create_app():
-    # Get the directory of this file
+    """Application factory pattern"""
+    
+    # Create Flask app with correct template directory
+    import os
     template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates'))
     app = Flask(__name__, template_folder=template_dir)
     
+    # Configuration
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///classroom.db')
+    
+    # MySQL Database Configuration
+    HOSTNAME = os.getenv('MYSQL_HOST', '127.0.0.1')
+    PORT = os.getenv('MYSQL_PORT', '3307')
+    USERNAME = os.getenv('MYSQL_USER', 'root')
+    PASSWORD = os.getenv('MYSQL_PASSWORD', '1234')
+    DATABASE = os.getenv('MYSQL_DATABASE', 'platform')
+    
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{USERNAME}:{PASSWORD}@{HOSTNAME}:{PORT}/{DATABASE}?charset=utf8mb4'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
+    # Email Configuration
+    app.config['MAIL_SERVER'] = "smtp.163.com"
+    app.config['MAIL_USE_SSL'] = True
+    app.config['MAIL_PORT'] = 465
+    app.config['MAIL_USERNAME'] = "ruonan111421@163.com"
+    app.config['MAIL_PASSWORD'] = "UNxNyYZdKXiEvH6U"
+    app.config['MAIL_DEFAULT_SENDER'] = "ruonan111421@163.com"
+     
+     # Email Configuration
+    app.config['MAIL_SERVER'] = "smtp.qq.com"
+    app.config['MAIL_USE_SSL'] = True
+    app.config['MAIL_PORT'] = 465
+    app.config['MAIL_USERNAME'] = "2966602258@qq.com"
+    app.config['MAIL_PASSWORD'] = "nihtjcxaseuedcdd"
+    app.config['MAIL_DEFAULT_SENDER'] = "2966602258@qq.com"
+
+    # Initialize extensions
     db.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
-    login_manager.login_message = 'Please log in to access this page'
+    login_manager.login_message = '请登录以访问此页面'
     socketio.init_app(app, cors_allowed_origins="*")
+    mail.init_app(app)
     
+    # User loader
     from .models import User
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
     
-    from .routes import main, auth, courses, activities
-    from . import socket_events  # Import socket events
+    # 添加时区转换函数
+    @app.template_filter('local_time')
+    def local_time_filter(utc_time):
+        """将UTC时间转换为北京时间"""
+        if utc_time is None:
+            return ''
+        # 北京时间 = UTC时间 + 8小时
+        beijing_time = utc_time + timedelta(hours=8)
+        return beijing_time.strftime('%Y-%m-%d %H:%M')
+    
+    @app.template_filter('local_date')
+    def local_date_filter(utc_time):
+        """将UTC时间转换为北京日期"""
+        if utc_time is None:
+            return ''
+        beijing_time = utc_time + timedelta(hours=8)
+        return beijing_time.strftime('%Y-%m-%d')
+    
+    # Register blueprints
+    from .routes import main, auth, courses, activities, qa
     app.register_blueprint(main.bp)
     app.register_blueprint(auth.bp)
     app.register_blueprint(courses.bp)
     app.register_blueprint(activities.bp)
+    app.register_blueprint(qa.qa_bp)
     
+    # Create database tables and initial data
     with app.app_context():
         db.create_all()
         
+        # Create default admin user
         admin = User.query.filter_by(email='admin@example.com').first()
         if not admin:
             admin = User(
