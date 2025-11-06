@@ -194,8 +194,36 @@ document.getElementById('generate-questions').addEventListener('click', function
 document.addEventListener('click', function(e) {
     if (e.target.classList.contains('use-question')) {
         const question = e.target.getAttribute('data-question');
-        document.querySelector('textarea[name="question"]').value = question;
-        document.getElementById('generated-questions').style.display = 'none';
+        const questionTextarea = document.querySelector('textarea[name="question"]');
+        const currentValue = questionTextarea.value.trim();
+        
+        // 追加问题到问题字段
+        if (currentValue) {
+            // 如果已有内容，追加新问题（换行分隔）
+            questionTextarea.value = currentValue + '\n\n' + question;
+        } else {
+            // 如果为空，直接填入
+            questionTextarea.value = question;
+        }
+        
+        // 标记该问题为已使用，但不移除整个列表
+        const questionCard = e.target.closest('.card');
+        if (questionCard) {
+            // 添加已使用的视觉标记
+            questionCard.style.opacity = '0.6';
+            questionCard.style.borderLeft = '4px solid #28a745';
+            e.target.disabled = true;
+            e.target.innerHTML = '<i class="bi bi-check-circle"></i> Added';
+            e.target.classList.remove('btn-outline-primary');
+            e.target.classList.add('btn-success');
+        }
+        
+        // 滚动到问题输入框，方便用户查看
+        questionTextarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        questionTextarea.focus();
+        
+        // 将光标移到文本末尾
+        questionTextarea.setSelectionRange(questionTextarea.value.length, questionTextarea.value.length);
     }
 });
 </script>
