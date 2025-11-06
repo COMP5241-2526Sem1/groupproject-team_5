@@ -15,6 +15,22 @@ from flask import make_response
 
 bp = Blueprint('activities', __name__)
 
+# English stopwords for word cloud filtering
+STOPWORDS = {
+    'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
+    'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'be',
+    'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will',
+    'would', 'should', 'could', 'may', 'might', 'must', 'can', 'this',
+    'that', 'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they',
+    'them', 'their', 'what', 'which', 'who', 'when', 'where', 'why', 'how',
+    'all', 'each', 'every', 'both', 'few', 'more', 'most', 'other', 'some',
+    'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too',
+    'very', 's', 't', 'just', 'don', 'now', 'my', 'me', 'about', 'up', 'out',
+    'if', 'into', 'through', 'over', 'before', 'after', 'above', 'below',
+    'between', 'during', 'without', 'under', 'again', 'further', 'then',
+    'once', 'here', 'there', 'also', 'any', 'because', 'until', 'while'
+}
+
 @bp.route('/activities')
 @login_required
 def list_activities():
@@ -324,19 +340,24 @@ def activity_results(activity_id):
         }
     else:
         answers = [response.answer for response in responses]
+        
         word_freq = Counter()
         
         for answer in answers:
-            words = re.findall(r'\b\w+\b', answer.lower())
-            word_freq.update(words)
+            # Extract words, filter by length and stopwords
+            words = re.findall(r'\b[a-zA-Z]+\b', answer.lower())
+            # Filter: remove stopwords and words shorter than 3 characters
+            filtered_words = [w for w in words if w not in STOPWORDS and len(w) >= 3]
+            word_freq.update(filtered_words)
         
-        common_words = word_freq.most_common(20)
+        common_words = word_freq.most_common(200)
         
         results = {
             'type': 'short_answer',
             'answers': answers,
             'word_frequency': common_words,
-            'total_responses': len(responses)
+            'total_responses': len(responses),
+            'unique_words': len(word_freq)
         }
     
     return render_template('activities/activity_results.html', activity=activity, results=results, responses=responses)
@@ -512,12 +533,14 @@ def activity_analytics(activity_id):
         # Word analysis for text responses
         if activity.type in ['short_answer', 'word_cloud']:
             all_text = ' '.join([response.answer for response in responses])
-            words = re.findall(r'\b\w+\b', all_text.lower())
-            word_freq = Counter(words)
+            words = re.findall(r'\b[a-zA-Z]+\b', all_text.lower())
+            # Filter stopwords and short words
+            filtered_words = [w for w in words if w not in STOPWORDS and len(w) >= 3]
+            word_freq = Counter(filtered_words)
             analytics['word_analysis'] = {
-                'total_words': len(words),
+                'total_words': len(filtered_words),
                 'unique_words': len(word_freq),
-                'most_common': word_freq.most_common(10)
+                'most_common': word_freq.most_common(200)
             }
         
         # Response distribution
