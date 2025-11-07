@@ -22,6 +22,11 @@ try:
 except ImportError:
     pdfplumber = None
 
+try:
+    from pptx import Presentation
+except ImportError:
+    Presentation = None
+
 # 添加dotenv支持
 try:
     from dotenv import load_dotenv
@@ -466,13 +471,15 @@ def group_answers_fallback(answers: List[str]) -> Dict[str, Any]:
 def extract_text_from_file(file_path: str, file_extension: str) -> str:
     """
     从上传的文件中提取文本内容
-    支持的文件格式：.docx, .pdf
+    支持的文件格式：.docx, .pdf, .pptx
     """
     try:
         if file_extension.lower() == '.docx':
             return extract_text_from_docx(file_path)
         elif file_extension.lower() == '.pdf':
             return extract_text_from_pdf(file_path)
+        elif file_extension.lower() == '.pptx':
+            return extract_text_from_pptx(file_path)
         else:
             raise ValueError(f"Unsupported file format: {file_extension}")
     except Exception as e:
@@ -543,12 +550,52 @@ def extract_text_from_pdf(file_path: str) -> str:
     
     return text
 
+def extract_text_from_pptx(file_path: str) -> str:
+    """从PowerPoint文档中提取文本"""
+    if not Presentation:
+        raise ImportError("python-pptx library not installed")
+    
+    try:
+        presentation = Presentation(file_path)
+        full_text = []
+        
+        # 遍历所有幻灯片
+        for slide_num, slide in enumerate(presentation.slides, 1):
+            slide_text = []
+            
+            # 提取幻灯片中的所有文本
+            for shape in slide.shapes:
+                if hasattr(shape, "text") and shape.text.strip():
+                    slide_text.append(shape.text.strip())
+                
+                # 如果是表格，提取表格中的文本
+                if shape.has_table:
+                    table = shape.table
+                    for row in table.rows:
+                        for cell in row.cells:
+                            if cell.text.strip():
+                                slide_text.append(cell.text.strip())
+            
+            # 如果幻灯片有内容，添加幻灯片标题
+            if slide_text:
+                full_text.append(f"=== Slide {slide_num} ===")
+                full_text.extend(slide_text)
+                full_text.append("")  # 添加空行分隔
+        
+        text = '\n'.join(full_text)
+        if not text.strip():
+            raise ValueError("No text content found in the PowerPoint presentation")
+        
+        return text
+    except Exception as e:
+        raise Exception(f"Error reading PowerPoint presentation: {str(e)}")
+
 def validate_file_upload(file, allowed_extensions=None):
     """
     验证上传的文件
     """
     if allowed_extensions is None:
-        allowed_extensions = {'.pdf', '.docx'}
+        allowed_extensions = {'.pdf', '.docx', '.pptx'}
     
     if not file or not file.filename:
         return False, "No file selected"

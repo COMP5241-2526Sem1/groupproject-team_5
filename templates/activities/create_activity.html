@@ -132,9 +132,15 @@
                     <div class="tab-pane fade" id="file-panel" role="tabpanel">
                         <div class="mb-3">
                             <label for="ai-file" class="form-label">Upload Document</label>
-                            <input type="file" id="ai-file" class="form-control" accept=".pdf,.docx" />
-                            <div class="form-text">
-                                <i class="bi bi-info-circle"></i> Supported formats: PDF (.pdf), Word Document (.docx). Maximum size: 10MB
+                            <div class="custom-file-upload">
+                                <input type="file" id="ai-file" class="d-none" accept=".pdf,.docx,.pptx" />
+                                <button type="button" class="btn btn-outline-secondary" id="file-upload-btn">
+                                    <i class="bi bi-file-earmark-arrow-up"></i> Choose File
+                                </button>
+                                <span id="file-upload-status" class="ms-2 text-muted">No file selected</span>
+                            </div>
+                            <div class="form-text mt-2">
+                                <i class="bi bi-info-circle"></i> Supported formats: PDF (.pdf), Word Document (.docx), PowerPoint (.pptx). Maximum size: 10MB
                             </div>
                         </div>
                         <button id="generate-questions-file" class="btn btn-outline-primary">
@@ -195,10 +201,10 @@ document.getElementById('generate-questions-file').addEventListener('click', fun
     }
     
     // 验证文件类型
-    const allowedTypes = ['.pdf', '.docx'];
+    const allowedTypes = ['.pdf', '.docx', '.pptx'];
     const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
     if (!allowedTypes.includes(fileExtension)) {
-        alert('Please upload a PDF or Word document');
+        alert('Please upload a PDF, Word document, or PowerPoint presentation');
         return;
     }
     
@@ -330,5 +336,64 @@ document.addEventListener('click', function(e) {
         questionTextarea.setSelectionRange(questionTextarea.value.length, questionTextarea.value.length);
     }
 });
+
+// 处理自定义文件上传按钮点击
+document.getElementById('file-upload-btn').addEventListener('click', function() {
+    document.getElementById('ai-file').click();
+});
+
+// 处理文件选择的显示文字
+document.getElementById('ai-file').addEventListener('change', function() {
+    const fileInput = this;
+    const statusSpan = document.getElementById('file-upload-status');
+    const uploadBtn = document.getElementById('file-upload-btn');
+    
+    if (fileInput.files && fileInput.files.length > 0) {
+        const fileName = fileInput.files[0].name;
+        // 如果文件名太长，截取显示
+        const displayName = fileName.length > 30 ? fileName.substring(0, 27) + '...' : fileName;
+        statusSpan.textContent = displayName;
+        statusSpan.classList.remove('text-muted');
+        statusSpan.classList.add('text-success');
+        
+        // 更新按钮样式
+        uploadBtn.classList.remove('btn-outline-secondary');
+        uploadBtn.classList.add('btn-outline-success');
+        uploadBtn.innerHTML = '<i class="bi bi-file-earmark-check"></i> File Selected';
+    } else {
+        statusSpan.textContent = 'No file selected';
+        statusSpan.classList.remove('text-success');
+        statusSpan.classList.add('text-muted');
+        
+        // 恢复按钮样式
+        uploadBtn.classList.remove('btn-outline-success');
+        uploadBtn.classList.add('btn-outline-secondary');
+        uploadBtn.innerHTML = '<i class="bi bi-file-earmark-arrow-up"></i> Choose File';
+    }
+});
 </script>
+
+<style>
+.custom-file-upload {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.custom-file-upload .btn {
+    white-space: nowrap;
+}
+
+#file-upload-status {
+    font-size: 0.9em;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#file-upload-status.text-success {
+    font-weight: 500;
+}
+</style>
 {% endblock %}
