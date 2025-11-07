@@ -1,39 +1,39 @@
 {% extends "base.html" %}
 
-{% block title %}编辑活动 - 在线教室{% endblock %}
+{% block title %}Edit Activity - Online Classroom{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
     <div class="row justify-content-center">
         <div class="col-xl-8 col-lg-10">
-            <!-- 页面标题 -->
+            <!-- Page title -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="fw-bold text-primary">
-                    <i class="fas fa-edit me-2"></i>编辑活动
+                    <i class="fas fa-edit me-2"></i>Edit Activity
                 </h2>
                 <a href="{{ url_for('activities.list_activities') }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-2"></i>返回活动列表
+                    <i class="fas fa-arrow-left me-2"></i>Back to Activity List
                 </a>
             </div>
 
-            <!-- 课程信息 -->
+            <!-- Course info -->
             <div class="alert alert-info mb-4">
                 <h6 class="mb-0">
-                    <i class="fas fa-book me-2"></i>课程：{{ course.name }}
+                    <i class="fas fa-book me-2"></i>Course: {{ course.name }}
                     <span class="badge bg-primary ms-2">{{ course.semester }}</span>
                 </h6>
             </div>
 
-            <!-- 表单卡片 -->
+            <!-- Form card -->
             <div class="card shadow-sm border-0 rounded-3">
                 <div class="card-body p-4">
                     <form method="POST" id="editActivityForm">
                         {{ form.hidden_tag() }}
                         
-                        <!-- 活动标题 -->
+                        <!-- Activity title -->
                         <div class="mb-3">
                             {{ form.title.label(class="form-label fw-bold") }}
-                            {{ form.title(class="form-control form-control-lg", placeholder="请输入活动标题") }}
+                            {{ form.title(class="form-control form-control-lg", placeholder="Enter activity title") }}
                             {% if form.title.errors %}
                                 {% for error in form.title.errors %}
                                     <div class="text-danger small mt-1">{{ error }}</div>
@@ -41,7 +41,7 @@
                             {% endif %}
                         </div>
 
-                        <!-- 活动类型 -->
+                        <!-- Activity type -->
                         <div class="mb-3">
                             {{ form.type.label(class="form-label fw-bold") }}
                             {{ form.type(class="form-select form-select-lg") }}
@@ -52,10 +52,10 @@
                             {% endif %}
                         </div>
 
-                        <!-- 活动问题 -->
+                        <!-- Activity question -->
                         <div class="mb-3">
                             {{ form.question.label(class="form-label fw-bold") }}
-                            {{ form.question(class="form-control", rows="4", placeholder="请输入活动问题或描述") }}
+                            {{ form.question(class="form-control", rows="4", placeholder="Enter activity question or description") }}
                             {% if form.question.errors %}
                                 {% for error in form.question.errors %}
                                     <div class="text-danger small mt-1">{{ error }}</div>
@@ -63,11 +63,11 @@
                             {% endif %}
                         </div>
 
-                        <!-- 选择题选项 -->
+                        <!-- Multiple choice options -->
                         <div class="mb-4" id="optionsContainer" style="display: none;">
                             {{ form.options.label(class="form-label fw-bold") }}
-                            {{ form.options(class="form-control", rows="3", placeholder="对于选择题，请输入选项（每行一个选项）") }}
-                            <div class="form-text">每行输入一个选项，留空表示该类型活动不需要选项</div>
+                            {{ form.options(class="form-control", rows="3", placeholder="For multiple choice questions, enter options (one per line)") }}
+                            <div class="form-text">Enter one option per line, leave empty if this activity type doesn't need options</div>
                             {% if form.options.errors %}
                                 {% for error in form.options.errors %}
                                     <div class="text-danger small mt-1">{{ error }}</div>
@@ -75,35 +75,35 @@
                             {% endif %}
                         </div>
 
-                        <!-- 按钮组 -->
+                        <!-- Button group -->
                         <div class="d-flex gap-3 justify-content-end">
                             <a href="{{ url_for('activities.activity_detail', activity_id=activity.id) }}" 
                                class="btn btn-outline-secondary btn-lg px-4">
-                                <i class="fas fa-times me-2"></i>取消
+                                <i class="fas fa-times me-2"></i>Cancel
                             </a>
                             <button type="submit" class="btn btn-primary btn-lg px-4" id="submitBtn">
-                                <i class="fas fa-save me-2"></i>保存修改
+                                <i class="fas fa-save me-2"></i>Save Changes
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
 
-            <!-- 危险区域：删除活动 -->
+            <!-- Danger zone: Delete activity -->
             {% if current_user.role == 'admin' or (current_user.role == 'instructor' and course.instructor_id == current_user.id) %}
             <div class="card border-danger mt-4">
                 <div class="card-header bg-danger text-white">
                     <h5 class="mb-0">
-                        <i class="fas fa-exclamation-triangle me-2"></i>危险操作
+                        <i class="fas fa-exclamation-triangle me-2"></i>Danger Zone
                     </h5>
                 </div>
                 <div class="card-body">
-                    <h6 class="text-danger">删除活动</h6>
+                    <h6 class="text-danger">Delete Activity</h6>
                     <p class="text-muted mb-3">
-                        删除活动后，该活动下的所有学生响应和回答都将被永久删除，此操作无法撤销。
+                        Once you delete an activity, all student responses and answers associated with it will be permanently deleted. This action cannot be undone.
                     </p>
                     <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteActivityModal">
-                        <i class="fas fa-trash me-2"></i>删除活动
+                        <i class="fas fa-trash me-2"></i>Delete Activity
                     </button>
                 </div>
             </div>
@@ -112,34 +112,34 @@
     </div>
 </div>
 
-<!-- 删除确认模态框 -->
+<!-- Delete confirmation modal -->
 {% if current_user.role == 'admin' or (current_user.role == 'instructor' and course.instructor_id == current_user.id) %}
 <div class="modal fade" id="deleteActivityModal" tabindex="-1" aria-labelledby="deleteActivityModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header border-0">
                 <h5 class="modal-title text-danger" id="deleteActivityModalLabel">
-                    <i class="fas fa-exclamation-triangle me-2"></i>确认删除活动
+                    <i class="fas fa-exclamation-triangle me-2"></i>Confirm Delete Activity
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>您确定要删除活动 <strong class="text-danger">{{ activity.title }}</strong> 吗？</p>
+                <p>Are you sure you want to delete activity <strong class="text-danger">{{ activity.title }}</strong>?</p>
                 <div class="alert alert-danger" role="alert">
-                    <strong>警告：</strong>此操作将：
+                    <strong>Warning:</strong> This action will:
                     <ul class="mb-0 mt-2">
-                        <li>删除所有学生的响应和回答</li>
-                        <li>删除活动的所有统计数据</li>
-                        <li>删除活动本身</li>
+                        <li>Delete all student responses and answers</li>
+                        <li>Delete all statistical data for this activity</li>
+                        <li>Delete the activity itself</li>
                     </ul>
-                    <p class="mt-2 mb-0">此操作无法撤销！</p>
+                    <p class="mt-2 mb-0">This action cannot be undone!</p>
                 </div>
             </div>
             <div class="modal-footer border-0">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <form method="POST" action="{{ url_for('activities.delete_activity', activity_id=activity.id) }}" class="d-inline">
                     <button type="submit" class="btn btn-danger">
-                        <i class="fas fa-trash me-2"></i>确认删除
+                        <i class="fas fa-trash me-2"></i>Confirm Delete
                     </button>
                 </form>
             </div>
@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const typeSelect = document.getElementById('type');
     const optionsContainer = document.getElementById('optionsContainer');
     
-    // 显示/隐藏选项输入框
+    // Show/hide options input
     function toggleOptionsVisibility() {
         if (typeSelect.value === 'choice') {
             optionsContainer.style.display = 'block';
@@ -192,18 +192,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // 初始化显示状态
+    // Initialize display state
     toggleOptionsVisibility();
     
-    // 监听类型变化
+    // Listen for type changes
     typeSelect.addEventListener('change', toggleOptionsVisibility);
     
     form.addEventListener('submit', function(e) {
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>保存中...';
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
         submitBtn.disabled = true;
     });
     
-    // 表单验证提示
+    // Form validation hints
     const inputs = form.querySelectorAll('input, textarea, select');
     inputs.forEach(input => {
         input.addEventListener('blur', function() {

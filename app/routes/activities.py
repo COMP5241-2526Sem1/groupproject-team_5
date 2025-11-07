@@ -622,60 +622,60 @@ def export_course_activities(course_id):
 @bp.route('/activities/<int:activity_id>/delete', methods=['POST'])
 @login_required
 def delete_activity(activity_id):
-    """删除活动 - 管理员和教师权限"""
+    """Delete activity - Admin and instructor permission"""
     activity = Activity.query.get_or_404(activity_id)
     course = Course.query.get_or_404(activity.course_id)
     
-    # 权限检查
+    # Permission check
     if current_user.role == 'admin':
-        # 管理员可以删除所有活动
+        # Admin can delete all activities
         pass
     elif current_user.role == 'instructor' and course.instructor_id == current_user.id:
-        # 教师只能删除自己课程的活动
+        # Instructor can delete activities in their own courses
         pass
     else:
-        flash('您没有权限删除此活动', 'error')
+        flash('You do not have permission to delete this activity', 'error')
         return redirect(url_for('activities.list_activities'))
     
     try:
-        # 删除所有相关的响应
+        # Delete all related responses
         Response.query.filter_by(activity_id=activity_id).delete()
         
-        # 删除活动本身
+        # Delete the activity itself
         db.session.delete(activity)
         db.session.commit()
         
-        flash(f'活动 "{activity.title}" 已成功删除', 'success')
+        flash(f'Activity "{activity.title}" deleted successfully', 'success')
         return jsonify({
             'success': True, 
-            'message': '活动已成功删除',
+            'message': 'Activity deleted successfully',
             'redirect_url': url_for('activities.list_activities')
         })
         
     except Exception as e:
         db.session.rollback()
-        flash('删除活动时发生错误，请稍后重试', 'error')
+        flash('Error occurred while deleting activity, please try again later', 'error')
         return jsonify({
             'success': False, 
-            'message': f'删除失败：{str(e)}'
+            'message': f'Delete failed: {str(e)}'
         })
 
 @bp.route('/activities/<int:activity_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_activity(activity_id):
-    """编辑活动 - 管理员和教师权限"""
+    """Edit activity - Admin and instructor permission"""
     activity = Activity.query.get_or_404(activity_id)
     course = Course.query.get_or_404(activity.course_id)
     
-    # 权限检查
+    # Permission check
     if current_user.role == 'admin':
         # 管理员可以编辑所有活动
         pass
     elif current_user.role == 'instructor' and course.instructor_id == current_user.id:
-        # 教师只能编辑自己课程的活动
+        # Instructor can edit activities in their own courses
         pass
     else:
-        flash('您没有权限编辑此活动', 'error')
+        flash('You do not have permission to edit this activity', 'error')
         return redirect(url_for('activities.list_activities'))
     
     form = ActivityForm()
@@ -687,10 +687,10 @@ def edit_activity(activity_id):
         activity.options = form.options.data
         
         db.session.commit()
-        flash('活动信息更新成功！', 'success')
+        flash('Activity information updated successfully!', 'success')
         return redirect(url_for('activities.view_activity', activity_id=activity.id))
     
-    # 预填充表单数据
+    # Pre-populate form data
     if request.method == 'GET':
         form.title.data = activity.title
         form.type.data = activity.type

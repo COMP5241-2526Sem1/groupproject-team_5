@@ -32,22 +32,22 @@
                     <div class="btn-group btn-group-sm" role="group">
                         {% if current_user.role in ['admin', 'instructor'] and (current_user.role == 'admin' or activity.course.instructor_id == current_user.id) %}
                         <a href="{{ url_for('activities.activity_results', activity_id=activity.id) }}" 
-                           class="btn btn-outline-info" title="查看结果">
+                           class="btn btn-outline-info" title="View Results">
                             <i class="bi bi-graph-up"></i>
                         </a>
                         <a href="{{ url_for('activities.edit_activity', activity_id=activity.id) }}" 
-                           class="btn btn-outline-primary" title="编辑活动">
+                           class="btn btn-outline-primary" title="Edit Activity">
                             <i class="bi bi-pencil"></i>
                         </a>
                         <button type="button" class="btn btn-outline-danger" 
                                 data-bs-toggle="modal" 
                                 data-bs-target="#deleteActivityModal{{ activity.id }}" 
-                                title="删除活动">
+                                title="Delete Activity">
                             <i class="bi bi-trash"></i>
                         </button>
                         {% else %}
                         <a href="{{ url_for('activities.activity_detail', activity_id=activity.id) }}" 
-                           class="btn btn-outline-primary" title="查看详情">
+                           class="btn btn-outline-primary" title="View Details">
                             <i class="bi bi-eye"></i>
                         </a>
                         {% endif %}
@@ -67,7 +67,7 @@
     {% endfor %}
 </div>
 
-<!-- 删除活动确认模态框 -->
+<!-- Delete activity confirmation modals -->
 {% for activity in activities %}
 {% if current_user.role in ['admin', 'instructor'] and (current_user.role == 'admin' or activity.course.instructor_id == current_user.id) %}
 <div class="modal fade" id="deleteActivityModal{{ activity.id }}" tabindex="-1" aria-labelledby="deleteActivityModalLabel{{ activity.id }}" aria-hidden="true">
@@ -75,21 +75,21 @@
         <div class="modal-content">
             <div class="modal-header border-0">
                 <h5 class="modal-title text-danger" id="deleteActivityModalLabel{{ activity.id }}">
-                    <i class="bi bi-exclamation-triangle"></i> 确认删除活动
+                    <i class="bi bi-exclamation-triangle"></i> Confirm Delete Activity
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>您确定要删除活动 <strong class="text-danger">{{ activity.title }}</strong> 吗？</p>
+                <p>Are you sure you want to delete activity <strong class="text-danger">{{ activity.title }}</strong>?</p>
                 <div class="alert alert-danger" role="alert">
-                    <small><strong>警告：</strong>此操作将删除该活动的所有学生回答和响应，且无法撤销。</small>
+                    <small><strong>Warning:</strong> This action will delete all student answers and responses for this activity, and cannot be undone.</small>
                 </div>
             </div>
             <div class="modal-footer border-0">
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
                 <form method="POST" action="{{ url_for('activities.delete_activity', activity_id=activity.id) }}" class="d-inline">
                     <button type="submit" class="btn btn-danger btn-sm">
-                        <i class="bi bi-trash"></i> 确认删除
+                        <i class="bi bi-trash"></i> Confirm Delete
                     </button>
                 </form>
             </div>
@@ -99,20 +99,20 @@
 {% endif %}
 {% endfor %}
 
-<!-- 分页导航 -->
+<!-- Pagination navigation -->
 {% if pagination.pages > 1 %}
-<nav aria-label="活动分页">
+<nav aria-label="Activity pagination">
     <ul class="pagination justify-content-center mt-4">
         {% if pagination.has_prev %}
             <li class="page-item">
                 <a class="page-link" href="{{ url_for('activities.list_activities', page=pagination.prev_num) }}">
-                    <i class="bi bi-chevron-left"></i> 上一页
+                    <i class="bi bi-chevron-left"></i> Previous
                 </a>
             </li>
         {% else %}
             <li class="page-item disabled">
                 <span class="page-link">
-                    <i class="bi bi-chevron-left"></i> 上一页
+                    <i class="bi bi-chevron-left"></i> Previous
                 </span>
             </li>
         {% endif %}
@@ -138,13 +138,13 @@
         {% if pagination.has_next %}
             <li class="page-item">
                 <a class="page-link" href="{{ url_for('activities.list_activities', page=pagination.next_num) }}">
-                    下一页 <i class="bi bi-chevron-right"></i>
+                    Next <i class="bi bi-chevron-right"></i>
                 </a>
             </li>
         {% else %}
             <li class="page-item disabled">
                 <span class="page-link">
-                    下一页 <i class="bi bi-chevron-right"></i>
+                    Next <i class="bi bi-chevron-right"></i>
                 </span>
             </li>
         {% endif %}
@@ -153,8 +153,8 @@
 
 <div class="text-center text-muted mt-3">
     <small>
-        显示第 {{ pagination.page }} 页，共 {{ pagination.pages }} 页
-        （总计 {{ pagination.total }} 个活动）
+        Showing page {{ pagination.page }} of {{ pagination.pages }}
+        ({{ pagination.total }} activities total)
     </small>
 </div>
 {% endif %}

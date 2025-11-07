@@ -175,25 +175,25 @@ def enroll_course(course_id):
         enrollment = Enrollment(student_id=current_user.id, course_id=course_id)
         db.session.add(enrollment)
         db.session.commit()
-        flash(f'成功选修课程：{course.name}', 'success')
+        flash(f'Successfully enrolled in course: {course.name}', 'success')
     
     return redirect(url_for('courses.browse_courses'))
 
 @bp.route('/courses/<int:course_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_course(course_id):
-    """编辑课程 - 管理员可以编辑所有课程，教师只能编辑自己的课程"""
+    """Edit course - Admin can edit all courses, instructors can edit their own courses"""
     course = Course.query.get_or_404(course_id)
     
-    # 权限检查
+    # Permission check
     if current_user.role == 'admin':
-        # 管理员可以编辑所有课程
+        # Admin can edit all courses
         pass
     elif current_user.role == 'instructor' and course.instructor_id == current_user.id:
-        # 教师只能编辑自己的课程
+        # Instructor can edit their own courses
         pass
     else:
-        flash('您没有编辑此课程的权限', 'error')
+        flash('You do not have permission to edit this course', 'error')
         return redirect(url_for('courses.list_courses'))
     
     form = CourseForm()
@@ -204,10 +204,10 @@ def edit_course(course_id):
         course.description = form.description.data
         
         db.session.commit()
-        flash('课程信息更新成功！', 'success')
+        flash('Course information updated successfully!', 'success')
         return redirect(url_for('courses.course_detail', course_id=course.id))
     
-    # 预填充表单数据
+    # Pre-populate form data
     if request.method == 'GET':
         form.name.data = course.name
         form.semester.data = course.semester
@@ -218,43 +218,43 @@ def edit_course(course_id):
 @bp.route('/courses/<int:course_id>/delete', methods=['POST'])
 @login_required
 def delete_course(course_id):
-    """删除课程 - 管理员可以删除所有课程，教师只能删除自己的课程"""
+    """Delete course - Admin can delete all courses, instructors can delete their own courses"""
     course = Course.query.get_or_404(course_id)
     
-    # 权限检查
+    # Permission check
     if current_user.role == 'admin':
-        # 管理员可以删除所有课程
+        # Admin can delete all courses
         pass
     elif current_user.role == 'instructor' and course.instructor_id == current_user.id:
-        # 教师只能删除自己的课程
+        # Instructor can delete their own courses
         pass
     else:
-        flash('您没有删除此课程的权限', 'error')
+        flash('You do not have permission to delete this course', 'error')
         return redirect(url_for('courses.list_courses'))
     
     try:
-        # 删除相关数据
-        # 1. 删除课程相关的问题和答案
+        # Delete related data
+        # 1. Delete course related questions and answers
         for question in course.questions:
-            # 删除问题的所有答案
+            # Delete all answers of the question
             Answer.query.filter_by(question_id=question.id).delete()
-            # 删除问题
+            # Delete the question
             db.session.delete(question)
         
-        # 2. 删除课程相关的活动和响应
+        # 2. Delete course related activities and responses
         for activity in course.activities:
-            db.session.delete(activity)  # 响应会通过级联删除
+            db.session.delete(activity)  # Responses will be deleted through cascade
         
-        # 3. 删除选课记录
+        # 3. Delete enrollment records
         Enrollment.query.filter_by(course_id=course.id).delete()
         
-        # 4. 删除课程本身
+        # 4. Delete the course itself
         db.session.delete(course)
         db.session.commit()
         
-        flash('课程删除成功！', 'success')
+        flash('Course deleted successfully!', 'success')
     except Exception as e:
         db.session.rollback()
-        flash('删除课程时发生错误，请稍后重试', 'error')
+        flash('Error occurred while deleting course, please try again later', 'error')
     
     return redirect(url_for('courses.list_courses'))
