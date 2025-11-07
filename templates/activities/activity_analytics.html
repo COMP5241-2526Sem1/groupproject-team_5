@@ -133,29 +133,176 @@
     <div class="row mt-4">
         <div class="col-12">
             <div class="card">
-                <div class="card-header">
-                    <h5><i class="bi bi-cloud"></i> Word Analysis</h5>
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-cloud"></i> Word Frequency Analysis</h5>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
                             <h6>Statistics</h6>
                             <ul class="list-unstyled">
-                                <li><strong>Total Words:</strong> {{ analytics.word_analysis.total_words }}</li>
+                                <li><strong>Total Words (Filtered):</strong> {{ analytics.word_analysis.total_words }}</li>
                                 <li><strong>Unique Words:</strong> {{ analytics.word_analysis.unique_words }}</li>
                             </ul>
                         </div>
-                        <div class="col-md-8">
-                            <h6>Most Common Words</h6>
-                            <div class="word-cloud">
-                                {% for word, freq in analytics.word_analysis.most_common %}
-                                <span class="badge bg-secondary me-1 mb-1" style="font-size: {{ (freq / analytics.word_analysis.most_common[0][1] * 20 + 12) }}px;">
-                                    {{ word }} ({{ freq }})
-                                </span>
-                                {% endfor %}
-                            </div>
+                        <div class="col-md-6">
+                            <p class="text-muted mb-0">
+                                <i class="bi bi-info-circle"></i> 
+                                Common words (articles, prepositions, pronouns) have been filtered out.
+                            </p>
                         </div>
                     </div>
+                    <div class="word-cloud-container" style="
+                        width: 100%;
+                        height: 500px;
+                        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                        border-radius: 15px;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        padding: 20px;
+                        overflow: hidden;
+                        position: relative;">
+                        <canvas id="wordcloud-canvas-analytics-{{ activity.id }}"></canvas>
+                    </div>
+                    <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.2/src/wordcloud2.min.js"></script>
+                    <script>
+                    (function() {
+                        function generateWordCloud() {
+                            const canvas = document.getElementById('wordcloud-canvas-analytics-{{ activity.id }}');
+                            if (!canvas) return;
+                            
+                            const container = canvas.parentElement;
+                            // 确保有足够的边距，防止词被裁剪
+                            const padding = 30;
+                            const containerWidth = container.offsetWidth - (padding * 2);
+                            const containerHeight = container.offsetHeight - (padding * 2);
+                            
+                            // 设置canvas尺寸，留出边距
+                            canvas.width = containerWidth;
+                            canvas.height = containerHeight;
+                            canvas.style.width = containerWidth + 'px';
+                            canvas.style.height = containerHeight + 'px';
+                            
+                            {% set word_list = analytics.word_analysis.most_common %}
+                            {% set max_freq = word_list[0][1] if word_list else 1 %}
+                            
+                            const wordList = [
+                                {% for word, freq in word_list %}
+                                ['{{ word }}', {{ freq }}]{% if not loop.last %},{% endif %}
+                                {% endfor %}
+                            ];
+                            
+                            if (wordList.length === 0) return;
+                            
+                            // Color function with random color assignment
+                            const maxFreq = {{ max_freq }};
+                            
+                            // 丰富的颜色调色板
+                            const colorPalette = [
+                                '#0d6efd', // Blue
+                                '#6610f2', // Purple
+                                '#d63384', // Pink
+                                '#dc3545', // Red
+                                '#fd7e14', // Orange
+                                '#ffc107', // Yellow
+                                '#20c997', // Teal
+                                '#198754', // Green
+                                '#0dcaf0', // Cyan
+                                '#6f42c1', // Indigo
+                                '#e83e8c', // Magenta
+                                '#0056b3', // Dark Blue
+                                '#4a148c', // Dark Purple
+                                '#a02669', // Dark Pink
+                                '#b02a37', // Dark Red
+                                '#c4620a', // Dark Orange
+                                '#cc9a00', // Dark Yellow
+                                '#146c43', // Dark Green
+                                '#087990', // Dark Cyan
+                                '#4a0e4e'  // Dark Indigo
+                            ];
+                            
+                            // 为每个词预先分配随机颜色（确保同一词每次都是相同颜色）
+                            const wordColorMap = {};
+                            wordList.forEach((wordData, idx) => {
+                                const word = wordData[0];
+                                // 使用词的哈希值来确保同一词总是得到相同颜色
+                                let hash = 0;
+                                for (let i = 0; i < word.length; i++) {
+                                    hash = word.charCodeAt(i) + ((hash << 5) - hash);
+                                }
+                                wordColorMap[word] = colorPalette[Math.abs(hash) % colorPalette.length];
+                            });
+                            
+                            const getColor = function(word, weight, fontSize, distance, theta) {
+                                // 返回预先分配的随机颜色
+                                return wordColorMap[word] || colorPalette[0];
+                            };
+                            
+                            // Generate word cloud
+                            if (typeof WordCloud !== 'undefined') {
+                                // 计算字体大小范围
+                                const maxFreq = Math.max(...wordList.map(w => w[1]));
+                                const minFreq = Math.min(...wordList.map(w => w[1]));
+                                const freqRange = maxFreq - minFreq;
+                                
+                                // 设置字体大小范围：增大高频词字体
+                                const maxFontSize = Math.min(containerWidth / 5, 120); // 最大字体120px，增大高频词
+                                const minFontSize = Math.max(containerWidth / 45, 14); // 最小字体14px
+                                
+                                WordCloud(canvas, {
+                                    list: wordList,
+                                    gridSize: Math.round(6 * containerWidth / 1024), // 减小网格大小，让词更紧密
+                                    weightFactor: function(size) {
+                                        if (freqRange === 0) return (maxFontSize + minFontSize) / 2;
+                                        
+                                        // 归一化频率 (0-1)
+                                        const normalizedFreq = (size - minFreq) / freqRange;
+                                        
+                                        // 使用0.6次方，让高频词更大更突出
+                                        const scaledFreq = Math.pow(normalizedFreq, 0.6);
+                                        
+                                        // 计算字体大小
+                                        const fontSize = minFontSize + (maxFontSize - minFontSize) * scaledFreq;
+                                        
+                                        return fontSize;
+                                    },
+                                    fontFamily: 'Arial, sans-serif',
+                                    color: getColor,
+                                    rotateRatio: 0,
+                                    rotationSteps: 0,
+                                    backgroundColor: 'transparent',
+                                    minSize: minFontSize,
+                                    drawOutOfBound: false,
+                                    shrinkToFit: true,
+                                    ellipticity: 0.7,
+                                    shuffle: false,
+                                    shape: 'circle'
+                                });
+                            } else {
+                                console.error('WordCloud library not loaded');
+                            }
+                        }
+                        
+                        // Run on page load and handle resize
+                        function initWordCloud() {
+                            if (document.readyState === 'loading') {
+                                document.addEventListener('DOMContentLoaded', generateWordCloud);
+                            } else {
+                                setTimeout(generateWordCloud, 100);
+                            }
+                        }
+                        
+                        initWordCloud();
+                        
+                        // 处理窗口大小变化
+                        let resizeTimer;
+                        window.addEventListener('resize', function() {
+                            clearTimeout(resizeTimer);
+                            resizeTimer = setTimeout(generateWordCloud, 250);
+                        });
+                    })();
+                    </script>
                 </div>
             </div>
         </div>
