@@ -1,6 +1,6 @@
 """
-Q&A功能路由
-集成到课堂互动平台中的问答系统
+Q&A Feature Routes
+Q&A system integrated into the classroom interaction platform
 """
 
 from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify
@@ -14,20 +14,20 @@ qa_bp = Blueprint('qa', __name__)
 @qa_bp.route('/course/<int:course_id>/qa')
 @login_required
 def course_qa_list(course_id):
-    """显示课程的Q&A列表"""
+    """Display course Q&A list"""
     course = Course.query.get_or_404(course_id)
     
-    # 检查用户是否有权限访问此课程
+    # Check if user has permission to access this course
     if current_user.role == 'student':
         enrollment = Enrollment.query.filter_by(
             student_id=current_user.id, 
             course_id=course_id
         ).first()
         if not enrollment:
-            flash('您没有权限访问此课程', 'danger')
+            flash('You do not have permission to access this course', 'danger')
             return redirect(url_for('main.dashboard'))
     elif current_user.role == 'instructor' and course.instructor_id != current_user.id:
-        flash('您没有权限访问此课程', 'danger')
+        flash('You do not have permission to access this course', 'danger')
         return redirect(url_for('main.dashboard'))
     
     # 获取问题列表（按创建时间排序）
@@ -43,17 +43,17 @@ def course_qa_list(course_id):
 @qa_bp.route('/course/<int:course_id>/qa/ask', methods=['GET', 'POST'])
 @login_required
 def ask_question(course_id):
-    """提问页面"""
+    """Ask question page"""
     course = Course.query.get_or_404(course_id)
     
-    # 检查权限
+    # Check permission
     if current_user.role == 'student':
         enrollment = Enrollment.query.filter_by(
             student_id=current_user.id, 
             course_id=course_id
         ).first()
         if not enrollment:
-            flash('您没有权限在此课程中提问', 'danger')
+            flash('You do not have permission to ask questions in this course', 'danger')
             return redirect(url_for('main.dashboard'))
     
     if request.method == 'POST':
@@ -61,10 +61,10 @@ def ask_question(course_id):
         content = request.form.get('content', '').strip()
         
         if not title or not content:
-            flash('标题和内容不能为空', 'danger')
+            flash('Title and content cannot be empty', 'danger')
             return render_template('qa/ask_question.html', course=course)
         
-        # 创建问题
+        # Create question
         question = Question(
             title=title,
             content=content,
@@ -75,7 +75,7 @@ def ask_question(course_id):
         db.session.add(question)
         db.session.commit()
         
-        flash('问题发布成功！', 'success')
+        flash('Question published successfully!', 'success')
         return redirect(url_for('qa.course_qa_list', course_id=course_id))
     
     return render_template('qa/ask_question.html', course=course)
@@ -83,26 +83,26 @@ def ask_question(course_id):
 @qa_bp.route('/course/<int:course_id>/qa/<int:question_id>')
 @login_required
 def question_detail(course_id, question_id):
-    """问题详情页"""
+    """Question detail page"""
     course = Course.query.get_or_404(course_id)
     question = Question.query.get_or_404(question_id)
     
-    # 检查问题是否属于该课程
+    # Check if question belongs to this course
     if question.course_id != course_id:
-        flash('问题不存在', 'danger')
+        flash('Question does not exist', 'danger')
         return redirect(url_for('qa.course_qa_list', course_id=course_id))
     
-    # 检查权限
+    # Check permission
     if current_user.role == 'student':
         enrollment = Enrollment.query.filter_by(
             student_id=current_user.id, 
             course_id=course_id
         ).first()
         if not enrollment:
-            flash('您没有权限访问此内容', 'danger')
+            flash('You do not have permission to access this content', 'danger')
             return redirect(url_for('main.dashboard'))
     elif current_user.role == 'instructor' and course.instructor_id != current_user.id:
-        flash('您没有权限访问此内容', 'danger')
+        flash('You do not have permission to access this content', 'danger')
         return redirect(url_for('main.dashboard'))
     
     # 获取答案（按投票数和创建时间排序，添加分页）
@@ -132,22 +132,22 @@ def question_detail(course_id, question_id):
 @qa_bp.route('/course/<int:course_id>/qa/<int:question_id>/answer', methods=['POST'])
 @login_required
 def submit_answer(course_id, question_id):
-    """提交答案"""
+    """Submit answer"""
     course = Course.query.get_or_404(course_id)
     question = Question.query.get_or_404(question_id)
     
     content = request.form.get('content', '').strip()
     if not content:
-        flash('回答内容不能为空', 'danger')
+        flash('Answer content cannot be empty', 'danger')
         return redirect(url_for('qa.question_detail', 
                               course_id=course_id, 
                               question_id=question_id))
     
-    # 检查是否为教师回答
+    # Check if this is an instructor answer
     is_instructor_answer = (current_user.role == 'instructor' and 
                            course.instructor_id == current_user.id)
     
-    # 创建答案
+    # Create answer
     answer = Answer(
         content=content,
         question_id=question_id,
@@ -158,7 +158,7 @@ def submit_answer(course_id, question_id):
     db.session.add(answer)
     db.session.commit()
     
-    flash('回答提交成功！', 'success')
+    flash('Answer submitted successfully!', 'success')
     return redirect(url_for('qa.question_detail', 
                           course_id=course_id, 
                           question_id=question_id))
@@ -166,14 +166,14 @@ def submit_answer(course_id, question_id):
 @qa_bp.route('/answer/<int:answer_id>/vote', methods=['POST'])
 @login_required
 def vote_answer(answer_id):
-    """对答案投票"""
+    """Vote on answer"""
     answer = Answer.query.get_or_404(answer_id)
     vote_type = request.json.get('vote_type')  # 'upvote' or 'downvote'
     
     if vote_type not in ['upvote', 'downvote']:
-        return jsonify({'success': False, 'message': '无效的投票类型'})
+        return jsonify({'success': False, 'message': 'Invalid vote type'})
     
-    # 检查是否已投票
+    # Check if already voted
     existing_vote = AnswerVote.query.filter_by(
         answer_id=answer_id,
         user_id=current_user.id
@@ -181,19 +181,19 @@ def vote_answer(answer_id):
     
     if existing_vote:
         if existing_vote.vote_type == vote_type:
-            # 取消投票
+            # Cancel vote
             db.session.delete(existing_vote)
             if vote_type == 'upvote':
                 answer.upvotes = max(0, answer.upvotes - 1)
         else:
-            # 改变投票类型
+            # Change vote type
             existing_vote.vote_type = vote_type
             if vote_type == 'upvote':
                 answer.upvotes += 1
             else:
                 answer.upvotes = max(0, answer.upvotes - 1)
     else:
-        # 新投票
+        # New vote
         vote = AnswerVote(
             answer_id=answer_id,
             user_id=current_user.id,
@@ -208,111 +208,116 @@ def vote_answer(answer_id):
     return jsonify({
         'success': True, 
         'upvotes': answer.upvotes,
-        'message': '投票成功'
+        'message': 'Vote successful'
     })
 
 @qa_bp.route('/question/<int:question_id>/mark_best/<int:answer_id>', methods=['POST'])
 @login_required
 def mark_best_answer(question_id, answer_id):
-    """标记最佳答案（仅教师可操作）"""
+    """Mark best answer (instructors only)"""
     question = Question.query.get_or_404(question_id)
     answer = Answer.query.get_or_404(answer_id)
     
-    # 检查权限（必须是课程教师）
+    # Check permission (must be course instructor)
     if (current_user.role != 'instructor' or 
         question.course.instructor_id != current_user.id):
-        return jsonify({'success': False, 'message': '您没有权限执行此操作'})
+        return jsonify({'success': False, 'message': 'You do not have permission to perform this action'})
     
-    # 检查答案是否属于该问题
+    # Check if answer belongs to this question
     if answer.question_id != question_id:
-        return jsonify({'success': False, 'message': '答案不属于该问题'})
+        return jsonify({'success': False, 'message': 'Answer does not belong to this question'})
     
-    # 更新最佳答案
+    # Update best answer
     question.best_answer_id = answer_id
     question.is_resolved = True
     db.session.commit()
     
-    return jsonify({'success': True, 'message': '已标记为最佳答案'})
+    return jsonify({'success': True, 'message': 'Marked as best answer'})
 
 @qa_bp.route('/course/<int:course_id>/qa/<int:question_id>/delete', methods=['POST'])
 @login_required
 def delete_question(course_id, question_id):
-    """删除问题 - 仅管理员权限"""
+    """Delete question - Admin and instructor permission"""
     course = Course.query.get_or_404(course_id)
     question = Question.query.get_or_404(question_id)
     
-    # 检查问题是否属于该课程
+    # Check if question belongs to this course
     if question.course_id != course_id:
-        return jsonify({'success': False, 'message': '问题不存在'})
+        return jsonify({'success': False, 'message': 'Question does not exist'})
     
-    # 检查权限 - 只有管理员可以删除任何问题，教师可以删除自己课程的问题
+    # Check permission - only admin can delete any question, instructors can delete questions in their own courses
     if current_user.role == 'admin':
-        # 管理员可以删除任何问题
+        # Admin can delete any question
         pass
     elif current_user.role == 'instructor' and course.instructor_id == current_user.id:
-        # 教师可以删除自己课程的问题
+        # Instructor can delete questions in their own courses
         pass
     else:
-        return jsonify({'success': False, 'message': '您没有权限删除此问题'})
+        return jsonify({'success': False, 'message': 'You do not have permission to delete this question'})
     
     try:
-        # 删除相关的投票记录
+        # Step 1: Clear best_answer_id to avoid foreign key constraint
+        if question.best_answer_id:
+            question.best_answer_id = None
+            db.session.flush()  # Apply this change first
+        
+        # Step 2: Delete related vote records
         for answer in question.answers:
             AnswerVote.query.filter_by(answer_id=answer.id).delete()
         
-        # 删除所有回答
+        # Step 3: Delete all answers
         Answer.query.filter_by(question_id=question_id).delete()
         
-        # 删除问题
+        # Step 4: Delete the question itself
         db.session.delete(question)
         db.session.commit()
         
         return jsonify({
             'success': True, 
-            'message': '问题已成功删除',
+            'message': 'Question deleted successfully',
             'redirect_url': url_for('qa.course_qa_list', course_id=course_id)
         })
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'message': f'删除失败：{str(e)}'})
+        return jsonify({'success': False, 'message': f'Delete failed: {str(e)}'})
 
 @qa_bp.route('/course/<int:course_id>/qa/<int:question_id>/delete_answer/<int:answer_id>', methods=['POST'])
 @login_required  
 def delete_answer(course_id, question_id, answer_id):
-    """删除回答 - 管理员和教师权限"""
+    """Delete answer - Admin and instructor permission"""
     course = Course.query.get_or_404(course_id)
     question = Question.query.get_or_404(question_id)
     answer = Answer.query.get_or_404(answer_id)
     
-    # 检查权限 - 管理员、教师或回答者本人可以删除
+    # Check permission - admin, instructor or answer author can delete
     if current_user.role == 'admin':
-        # 管理员可以删除任何回答
+        # Admin can delete any answer
         pass
     elif current_user.role == 'instructor' and course.instructor_id == current_user.id:
-        # 教师可以删除自己课程的回答
+        # Instructor can delete answers in their own courses
         pass
     elif answer.user_id == current_user.id:
-        # 用户可以删除自己的回答
+        # User can delete their own answer
         pass
     else:
-        return jsonify({'success': False, 'message': '您没有权限删除此回答'})
+        return jsonify({'success': False, 'message': 'You do not have permission to delete this answer'})
     
     try:
-        # 删除相关投票记录
+        # Delete related vote records
         AnswerVote.query.filter_by(answer_id=answer_id).delete()
         
-        # 如果是最佳答案，清除最佳答案标记
+        # If this is the best answer, clear the best answer mark
         if question.best_answer_id == answer_id:
             question.best_answer_id = None
             question.is_resolved = False
         
-        # 删除回答
+        # Delete answer
         db.session.delete(answer)
         db.session.commit()
         
-        return jsonify({'success': True, 'message': '回答已成功删除'})
+        return jsonify({'success': True, 'message': 'Answer deleted successfully'})
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'message': f'删除失败：{str(e)}'})
+        return jsonify({'success': False, 'message': f'Delete failed: {str(e)}'})

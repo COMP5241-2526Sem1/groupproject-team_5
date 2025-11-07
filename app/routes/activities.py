@@ -653,41 +653,45 @@ def delete_activity(activity_id):
     
     return redirect(url_for('activities.list_activities'))
 
-@bp.route('/activities/<int:activity_id>/edit', methods=['GET', 'POST'])
-@login_required
-def edit_activity(activity_id):
-    """Edit activity - Admin and instructor permission"""
-    activity = Activity.query.get_or_404(activity_id)
-    course = Course.query.get_or_404(activity.course_id)
-    
-    # Permission check
-    if current_user.role == 'admin':
-        # 管理员可以编辑所有活动
-        pass
-    elif current_user.role == 'instructor' and course.instructor_id == current_user.id:
-        # Instructor can edit activities in their own courses
-        pass
-    else:
-        flash('You do not have permission to edit this activity', 'error')
-        return redirect(url_for('activities.list_activities'))
-    
-    form = ActivityForm()
-    
-    if form.validate_on_submit():
-        activity.title = form.title.data
-        activity.type = form.type.data
-        activity.question = form.question.data
-        activity.options = form.options.data
-        
-        db.session.commit()
-        flash('Activity information updated successfully!', 'success')
-        return redirect(url_for('activities.view_activity', activity_id=activity.id))
-    
-    # Pre-populate form data
-    if request.method == 'GET':
-        form.title.data = activity.title
-        form.type.data = activity.type
-        form.question.data = activity.question
-        form.options.data = activity.options
-    
-    return render_template('activities/edit_activity.html', form=form, activity=activity, course=course)
+# Note: Activity editing is disabled to maintain data integrity
+# Once an activity is published, it should not be modified
+# 
+# @bp.route('/activities/<int:activity_id>/edit', methods=['GET', 'POST'])
+# @login_required
+# def edit_activity(activity_id):
+#     """Edit activity - Admin and instructor permission"""
+#     activity = Activity.query.get_or_404(activity_id)
+#     course = Course.query.get_or_404(activity.course_id)
+#     
+#     # Permission check
+#     if current_user.role == 'admin':
+#         # 管理员可以编辑所有活动
+#         pass
+#     elif current_user.role == 'instructor' and course.instructor_id == current_user.id:
+#         # Instructor can edit activities in their own courses
+#         pass
+#     else:
+#         flash('You do not have permission to edit this activity', 'error')
+#         return redirect(url_for('activities.list_activities'))
+#     
+#     form = ActivityForm()
+#     
+#     if form.validate_on_submit():
+#         activity.title = form.title.data
+#         activity.type = form.type.data
+#         activity.question = form.question.data
+#         activity.options = form.options.data
+#         
+#         db.session.commit()
+#         flash('Activity information updated successfully!', 'success')
+#         return redirect(url_for('activities.activity_detail', activity_id=activity.id))
+#     
+#     # Pre-populate form data
+#     if request.method == 'GET':
+#         form.title.data = activity.title
+#         form.type.data = activity.type
+#         form.question.data = activity.question
+#         form.options.data = activity.options
+#     
+#     return render_template('activities/edit_activity.html', form=form, activity=activity, course=course)
+

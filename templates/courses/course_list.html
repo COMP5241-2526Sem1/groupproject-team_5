@@ -125,9 +125,9 @@
                            class="btn btn-outline-primary btn-sm" title="Edit Course">
                             <i class="bi bi-pencil"></i>
                         </a>
-                        <button type="button" class="btn btn-outline-danger btn-sm" 
-                                data-bs-toggle="modal" 
-                                data-bs-target="#deleteCourseModal{{ course.id }}" 
+                        <button type="button" class="btn btn-outline-danger btn-sm delete-course-btn" 
+                                data-course-name="{{ course.name }}"
+                                data-delete-url="{{ url_for('courses.delete_course', course_id=course.id) }}"
                                 title="Delete Course">
                             <i class="bi bi-trash"></i>
                         </button>
@@ -161,39 +161,6 @@
     </div>
     {% endfor %}
 </div>
-
-<!-- Delete course confirmation modal -->
-{% for course in courses %}
-{% if current_user.role == 'admin' or (current_user.role == 'instructor' and course.instructor_id == current_user.id) %}
-<div class="modal fade" id="deleteCourseModal{{ course.id }}" tabindex="-1" aria-labelledby="deleteCourseModalLabel{{ course.id }}" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header border-0">
-                <h5 class="modal-title text-danger" id="deleteCourseModalLabel{{ course.id }}">
-                    <i class="bi bi-exclamation-triangle"></i> Confirm Delete Course
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p>Are you sure you want to delete course <strong class="text-danger">{{ course.name }}</strong>?</p>
-                <div class="alert alert-danger" role="alert">
-                    <small><strong>Warning:</strong> This action will delete all related data including student enrollments, Q&A questions and activities, and cannot be undone.</small>
-                </div>
-            </div>
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                <form method="POST" action="{{ url_for('courses.delete_course', course_id=course.id) }}" class="d-inline">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                    <button type="submit" class="btn btn-danger btn-sm">
-                        <i class="bi bi-trash"></i> Confirm Delete
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
-{% endfor %}
 
 <!-- Pagination navigation -->
 {% if pagination.pages > 1 %}
@@ -256,29 +223,51 @@
 {% endif %}
 {% endblock %}
 
+{% block scripts %}
 <script>
-// Debug script for delete buttons
+// Simple confirm dialog for delete functionality
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Course list page loaded');
     
-    // Check all delete buttons
-    const deleteButtons = document.querySelectorAll('button[data-bs-target^="#deleteCourseModal"]');
-    console.log('Found delete buttons:', deleteButtons.length);
+    // Handle delete course buttons
+    const deleteCourseButtons = document.querySelectorAll('.delete-course-btn');
+    console.log('Found delete course buttons:', deleteCourseButtons.length);
     
-    deleteButtons.forEach((button, index) => {
-        console.log(`Button ${index}:`, button.getAttribute('data-bs-target'));
-        
+    deleteCourseButtons.forEach(button => {
         button.addEventListener('click', function(e) {
-            console.log('Delete button clicked:', this.getAttribute('data-bs-target'));
+            e.preventDefault();
+            
+            const courseName = this.getAttribute('data-course-name');
+            const deleteUrl = this.getAttribute('data-delete-url');
+            
+            console.log('Delete button clicked for course:', courseName);
+            
+            const confirmed = confirm(
+                `Are you sure you want to delete course "${courseName}"?\n\n` +
+                'WARNING: This action will delete all related data including:\n' +
+                '• Student enrollment records\n' +
+                '• Q&A questions and answers\n' +
+                '• Activities and student submissions\n' +
+                '• The course itself\n\n' +
+                'This action cannot be undone!'
+            );
+            
+            if (confirmed) {
+                console.log('Deletion confirmed, submitting form');
+                
+                // Create a form and submit it
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = deleteUrl;
+                form.style.display = 'none';
+                
+                document.body.appendChild(form);
+                form.submit();
+            } else {
+                console.log('Deletion cancelled');
+            }
         });
-    });
-    
-    // Check all modals
-    const modals = document.querySelectorAll('[id^="deleteCourseModal"]');
-    console.log('Found modals:', modals.length);
-    
-    modals.forEach((modal, index) => {
-        console.log(`Modal ${index}:`, modal.id);
     });
 });
 </script>
+{% endblock %}

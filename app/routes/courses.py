@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_required, current_user
 from werkzeug.security import generate_password_hash
 from app import db
-from app.models import Course, User, Enrollment, Activity, Question, Answer
+from app.models import Course, User, Enrollment, Activity, Question, Answer, AnswerVote
 from app.forms import CourseForm, StudentImportForm
 import csv
 import io
@@ -19,15 +19,19 @@ def list_courses():
         courses = Course.query.paginate(
             page=page, per_page=per_page, error_out=False
         )
+        return render_template('courses/course_list.html', courses=courses.items, pagination=courses)
     elif current_user.role == 'instructor':
         courses = Course.query.filter_by(instructor_id=current_user.id).paginate(
             page=page, per_page=per_page, error_out=False
         )
+        return render_template('courses/course_list.html', courses=courses.items, pagination=courses)
     else:
-        enrolled_courses = [enrollment.course for enrollment in current_user.enrollments]
-        return render_template('courses/student_courses.html', courses=enrolled_courses)
-    
-    return render_template('courses/course_list.html', courses=courses.items, pagination=courses)
+        # Student: paginate enrolled courses
+        enrollment_ids = [e.course_id for e in current_user.enrollments]
+        courses = Course.query.filter(Course.id.in_(enrollment_ids)).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        return render_template('courses/student_courses.html', courses=courses.items, pagination=courses)
 
 @bp.route('/courses/create', methods=['GET', 'POST'])
 @login_required
@@ -233,11 +237,22 @@ def delete_course(course_id):
         return redirect(url_for('courses.list_courses'))
     
     try:
-        # Delete related data
+        # Delete related data in correct order to avoid foreign key constraint issues
+        
         # 1. Delete course related questions and answers
         for question in course.questions:
+            # First, clear best_answer_id to avoid foreign key constraint
+            if question.best_answer_id:
+                question.best_answer_id = None
+                db.session.flush()
+            
+            # Delete all vote records for answers
+            for answer in question.answers:
+                AnswerVote.query.filter_by(answer_id=answer.id).delete()
+            
             # Delete all answers of the question
             Answer.query.filter_by(question_id=question.id).delete()
+            
             # Delete the question
             db.session.delete(question)
         
