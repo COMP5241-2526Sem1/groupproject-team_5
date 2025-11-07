@@ -88,6 +88,7 @@
             <div class="modal-footer border-0">
                 <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
                 <form method="POST" action="{{ url_for('activities.delete_activity', activity_id=activity.id) }}" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <button type="submit" class="btn btn-danger btn-sm">
                         <i class="bi bi-trash"></i> Confirm Delete
                     </button>
