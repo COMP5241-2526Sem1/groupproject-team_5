@@ -646,19 +646,12 @@ def delete_activity(activity_id):
         db.session.commit()
         
         flash(f'Activity "{activity.title}" deleted successfully', 'success')
-        return jsonify({
-            'success': True, 
-            'message': 'Activity deleted successfully',
-            'redirect_url': url_for('activities.list_activities')
-        })
         
     except Exception as e:
         db.session.rollback()
         flash('Error occurred while deleting activity, please try again later', 'error')
-        return jsonify({
-            'success': False, 
-            'message': f'Delete failed: {str(e)}'
-        })
+    
+    return redirect(url_for('activities.list_activities'))
 
 @bp.route('/activities/<int:activity_id>/edit', methods=['GET', 'POST'])
 @login_required
