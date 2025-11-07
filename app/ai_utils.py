@@ -24,18 +24,11 @@ def generate_questions(text: str) -> List[str]:
     ark_api_key = os.environ.get('ARK_API_KEY')
     openai_api_key = os.environ.get('OPENAI_API_KEY')
     
-    print(f"Debug: ARK API Key: {ark_api_key[:8]}..." if ark_api_key else "Debug: No ARK API Key")
-    print(f"Debug: OpenAI API Key exists: {bool(openai_api_key)}")
-    
-    # 修复ARK API Key检查 - 支持UUID格式的key
     if ark_api_key and ark_api_key != 'your-bytedance-ark-api-key-here' and len(ark_api_key) > 10:
-        print("Attempting to use ARK API")
         return generate_questions_with_ark(text, ark_api_key)
     elif openai_api_key and openai_api_key != 'your-openai-api-key-here' and openai_api_key.startswith('sk-'):
-        print("Using OpenAI API")
         return generate_questions_with_openai(text, openai_api_key)
     else:
-        print("Using fallback method")
         return generate_questions_fallback(text)
 
 def generate_questions_with_ark(text: str, api_key: str) -> List[str]:
@@ -45,12 +38,10 @@ def generate_questions_with_ark(text: str, api_key: str) -> List[str]:
             print("Volcengine SDK not available, using fallback")
             return generate_questions_fallback(text)
             
-        # 使用提供的初始化方法
         client = Ark(
+            base_url="https://ark.cn-beijing.volces.com/api/v3",
             api_key=api_key,
         )
-        
-        print(f"Making API call to Ark with model: doubao-1-5-pro-32k-250115")
         
         completion = client.chat.completions.create(
             model="doubao-1-5-pro-32k-250115",
@@ -66,11 +57,8 @@ def generate_questions_with_ark(text: str, api_key: str) -> List[str]:
             ]
         )
         
-        print(f"API response received successfully")
         questions_text = completion.choices[0].message.content.strip()
         questions = [q.strip() for q in questions_text.split('\n') if q.strip()]
-        
-        print(f"Generated {len(questions)} questions: {questions}")
         
         if len(questions) < 3:
             questions.extend(generate_questions_fallback(text)[:3-len(questions)])
@@ -79,7 +67,6 @@ def generate_questions_with_ark(text: str, api_key: str) -> List[str]:
         
     except Exception as e:
         print(f"Ark API error: {e}")
-        print(f"Error type: {type(e).__name__}")
         return generate_questions_fallback(text)
 
 def generate_questions_with_openai(text: str, api_key: str) -> List[str]:
