@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_required, current_user
 from werkzeug.security import generate_password_hash
 from app import db
-from app.models import Course, User, Enrollment, Activity
+from app.models import Course, User, Enrollment, Activity, Question, Answer
 from app.forms import CourseForm, StudentImportForm
 import csv
 import io
@@ -12,15 +12,22 @@ bp = Blueprint('courses', __name__)
 @bp.route('/courses')
 @login_required
 def list_courses():
+    page = request.args.get('page', 1, type=int)
+    per_page = 6  # 每页显示6个课程
+    
     if current_user.role == 'admin':
-        courses = Course.query.all()
+        courses = Course.query.paginate(
+            page=page, per_page=per_page, error_out=False
+        )
     elif current_user.role == 'instructor':
-        courses = Course.query.filter_by(instructor_id=current_user.id).all()
+        courses = Course.query.filter_by(instructor_id=current_user.id).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
     else:
         enrolled_courses = [enrollment.course for enrollment in current_user.enrollments]
         return render_template('courses/student_courses.html', courses=enrolled_courses)
     
-    return render_template('courses/course_list.html', courses=courses)
+    return render_template('courses/course_list.html', courses=courses.items, pagination=courses)
 
 @bp.route('/courses/create', methods=['GET', 'POST'])
 @login_required
@@ -171,3 +178,83 @@ def enroll_course(course_id):
         flash(f'成功选修课程：{course.name}', 'success')
     
     return redirect(url_for('courses.browse_courses'))
+
+@bp.route('/courses/<int:course_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_course(course_id):
+    """编辑课程 - 管理员可以编辑所有课程，教师只能编辑自己的课程"""
+    course = Course.query.get_or_404(course_id)
+    
+    # 权限检查
+    if current_user.role == 'admin':
+        # 管理员可以编辑所有课程
+        pass
+    elif current_user.role == 'instructor' and course.instructor_id == current_user.id:
+        # 教师只能编辑自己的课程
+        pass
+    else:
+        flash('您没有编辑此课程的权限', 'error')
+        return redirect(url_for('courses.list_courses'))
+    
+    form = CourseForm()
+    
+    if form.validate_on_submit():
+        course.name = form.name.data
+        course.semester = form.semester.data
+        course.description = form.description.data
+        
+        db.session.commit()
+        flash('课程信息更新成功！', 'success')
+        return redirect(url_for('courses.course_detail', course_id=course.id))
+    
+    # 预填充表单数据
+    if request.method == 'GET':
+        form.name.data = course.name
+        form.semester.data = course.semester
+        form.description.data = course.description
+    
+    return render_template('courses/edit_course.html', form=form, course=course)
+
+@bp.route('/courses/<int:course_id>/delete', methods=['POST'])
+@login_required
+def delete_course(course_id):
+    """删除课程 - 管理员可以删除所有课程，教师只能删除自己的课程"""
+    course = Course.query.get_or_404(course_id)
+    
+    # 权限检查
+    if current_user.role == 'admin':
+        # 管理员可以删除所有课程
+        pass
+    elif current_user.role == 'instructor' and course.instructor_id == current_user.id:
+        # 教师只能删除自己的课程
+        pass
+    else:
+        flash('您没有删除此课程的权限', 'error')
+        return redirect(url_for('courses.list_courses'))
+    
+    try:
+        # 删除相关数据
+        # 1. 删除课程相关的问题和答案
+        for question in course.questions:
+            # 删除问题的所有答案
+            Answer.query.filter_by(question_id=question.id).delete()
+            # 删除问题
+            db.session.delete(question)
+        
+        # 2. 删除课程相关的活动和响应
+        for activity in course.activities:
+            db.session.delete(activity)  # 响应会通过级联删除
+        
+        # 3. 删除选课记录
+        Enrollment.query.filter_by(course_id=course.id).delete()
+        
+        # 4. 删除课程本身
+        db.session.delete(course)
+        db.session.commit()
+        
+        flash('课程删除成功！', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('删除课程时发生错误，请稍后重试', 'error')
+    
+    return redirect(url_for('courses.list_courses'))

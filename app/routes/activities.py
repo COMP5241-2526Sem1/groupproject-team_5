@@ -34,16 +34,29 @@ STOPWORDS = {
 @bp.route('/activities')
 @login_required
 def list_activities():
+    page = request.args.get('page', 1, type=int)
+    per_page = 9  # 每页显示9个活动
+    
     if current_user.role == 'admin':
-        activities = Activity.query.order_by(Activity.created_at.desc()).all()
+        activities = Activity.query.order_by(Activity.created_at.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
     elif current_user.role == 'instructor':
-        activities = Activity.query.join(Course).filter(Course.instructor_id == current_user.id).order_by(Activity.created_at.desc()).all()
+        activities = Activity.query.join(Course).filter(
+            Course.instructor_id == current_user.id
+        ).order_by(Activity.created_at.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
     else:
         enrolled_courses = [enrollment.course for enrollment in current_user.enrollments]
         course_ids = [course.id for course in enrolled_courses]
-        activities = Activity.query.filter(Activity.course_id.in_(course_ids)).order_by(Activity.created_at.desc()).all()
+        activities = Activity.query.filter(
+            Activity.course_id.in_(course_ids)
+        ).order_by(Activity.created_at.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
     
-    return render_template('activities/activity_list.html', activities=activities)
+    return render_template('activities/activity_list.html', activities=activities.items, pagination=activities)
 
 def auto_end_activity(activity_id, duration_seconds):
     """后台任务：自动结束活动"""
@@ -605,3 +618,83 @@ def export_course_activities(course_id):
     response_obj.headers['Content-Disposition'] = f'attachment; filename=course_{course_id}_activities.csv'
     
     return response_obj
+
+@bp.route('/activities/<int:activity_id>/delete', methods=['POST'])
+@login_required
+def delete_activity(activity_id):
+    """删除活动 - 管理员和教师权限"""
+    activity = Activity.query.get_or_404(activity_id)
+    course = Course.query.get_or_404(activity.course_id)
+    
+    # 权限检查
+    if current_user.role == 'admin':
+        # 管理员可以删除所有活动
+        pass
+    elif current_user.role == 'instructor' and course.instructor_id == current_user.id:
+        # 教师只能删除自己课程的活动
+        pass
+    else:
+        flash('您没有权限删除此活动', 'error')
+        return redirect(url_for('activities.list_activities'))
+    
+    try:
+        # 删除所有相关的响应
+        Response.query.filter_by(activity_id=activity_id).delete()
+        
+        # 删除活动本身
+        db.session.delete(activity)
+        db.session.commit()
+        
+        flash(f'活动 "{activity.title}" 已成功删除', 'success')
+        return jsonify({
+            'success': True, 
+            'message': '活动已成功删除',
+            'redirect_url': url_for('activities.list_activities')
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        flash('删除活动时发生错误，请稍后重试', 'error')
+        return jsonify({
+            'success': False, 
+            'message': f'删除失败：{str(e)}'
+        })
+
+@bp.route('/activities/<int:activity_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_activity(activity_id):
+    """编辑活动 - 管理员和教师权限"""
+    activity = Activity.query.get_or_404(activity_id)
+    course = Course.query.get_or_404(activity.course_id)
+    
+    # 权限检查
+    if current_user.role == 'admin':
+        # 管理员可以编辑所有活动
+        pass
+    elif current_user.role == 'instructor' and course.instructor_id == current_user.id:
+        # 教师只能编辑自己课程的活动
+        pass
+    else:
+        flash('您没有权限编辑此活动', 'error')
+        return redirect(url_for('activities.list_activities'))
+    
+    form = ActivityForm()
+    
+    if form.validate_on_submit():
+        activity.title = form.title.data
+        activity.type = form.type.data
+        activity.question = form.question.data
+        activity.options = form.options.data
+        
+        db.session.commit()
+        flash('活动信息更新成功！', 'success')
+        return redirect(url_for('activities.view_activity', activity_id=activity.id))
+    
+    # 预填充表单数据
+    if request.method == 'GET':
+        form.title.data = activity.title
+        form.type.data = activity.type
+        form.question.data = activity.question
+        form.options.data = activity.options
+    
+    return render_template('activities/edit_activity.html', form=form, activity=activity, course=course)

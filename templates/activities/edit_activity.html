@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}编辑活动 - 在线教室{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-xl-8 col-lg-10">
+            <!-- 页面标题 -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold text-primary">
+                    <i class="fas fa-edit me-2"></i>编辑活动
+                </h2>
+                <a href="{{ url_for('activities.list_activities') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>返回活动列表
+                </a>
+            </div>
+
+            <!-- 课程信息 -->
+            <div class="alert alert-info mb-4">
+                <h6 class="mb-0">
+                    <i class="fas fa-book me-2"></i>课程：{{ course.name }}
+                    <span class="badge bg-primary ms-2">{{ course.semester }}</span>
+                </h6>
+            </div>
+
+            <!-- 表单卡片 -->
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-body p-4">
+                    <form method="POST" id="editActivityForm">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- 活动标题 -->
+                        <div class="mb-3">
+                            {{ form.title.label(class="form-label fw-bold") }}
+                            {{ form.title(class="form-control form-control-lg", placeholder="请输入活动标题") }}
+                            {% if form.title.errors %}
+                                {% for error in form.title.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <!-- 活动类型 -->
+                        <div class="mb-3">
+                            {{ form.type.label(class="form-label fw-bold") }}
+                            {{ form.type(class="form-select form-select-lg") }}
+                            {% if form.type.errors %}
+                                {% for error in form.type.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <!-- 活动问题 -->
+                        <div class="mb-3">
+                            {{ form.question.label(class="form-label fw-bold") }}
+                            {{ form.question(class="form-control", rows="4", placeholder="请输入活动问题或描述") }}
+                            {% if form.question.errors %}
+                                {% for error in form.question.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <!-- 选择题选项 -->
+                        <div class="mb-4" id="optionsContainer" style="display: none;">
+                            {{ form.options.label(class="form-label fw-bold") }}
+                            {{ form.options(class="form-control", rows="3", placeholder="对于选择题，请输入选项（每行一个选项）") }}
+                            <div class="form-text">每行输入一个选项，留空表示该类型活动不需要选项</div>
+                            {% if form.options.errors %}
+                                {% for error in form.options.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <!-- 按钮组 -->
+                        <div class="d-flex gap-3 justify-content-end">
+                            <a href="{{ url_for('activities.activity_detail', activity_id=activity.id) }}" 
+                               class="btn btn-outline-secondary btn-lg px-4">
+                                <i class="fas fa-times me-2"></i>取消
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg px-4" id="submitBtn">
+                                <i class="fas fa-save me-2"></i>保存修改
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 危险区域：删除活动 -->
+            {% if current_user.role == 'admin' or (current_user.role == 'instructor' and course.instructor_id == current_user.id) %}
+            <div class="card border-danger mt-4">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>危险操作
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-danger">删除活动</h6>
+                    <p class="text-muted mb-3">
+                        删除活动后，该活动下的所有学生响应和回答都将被永久删除，此操作无法撤销。
+                    </p>
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteActivityModal">
+                        <i class="fas fa-trash me-2"></i>删除活动
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认模态框 -->
+{% if current_user.role == 'admin' or (current_user.role == 'instructor' and course.instructor_id == current_user.id) %}
+<div class="modal fade" id="deleteActivityModal" tabindex="-1" aria-labelledby="deleteActivityModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-danger" id="deleteActivityModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>确认删除活动
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+            </div>
+            <div class="modal-body">
+                <p>您确定要删除活动 <strong class="text-danger">{{ activity.title }}</strong> 吗？</p>
+                <div class="alert alert-danger" role="alert">
+                    <strong>警告：</strong>此操作将：
+                    <ul class="mb-0 mt-2">
+                        <li>删除所有学生的响应和回答</li>
+                        <li>删除活动的所有统计数据</li>
+                        <li>删除活动本身</li>
+                    </ul>
+                    <p class="mt-2 mb-0">此操作无法撤销！</p>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <form method="POST" action="{{ url_for('activities.delete_activity', activity_id=activity.id) }}" class="d-inline">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-2"></i>确认删除
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+.card {
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.btn {
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #f8d7da 0%, #f1c0c3 100%);
+    border: none;
+}
+
+.card.border-danger {
+    box-shadow: 0 0 15px rgba(220, 53, 69, 0.1);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('editActivityForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const typeSelect = document.getElementById('type');
+    const optionsContainer = document.getElementById('optionsContainer');
+    
+    // 显示/隐藏选项输入框
+    function toggleOptionsVisibility() {
+        if (typeSelect.value === 'choice') {
+            optionsContainer.style.display = 'block';
+        } else {
+            optionsContainer.style.display = 'none';
+        }
+    }
+    
+    // 初始化显示状态
+    toggleOptionsVisibility();
+    
+    // 监听类型变化
+    typeSelect.addEventListener('change', toggleOptionsVisibility);
+    
+    form.addEventListener('submit', function(e) {
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>保存中...';
+        submitBtn.disabled = true;
+    });
+    
+    // 表单验证提示
+    const inputs = form.querySelectorAll('input, textarea, select');
+    inputs.forEach(input => {
+        input.addEventListener('blur', function() {
+            if (this.value.trim() === '' && this.hasAttribute('required')) {
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.remove('is-invalid');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

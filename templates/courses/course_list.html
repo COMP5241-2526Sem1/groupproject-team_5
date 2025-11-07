@@ -116,10 +116,33 @@
                     </div>
                 </div>
             </div>
-            <div class="card-footer bg-transparent text-center">
-                <small class="text-muted">
-                    <i class="bi bi-calendar-event"></i> Created {{ course.created_at.strftime('%Y-%m-%d') }}
-                </small>
+            <div class="card-footer bg-transparent">
+                <!-- 管理按钮 - 只有管理员或课程创建者可以看到 -->
+                {% if current_user.role == 'admin' or (current_user.role == 'instructor' and course.instructor_id == current_user.id) %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="{{ url_for('courses.edit_course', course_id=course.id) }}" 
+                           class="btn btn-outline-primary btn-sm" title="编辑课程">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <button type="button" class="btn btn-outline-danger btn-sm" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#deleteCourseModal{{ course.id }}" 
+                                title="删除课程">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                    <small class="text-muted">
+                        <i class="bi bi-calendar-event"></i> {{ course.created_at.strftime('%m-%d') }}
+                    </small>
+                </div>
+                {% else %}
+                <div class="text-center">
+                    <small class="text-muted">
+                        <i class="bi bi-calendar-event"></i> Created {{ course.created_at.strftime('%Y-%m-%d') }}
+                    </small>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -138,4 +161,96 @@
     </div>
     {% endfor %}
 </div>
+
+<!-- 删除课程确认模态框 -->
+{% for course in courses %}
+{% if current_user.role == 'admin' or (current_user.role == 'instructor' and course.instructor_id == current_user.id) %}
+<div class="modal fade" id="deleteCourseModal{{ course.id }}" tabindex="-1" aria-labelledby="deleteCourseModalLabel{{ course.id }}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-danger" id="deleteCourseModalLabel{{ course.id }}">
+                    <i class="bi bi-exclamation-triangle"></i> 确认删除课程
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+            </div>
+            <div class="modal-body">
+                <p>您确定要删除课程 <strong class="text-danger">{{ course.name }}</strong> 吗？</p>
+                <div class="alert alert-danger" role="alert">
+                    <small><strong>警告：</strong>此操作将删除该课程的所有相关数据，包括学生选课记录、Q&A问题和活动等，且无法撤销。</small>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">取消</button>
+                <form method="POST" action="{{ url_for('courses.delete_course', course_id=course.id) }}" class="d-inline">
+                    <button type="submit" class="btn btn-danger btn-sm">
+                        <i class="bi bi-trash"></i> 确认删除
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+<!-- 分页导航 -->
+{% if pagination.pages > 1 %}
+<nav aria-label="课程分页">
+    <ul class="pagination justify-content-center mt-4">
+        {% if pagination.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('courses.list_courses', page=pagination.prev_num) }}">
+                    <i class="bi bi-chevron-left"></i> 上一页
+                </a>
+            </li>
+        {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">
+                    <i class="bi bi-chevron-left"></i> 上一页
+                </span>
+            </li>
+        {% endif %}
+        
+        {% for page_num in pagination.iter_pages() %}
+            {% if page_num %}
+                {% if page_num != pagination.page %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('courses.list_courses', page=page_num) }}">{{ page_num }}</a>
+                    </li>
+                {% else %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ page_num }}</span>
+                    </li>
+                {% endif %}
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">…</span>
+                </li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if pagination.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('courses.list_courses', page=pagination.next_num) }}">
+                    下一页 <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+        {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">
+                    下一页 <i class="bi bi-chevron-right"></i>
+                </span>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+
+<div class="text-center text-muted mt-3">
+    <small>
+        显示第 {{ pagination.page }} 页，共 {{ pagination.pages }} 页
+        （总计 {{ pagination.total }} 个课程）
+    </small>
+</div>
+{% endif %}
 {% endblock %}

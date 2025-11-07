@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}编辑课程 - 在线教室{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-xl-8 col-lg-10">
+            <!-- 页面标题 -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold text-primary">
+                    <i class="fas fa-edit me-2"></i>编辑课程
+                </h2>
+                <a href="{{ url_for('courses.list_courses') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>返回课程列表
+                </a>
+            </div>
+
+            <!-- 表单卡片 -->
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-body p-4">
+                    <form method="POST" id="editCourseForm">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- 课程名称 -->
+                        <div class="mb-3">
+                            {{ form.name.label(class="form-label fw-bold") }}
+                            {{ form.name(class="form-control form-control-lg", placeholder="请输入课程名称") }}
+                            {% if form.name.errors %}
+                                {% for error in form.name.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <!-- 学期 -->
+                        <div class="mb-3">
+                            {{ form.semester.label(class="form-label fw-bold") }}
+                            {{ form.semester(class="form-control form-control-lg", placeholder="请输入学期信息") }}
+                            {% if form.semester.errors %}
+                                {% for error in form.semester.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <!-- 课程描述 -->
+                        <div class="mb-4">
+                            {{ form.description.label(class="form-label fw-bold") }}
+                            {{ form.description(class="form-control", rows="6", placeholder="请输入课程描述") }}
+                            {% if form.description.errors %}
+                                {% for error in form.description.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <!-- 按钮组 -->
+                        <div class="d-flex gap-3 justify-content-end">
+                            <a href="{{ url_for('courses.course_detail', course_id=course.id) }}" 
+                               class="btn btn-outline-secondary btn-lg px-4">
+                                <i class="fas fa-times me-2"></i>取消
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg px-4" id="submitBtn">
+                                <i class="fas fa-save me-2"></i>保存修改
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 危险区域：删除课程 -->
+            {% if current_user.role == 'admin' or (current_user.role == 'instructor' and course.instructor_id == current_user.id) %}
+            <div class="card border-danger mt-4">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>危险操作
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-danger">删除课程</h6>
+                    <p class="text-muted mb-3">
+                        删除课程后，该课程下的所有数据（包括学生选课记录、Q&A问题、活动等）都将被永久删除，此操作无法撤销。
+                    </p>
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteCourseModal">
+                        <i class="fas fa-trash me-2"></i>删除课程
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认模态框 -->
+{% if current_user.role == 'admin' or (current_user.role == 'instructor' and course.instructor_id == current_user.id) %}
+<div class="modal fade" id="deleteCourseModal" tabindex="-1" aria-labelledby="deleteCourseModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-danger" id="deleteCourseModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>确认删除课程
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+            </div>
+            <div class="modal-body">
+                <p>您确定要删除课程 <strong class="text-danger">{{ course.name }}</strong> 吗？</p>
+                <div class="alert alert-danger" role="alert">
+                    <strong>警告：</strong>此操作将：
+                    <ul class="mb-0 mt-2">
+                        <li>删除所有学生的选课记录</li>
+                        <li>删除课程下的所有Q&A问题和答案</li>
+                        <li>删除课程下的所有活动和学生提交</li>
+                        <li>删除课程本身</li>
+                    </ul>
+                    <p class="mt-2 mb-0">此操作无法撤销！</p>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <form method="POST" action="{{ url_for('courses.delete_course', course_id=course.id) }}" class="d-inline">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-2"></i>确认删除
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+.card {
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.btn {
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #f8d7da 0%, #f1c0c3 100%);
+    border: none;
+}
+
+.card.border-danger {
+    box-shadow: 0 0 15px rgba(220, 53, 69, 0.1);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('editCourseForm');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    form.addEventListener('submit', function(e) {
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>保存中...';
+        submitBtn.disabled = true;
+    });
+    
+    // 表单验证提示
+    const inputs = form.querySelectorAll('input, textarea');
+    inputs.forEach(input => {
+        input.addEventListener('blur', function() {
+            if (this.value.trim() === '' && this.hasAttribute('required')) {
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.remove('is-invalid');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
