@@ -101,13 +101,47 @@
                 <h5><i class="bi bi-robot"></i> AI-Assisted Question Generation</h5>
             </div>
             <div class="card-body">
-                <div class="mb-3">
-                    <label for="ai-text" class="form-label">Paste Teaching Text</label>
-                    <textarea id="ai-text" class="form-control" rows="4" placeholder="Paste your teaching text here, and AI will generate related questions..."></textarea>
+                <!-- Tab navigation -->
+                <ul class="nav nav-tabs" id="aiTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="text-tab" data-bs-toggle="tab" data-bs-target="#text-panel" type="button" role="tab">
+                            <i class="bi bi-file-text"></i> Text Input
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="file-tab" data-bs-toggle="tab" data-bs-target="#file-panel" type="button" role="tab">
+                            <i class="bi bi-file-earmark-arrow-up"></i> File Upload
+                        </button>
+                    </li>
+                </ul>
+                
+                <!-- Tab content -->
+                <div class="tab-content mt-3" id="aiTabContent">
+                    <!-- Text input tab -->
+                    <div class="tab-pane fade show active" id="text-panel" role="tabpanel">
+                        <div class="mb-3">
+                            <label for="ai-text" class="form-label">Paste Teaching Text</label>
+                            <textarea id="ai-text" class="form-control" rows="4" placeholder="Paste your teaching text here, and AI will generate related questions..."></textarea>
+                        </div>
+                        <button id="generate-questions-text" class="btn btn-outline-primary">
+                            <i class="bi bi-robot"></i> Generate Questions
+                        </button>
+                    </div>
+                    
+                    <!-- File upload tab -->
+                    <div class="tab-pane fade" id="file-panel" role="tabpanel">
+                        <div class="mb-3">
+                            <label for="ai-file" class="form-label">Upload Document</label>
+                            <input type="file" id="ai-file" class="form-control" accept=".pdf,.docx" />
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i> Supported formats: PDF (.pdf), Word Document (.docx). Maximum size: 10MB
+                            </div>
+                        </div>
+                        <button id="generate-questions-file" class="btn btn-outline-primary">
+                            <i class="bi bi-robot"></i> Generate Questions from File
+                        </button>
+                    </div>
                 </div>
-                <button id="generate-questions" class="btn btn-outline-primary">
-                    <i class="bi bi-robot"></i> Generate Questions
-                </button>
                 
                 <div id="generated-questions" class="mt-3" style="display: none;">
                     <h6>Generated Questions:</h6>
@@ -139,15 +173,48 @@ document.getElementById('type').addEventListener('change', function() {
     }
 });
 
-document.getElementById('generate-questions').addEventListener('click', function() {
+// 处理文本输入的问题生成
+document.getElementById('generate-questions-text').addEventListener('click', function() {
     const text = document.getElementById('ai-text').value.trim();
     if (!text) {
         alert('Please enter teaching text');
         return;
     }
     
-    this.disabled = true;
-    this.innerHTML = '<i class="bi bi-hourglass-split"></i> Generating...';
+    generateQuestionsFromText(text, this);
+});
+
+// 处理文件上传的问题生成
+document.getElementById('generate-questions-file').addEventListener('click', function() {
+    const fileInput = document.getElementById('ai-file');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        alert('Please select a file');
+        return;
+    }
+    
+    // 验证文件类型
+    const allowedTypes = ['.pdf', '.docx'];
+    const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+    if (!allowedTypes.includes(fileExtension)) {
+        alert('Please upload a PDF or Word document');
+        return;
+    }
+    
+    // 验证文件大小 (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+        alert('File size must be less than 10MB');
+        return;
+    }
+    
+    generateQuestionsFromFile(file, this);
+});
+
+// 从文本生成问题的函数
+function generateQuestionsFromText(text, button) {
+    button.disabled = true;
+    button.innerHTML = '<i class="bi bi-hourglass-split"></i> Generating...';
     
     fetch('{{ url_for("activities.generate_questions_route") }}', {
         method: 'POST',
@@ -158,38 +225,75 @@ document.getElementById('generate-questions').addEventListener('click', function
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success) {
-            const questionsList = document.getElementById('questions-list');
-            questionsList.innerHTML = '';
-            
-            data.questions.forEach((question, index) => {
-                const questionDiv = document.createElement('div');
-                questionDiv.className = 'card mb-2';
-                questionDiv.innerHTML = `
-                    <div class="card-body">
-                        <p class="card-text">${question}</p>
-                        <button class="btn btn-sm btn-outline-primary use-question" data-question="${question}">
-                            Use this question
-                        </button>
-                    </div>
-                `;
-                questionsList.appendChild(questionDiv);
-            });
-            
-            document.getElementById('generated-questions').style.display = 'block';
-        } else {
-            alert('Generation failed: ' + data.message);
-        }
+        handleGeneratedQuestions(data);
     })
     .catch(error => {
         console.error('Error:', error);
         alert('Generation failed, please try again');
     })
     .finally(() => {
-        this.disabled = false;
-        this.innerHTML = '<i class="bi bi-robot"></i> Generate Questions';
+        button.disabled = false;
+        button.innerHTML = '<i class="bi bi-robot"></i> Generate Questions';
     });
-});
+}
+
+// 从文件生成问题的函数
+function generateQuestionsFromFile(file, button) {
+    button.disabled = true;
+    button.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing file...';
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    fetch('{{ url_for("activities.generate_questions_route") }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        handleGeneratedQuestions(data);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('File processing failed, please try again');
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.innerHTML = '<i class="bi bi-robot"></i> Generate Questions from File';
+    });
+}
+
+// 处理生成的问题
+function handleGeneratedQuestions(data) {
+    if (data.success) {
+        const questionsList = document.getElementById('questions-list');
+        questionsList.innerHTML = '';
+        
+        data.questions.forEach((question, index) => {
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'card mb-2';
+            questionDiv.innerHTML = `
+                <div class="card-body">
+                    <p class="card-text">${question}</p>
+                    <button class="btn btn-sm btn-outline-primary use-question" data-question="${question}">
+                        Use this question
+                    </button>
+                </div>
+            `;
+            questionsList.appendChild(questionDiv);
+        });
+        
+        document.getElementById('generated-questions').style.display = 'block';
+        
+        // 滚动到生成的问题区域
+        document.getElementById('generated-questions').scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+        });
+    } else {
+        alert('Generation failed: ' + data.message);
+    }
+}
 
 document.addEventListener('click', function(e) {
     if (e.target.classList.contains('use-question')) {

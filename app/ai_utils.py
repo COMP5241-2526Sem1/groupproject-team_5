@@ -6,6 +6,22 @@ from typing import List, Dict, Any
 from collections import Counter
 import json
 
+# 添加文件处理支持
+try:
+    from docx import Document
+except ImportError:
+    Document = None
+
+try:
+    import PyPDF2
+except ImportError:
+    PyPDF2 = None
+
+try:
+    import pdfplumber
+except ImportError:
+    pdfplumber = None
+
 # 添加dotenv支持
 try:
     from dotenv import load_dotenv
@@ -446,3 +462,109 @@ def group_answers_fallback(answers: List[str]) -> Dict[str, Any]:
         'summary': f'Analyzed {len(answers)} responses with {len(groups)} main themes',
         'insights': f'Most common themes: {", ".join(common_words[:3])}'
     }
+
+def extract_text_from_file(file_path: str, file_extension: str) -> str:
+    """
+    从上传的文件中提取文本内容
+    支持的文件格式：.docx, .pdf
+    """
+    try:
+        if file_extension.lower() == '.docx':
+            return extract_text_from_docx(file_path)
+        elif file_extension.lower() == '.pdf':
+            return extract_text_from_pdf(file_path)
+        else:
+            raise ValueError(f"Unsupported file format: {file_extension}")
+    except Exception as e:
+        raise Exception(f"Failed to extract text from file: {str(e)}")
+
+def extract_text_from_docx(file_path: str) -> str:
+    """从Word文档中提取文本"""
+    if not Document:
+        raise ImportError("python-docx library not installed")
+    
+    try:
+        doc = Document(file_path)
+        full_text = []
+        
+        # 提取段落文本
+        for paragraph in doc.paragraphs:
+            if paragraph.text.strip():
+                full_text.append(paragraph.text.strip())
+        
+        # 提取表格文本
+        for table in doc.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    if cell.text.strip():
+                        full_text.append(cell.text.strip())
+        
+        text = '\n'.join(full_text)
+        if not text.strip():
+            raise ValueError("No text content found in the Word document")
+        
+        return text
+    except Exception as e:
+        raise Exception(f"Error reading Word document: {str(e)}")
+
+def extract_text_from_pdf(file_path: str) -> str:
+    """从PDF文件中提取文本，优先使用pdfplumber，回退到PyPDF2"""
+    text = ""
+    
+    # 优先使用pdfplumber，它对复杂PDF的处理更好
+    if pdfplumber:
+        try:
+            with pdfplumber.open(file_path) as pdf:
+                for page in pdf.pages:
+                    page_text = page.extract_text()
+                    if page_text:
+                        text += page_text + "\n"
+            if text.strip():
+                return text
+        except Exception as e:
+            print(f"pdfplumber failed: {e}, trying PyPDF2...")
+    
+    # 回退到PyPDF2
+    if PyPDF2:
+        try:
+            with open(file_path, 'rb') as file:
+                pdf_reader = PyPDF2.PdfReader(file)
+                for page in pdf_reader.pages:
+                    page_text = page.extract_text()
+                    if page_text:
+                        text += page_text + "\n"
+            if text.strip():
+                return text
+        except Exception as e:
+            raise Exception(f"Error reading PDF with PyPDF2: {str(e)}")
+    
+    if not text.strip():
+        raise ValueError("No text content found in the PDF file or PDF libraries not available")
+    
+    return text
+
+def validate_file_upload(file, allowed_extensions=None):
+    """
+    验证上传的文件
+    """
+    if allowed_extensions is None:
+        allowed_extensions = {'.pdf', '.docx'}
+    
+    if not file or not file.filename:
+        return False, "No file selected"
+    
+    # 检查文件扩展名
+    file_extension = os.path.splitext(file.filename)[1].lower()
+    if file_extension not in allowed_extensions:
+        return False, f"Unsupported file format. Allowed formats: {', '.join(allowed_extensions)}"
+    
+    # 检查文件大小（限制为10MB）
+    file.seek(0, 2)  # 移动到文件末尾
+    file_size = file.tell()
+    file.seek(0)  # 重置文件指针
+    
+    max_size = 10 * 1024 * 1024  # 10MB
+    if file_size > max_size:
+        return False, f"File too large. Maximum size allowed: {max_size // (1024*1024)}MB"
+    
+    return True, "File is valid"

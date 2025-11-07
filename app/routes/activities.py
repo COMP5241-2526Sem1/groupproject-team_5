@@ -3,15 +3,18 @@ from flask_login import login_required, current_user
 from app import db, socketio
 from app.models import Course, Activity, Response, User, Enrollment
 from app.forms import ActivityForm, AIQuestionForm
-from app.ai_utils import generate_questions, generate_activity_from_content, group_answers
+from app.ai_utils import generate_questions, generate_activity_from_content, group_answers, extract_text_from_file, validate_file_upload
 from datetime import datetime, timedelta
 import json
 import re
 import csv
 import io
 import time
+import os
+import tempfile
 from collections import Counter
 from flask import make_response
+from werkzeug.utils import secure_filename
 
 bp = Blueprint('activities', __name__)
 
@@ -381,11 +384,43 @@ def generate_questions_route():
     if current_user.role not in ['admin', 'instructor']:
         return jsonify({'success': False, 'message': 'Insufficient permissions'})
     
-    data = request.get_json()
-    text = data.get('text', '').strip()
+    text = ""
+    
+    # 检查是否是文件上传请求
+    if 'file' in request.files:
+        file = request.files['file']
+        
+        # 验证文件
+        is_valid, message = validate_file_upload(file)
+        if not is_valid:
+            return jsonify({'success': False, 'message': message})
+        
+        # 保存临时文件并提取文本
+        try:
+            # 创建临时文件
+            file_extension = os.path.splitext(secure_filename(file.filename))[1]
+            with tempfile.NamedTemporaryFile(delete=False, suffix=file_extension) as temp_file:
+                file.save(temp_file.name)
+                temp_file_path = temp_file.name
+            
+            # 提取文本
+            text = extract_text_from_file(temp_file_path, file_extension)
+            
+            # 清理临时文件
+            os.unlink(temp_file_path)
+            
+        except Exception as e:
+            return jsonify({'success': False, 'message': f'File processing failed: {str(e)}'})
+    
+    else:
+        # 处理JSON请求（原有的文本输入方式）
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'message': 'No data provided'})
+        text = data.get('text', '').strip()
     
     if not text:
-        return jsonify({'success': False, 'message': 'Please enter teaching text'})
+        return jsonify({'success': False, 'message': 'Please enter teaching text or upload a file'})
     
     try:
         questions = generate_questions(text)
