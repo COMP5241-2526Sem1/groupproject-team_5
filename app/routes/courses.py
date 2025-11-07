@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_required, current_user
 from werkzeug.security import generate_password_hash
 from app import db
-from app.models import Course, User, Enrollment, Activity
+from app.models import Course, User, Enrollment, Activity, Question, Answer, AnswerVote
 from app.forms import CourseForm, StudentImportForm
 import csv
 import io
@@ -12,15 +12,26 @@ bp = Blueprint('courses', __name__)
 @bp.route('/courses')
 @login_required
 def list_courses():
-    if current_user.role == 'admin':
-        courses = Course.query.all()
-    elif current_user.role == 'instructor':
-        courses = Course.query.filter_by(instructor_id=current_user.id).all()
-    else:
-        enrolled_courses = [enrollment.course for enrollment in current_user.enrollments]
-        return render_template('courses/student_courses.html', courses=enrolled_courses)
+    page = request.args.get('page', 1, type=int)
+    per_page = 6  # 每页显示6个课程
     
-    return render_template('courses/course_list.html', courses=courses)
+    if current_user.role == 'admin':
+        courses = Course.query.paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        return render_template('courses/course_list.html', courses=courses.items, pagination=courses)
+    elif current_user.role == 'instructor':
+        courses = Course.query.filter_by(instructor_id=current_user.id).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        return render_template('courses/course_list.html', courses=courses.items, pagination=courses)
+    else:
+        # Student: paginate enrolled courses
+        enrollment_ids = [e.course_id for e in current_user.enrollments]
+        courses = Course.query.filter(Course.id.in_(enrollment_ids)).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        return render_template('courses/student_courses.html', courses=courses.items, pagination=courses)
 
 @bp.route('/courses/create', methods=['GET', 'POST'])
 @login_required
@@ -168,6 +179,97 @@ def enroll_course(course_id):
         enrollment = Enrollment(student_id=current_user.id, course_id=course_id)
         db.session.add(enrollment)
         db.session.commit()
-        flash(f'成功选修课程：{course.name}', 'success')
+        flash(f'Successfully enrolled in course: {course.name}', 'success')
     
     return redirect(url_for('courses.browse_courses'))
+
+@bp.route('/courses/<int:course_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_course(course_id):
+    """Edit course - Admin can edit all courses, instructors can edit their own courses"""
+    course = Course.query.get_or_404(course_id)
+    
+    # Permission check
+    if current_user.role == 'admin':
+        # Admin can edit all courses
+        pass
+    elif current_user.role == 'instructor' and course.instructor_id == current_user.id:
+        # Instructor can edit their own courses
+        pass
+    else:
+        flash('You do not have permission to edit this course', 'error')
+        return redirect(url_for('courses.list_courses'))
+    
+    form = CourseForm()
+    
+    if form.validate_on_submit():
+        course.name = form.name.data
+        course.semester = form.semester.data
+        course.description = form.description.data
+        
+        db.session.commit()
+        flash('Course information updated successfully!', 'success')
+        return redirect(url_for('courses.course_detail', course_id=course.id))
+    
+    # Pre-populate form data
+    if request.method == 'GET':
+        form.name.data = course.name
+        form.semester.data = course.semester
+        form.description.data = course.description
+    
+    return render_template('courses/edit_course.html', form=form, course=course)
+
+@bp.route('/courses/<int:course_id>/delete', methods=['POST'])
+@login_required
+def delete_course(course_id):
+    """Delete course - Admin can delete all courses, instructors can delete their own courses"""
+    course = Course.query.get_or_404(course_id)
+    
+    # Permission check
+    if current_user.role == 'admin':
+        # Admin can delete all courses
+        pass
+    elif current_user.role == 'instructor' and course.instructor_id == current_user.id:
+        # Instructor can delete their own courses
+        pass
+    else:
+        flash('You do not have permission to delete this course', 'error')
+        return redirect(url_for('courses.list_courses'))
+    
+    try:
+        # Delete related data in correct order to avoid foreign key constraint issues
+        
+        # 1. Delete course related questions and answers
+        for question in course.questions:
+            # First, clear best_answer_id to avoid foreign key constraint
+            if question.best_answer_id:
+                question.best_answer_id = None
+                db.session.flush()
+            
+            # Delete all vote records for answers
+            for answer in question.answers:
+                AnswerVote.query.filter_by(answer_id=answer.id).delete()
+            
+            # Delete all answers of the question
+            Answer.query.filter_by(question_id=question.id).delete()
+            
+            # Delete the question
+            db.session.delete(question)
+        
+        # 2. Delete course related activities and responses
+        for activity in course.activities:
+            db.session.delete(activity)  # Responses will be deleted through cascade
+        
+        # 3. Delete enrollment records
+        Enrollment.query.filter_by(course_id=course.id).delete()
+        
+        # 4. Delete the course itself
+        db.session.delete(course)
+        db.session.commit()
+        
+        flash('Course deleted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error occurred while deleting course, please try again later', 'error')
+    
+    return redirect(url_for('courses.list_courses'))

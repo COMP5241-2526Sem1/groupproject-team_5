@@ -74,7 +74,9 @@
                 </div>
                 {% elif activity.type == 'quiz' %}
                 <div class="mt-4">
+                    {% if activity.quiz_type %}
                     <h6>Quiz Type: {{ activity.quiz_type.replace('_', ' ').title() }}</h6>
+                    {% endif %}
                     {% if activity.options %}
                     <h6>Options:</h6>
                     <ul class="list-group">

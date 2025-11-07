@@ -34,16 +34,29 @@ STOPWORDS = {
 @bp.route('/activities')
 @login_required
 def list_activities():
+    page = request.args.get('page', 1, type=int)
+    per_page = 9  # 每页显示9个活动
+    
     if current_user.role == 'admin':
-        activities = Activity.query.order_by(Activity.created_at.desc()).all()
+        activities = Activity.query.order_by(Activity.created_at.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
     elif current_user.role == 'instructor':
-        activities = Activity.query.join(Course).filter(Course.instructor_id == current_user.id).order_by(Activity.created_at.desc()).all()
+        activities = Activity.query.join(Course).filter(
+            Course.instructor_id == current_user.id
+        ).order_by(Activity.created_at.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
     else:
         enrolled_courses = [enrollment.course for enrollment in current_user.enrollments]
         course_ids = [course.id for course in enrolled_courses]
-        activities = Activity.query.filter(Activity.course_id.in_(course_ids)).order_by(Activity.created_at.desc()).all()
+        activities = Activity.query.filter(
+            Activity.course_id.in_(course_ids)
+        ).order_by(Activity.created_at.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
     
-    return render_template('activities/activity_list.html', activities=activities)
+    return render_template('activities/activity_list.html', activities=activities.items, pagination=activities)
 
 def auto_end_activity(activity_id, duration_seconds):
     """后台任务：自动结束活动"""
@@ -605,3 +618,80 @@ def export_course_activities(course_id):
     response_obj.headers['Content-Disposition'] = f'attachment; filename=course_{course_id}_activities.csv'
     
     return response_obj
+
+@bp.route('/activities/<int:activity_id>/delete', methods=['POST'])
+@login_required
+def delete_activity(activity_id):
+    """Delete activity - Admin and instructor permission"""
+    activity = Activity.query.get_or_404(activity_id)
+    course = Course.query.get_or_404(activity.course_id)
+    
+    # Permission check
+    if current_user.role == 'admin':
+        # Admin can delete all activities
+        pass
+    elif current_user.role == 'instructor' and course.instructor_id == current_user.id:
+        # Instructor can delete activities in their own courses
+        pass
+    else:
+        flash('You do not have permission to delete this activity', 'error')
+        return redirect(url_for('activities.list_activities'))
+    
+    try:
+        # Delete all related responses
+        Response.query.filter_by(activity_id=activity_id).delete()
+        
+        # Delete the activity itself
+        db.session.delete(activity)
+        db.session.commit()
+        
+        flash(f'Activity "{activity.title}" deleted successfully', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash('Error occurred while deleting activity, please try again later', 'error')
+    
+    return redirect(url_for('activities.list_activities'))
+
+# Note: Activity editing is disabled to maintain data integrity
+# Once an activity is published, it should not be modified
+# 
+# @bp.route('/activities/<int:activity_id>/edit', methods=['GET', 'POST'])
+# @login_required
+# def edit_activity(activity_id):
+#     """Edit activity - Admin and instructor permission"""
+#     activity = Activity.query.get_or_404(activity_id)
+#     course = Course.query.get_or_404(activity.course_id)
+#     
+#     # Permission check
+#     if current_user.role == 'admin':
+#         # 管理员可以编辑所有活动
+#         pass
+#     elif current_user.role == 'instructor' and course.instructor_id == current_user.id:
+#         # Instructor can edit activities in their own courses
+#         pass
+#     else:
+#         flash('You do not have permission to edit this activity', 'error')
+#         return redirect(url_for('activities.list_activities'))
+#     
+#     form = ActivityForm()
+#     
+#     if form.validate_on_submit():
+#         activity.title = form.title.data
+#         activity.type = form.type.data
+#         activity.question = form.question.data
+#         activity.options = form.options.data
+#         
+#         db.session.commit()
+#         flash('Activity information updated successfully!', 'success')
+#         return redirect(url_for('activities.activity_detail', activity_id=activity.id))
+#     
+#     # Pre-populate form data
+#     if request.method == 'GET':
+#         form.title.data = activity.title
+#         form.type.data = activity.type
+#         form.question.data = activity.question
+#         form.options.data = activity.options
+#     
+#     return render_template('activities/edit_activity.html', form=form, activity=activity, course=course)
+
