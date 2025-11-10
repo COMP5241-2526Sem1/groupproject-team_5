@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}快速加入活动 - {{ activity.title }}{% endblock %}
+{% block title %}Quick Join Activity - {{ activity.title }}{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
@@ -10,7 +10,7 @@
                 <div class="card-body p-5">
                     <div class="text-center mb-4">
                         <i class="fas fa-qrcode fa-3x text-primary mb-3"></i>
-                        <h3>快速加入活动</h3>
+                        <h3>Quick Join Activity</h3>
                     </div>
                     
                     <div class="alert alert-info">
@@ -20,19 +20,19 @@
                     </div>
                     
                     <p class="text-muted mb-4">
-                        请输入您的信息以快速加入此活动。如果您已经有账号，将自动为您登录；如果没有，将为您创建一个新账号。
+                        Enter your information to quickly join this activity. If you already have an account, you will be automatically logged in; if not, a new account will be created for you.
                     </p>
                     
                     <form method="POST">
                         <div class="mb-3">
                             <label for="name" class="form-label">
-                                <i class="fas fa-user"></i> 姓名 <span class="text-danger">*</span>
+                                <i class="fas fa-user"></i> Name <span class="text-danger">*</span>
                             </label>
                             <input type="text" 
                                    class="form-control" 
                                    id="name" 
                                    name="name" 
-                                   placeholder="请输入您的姓名"
+                                   placeholder="Enter your name"
                                    required>
                         </div>
                         
@@ -54,10 +54,10 @@
                         
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="fas fa-sign-in-alt"></i> 加入活动
+                                <i class="fas fa-sign-in-alt"></i> Join Activity
                             </button>
                             <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
-                                <i class="fas fa-times"></i> 取消
+                                <i class="fas fa-times"></i> Cancel
                             </a>
                         </div>
                     </form>
@@ -65,9 +65,9 @@
                     <hr class="my-4">
                     
                     <div class="text-center">
-                        <p class="mb-2 small text-muted">已有完整账号？</p>
+                        <p class="mb-2 small text-muted">Already have a full account?</p>
                         <a href="{{ url_for('auth.login') }}" class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-user-circle"></i> 前往登录页面
+                            <i class="fas fa-user-circle"></i> Go to Login Page
                         </a>
                     </div>
                 </div>

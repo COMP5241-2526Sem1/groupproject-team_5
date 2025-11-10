@@ -156,18 +156,31 @@ def profile():
 @bp.route('/change-password', methods=['GET', 'POST'])
 @login_required
 def change_password():
-    """修改密码"""
+    """Change password using email verification code"""
     if request.method == 'POST':
-        current_password = request.form.get('current_password')
-        new_password = request.form.get('new_password')
-        confirm_password = request.form.get('confirm_password')
+        captcha = request.form.get('captcha', '').strip()
+        new_password = request.form.get('new_password', '').strip()
+        confirm_password = request.form.get('confirm_password', '').strip()
         
-        # 验证当前密码
-        if not check_password_hash(current_user.password_hash, current_password):
-            flash('Current password is incorrect', 'error')
+        # Verify captcha
+        email_captcha = EmailCaptcha.query.filter_by(
+            email=current_user.email,
+            captcha=captcha
+        ).first()
+        
+        if not email_captcha:
+            flash('Invalid verification code', 'error')
             return render_template('auth/change_password.html')
         
-        # 验证新密码
+        # Check if captcha expired (5 minutes)
+        time_diff = datetime.utcnow() - email_captcha.create_time
+        if time_diff.total_seconds() > 300:
+            db.session.delete(email_captcha)
+            db.session.commit()
+            flash('Verification code expired (valid for 5 minutes)', 'error')
+            return render_template('auth/change_password.html')
+        
+        # Verify new password
         if len(new_password) < 6:
             flash('New password must be at least 6 characters long', 'error')
             return render_template('auth/change_password.html')
@@ -176,14 +189,52 @@ def change_password():
             flash('New passwords do not match', 'error')
             return render_template('auth/change_password.html')
         
-        # 更新密码
+        # Update password
         current_user.password_hash = generate_password_hash(new_password)
         db.session.commit()
         
-        flash('Password changed successfully!', 'success')
-        return redirect(url_for('auth.profile'))
+        # Delete used captcha
+        db.session.delete(email_captcha)
+        db.session.commit()
+        
+        flash('✅ Password changed successfully! Please login with your new password.', 'success')
+        
+        # Logout for security (force login with new password)
+        logout_user()
+        return redirect(url_for('auth.login'))
     
     return render_template('auth/change_password.html')
+
+@bp.route('/send-change-password-captcha', methods=['POST'])
+@login_required
+def send_change_password_captcha():
+    """Send verification code for password change"""
+    email = current_user.email
+    
+    # Generate 6-digit random code
+    captcha = ''.join(random.choices(string.digits, k=6))
+    
+    # Delete previous codes for this email
+    EmailCaptcha.query.filter_by(email=email).delete()
+    
+    # Save new code
+    email_captcha = EmailCaptcha(
+        email=email,
+        captcha=captcha,
+        create_time=datetime.utcnow()
+    )
+    db.session.add(email_captcha)
+    db.session.commit()
+    
+    # Send email using Flask-Mail
+    try:
+        from app.email_utils import send_verification_code_email
+        email_sent = send_verification_code_email(email, current_user.name, captcha, 'Change Password')
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        email_sent = False
+    
+    return jsonify({'success': email_sent})
 
 @bp.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():

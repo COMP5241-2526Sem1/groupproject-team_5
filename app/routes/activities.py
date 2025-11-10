@@ -815,12 +815,12 @@ def quick_join(token):
     activity = Activity.query.filter_by(join_token=token).first()
     
     if not activity:
-        flash('无效的活动链接', 'error')
+        flash('Invalid activity link', 'error')
         return redirect(url_for('main.index'))
     
     # 检查令牌是否有效
     if not activity.is_token_valid():
-        flash('此活动链接已过期或已禁用', 'error')
+        flash('This activity link has expired or been disabled', 'error')
         return redirect(url_for('main.index'))
     
     # 如果已登录
@@ -859,12 +859,12 @@ def quick_register(token):
     activity = Activity.query.filter_by(join_token=token).first()
     
     if not activity:
-        flash('无效的活动链接', 'error')
+        flash('Invalid activity link', 'error')
         return redirect(url_for('main.index'))
     
     # 检查令牌是否有效
     if not activity.is_token_valid():
-        flash('此活动链接已过期或已禁用', 'error')
+        flash('This activity link has expired or been disabled', 'error')
         return redirect(url_for('main.index'))
     
     if request.method == 'POST':
@@ -872,7 +872,7 @@ def quick_register(token):
         email = request.form.get('email', '').strip()
         
         if not name or not email:
-            flash('请填写姓名和邮箱', 'error')
+            flash('Please enter name and email', 'error')
             return render_template('activities/quick_register.html', 
                                  activity=activity, 
                                  course=activity.course)
@@ -882,7 +882,7 @@ def quick_register(token):
         
         if existing_user:
             # 如果用户已存在,提示用户登录
-            flash(f'该邮箱已注册，请使用密码登录', 'info')
+            flash(f'This email is already registered, please login with password', 'info')
             return redirect(url_for('auth.login', next=url_for('activities.quick_join', token=token)))
         else:
             # 创建新用户
@@ -930,30 +930,30 @@ def quick_register(token):
                 email_error = f"Email sending failed: {str(e)}"
                 email_sent = False
             
-            # 根据邮件发送结果决定是否创建用户
+            # Decide whether to create user based on email sending result
             if email_sent:
-                # 邮件发送成功,提交用户
+                # Email sent successfully, commit user
                 try:
                     db.session.commit()
-                    flash(f'✅ 账号创建成功！临时密码已发送到 {email}', 'success')
-                    flash(f'📧 请查收邮件（包括垃圾邮件箱）获取密码', 'info')
-                    # 重定向到登录页面,登录后会自动跳转到活动
+                    flash(f'✅ Account created successfully! Temporary password sent to {email}', 'success')
+                    flash(f'📧 Please check your email (including spam folder) for the password', 'info')
+                    # Redirect to login page, will auto-redirect to activity after login
                     return redirect(url_for('auth.login', next=url_for('activities.quick_join', token=token)))
                 except Exception as db_error:
                     db.session.rollback()
-                    flash(f'创建账号失败: {str(db_error)}', 'error')
+                    flash(f'Account creation failed: {str(db_error)}', 'error')
                     return render_template('activities/quick_register.html', 
                                          activity=activity, 
                                          course=activity.course)
             else:
                 # 邮件发送失败,回滚用户创建
                 db.session.rollback()
-                flash('❌ 账号创建失败：无法发送验证邮件', 'error')
-                flash(f'🔍 原因: {email_error}', 'warning')
-                flash('💡 请检查:', 'info')
-                flash('   1. 确认邮箱地址有效且可用', 'info')
-                flash('   2. 检查网络连接', 'info')
-                flash('   3. 稍后重试', 'info')
+                flash('❌ Account creation failed: Unable to send verification email', 'error')
+                flash(f'🔍 Reason: {email_error}', 'warning')
+                flash('💡 Please check:', 'info')
+                flash('   1. Make sure your email address is valid and active', 'info')
+                flash('   2. Check your internet connection', 'info')
+                flash('   3. Try again in a few moments', 'info')
                 flash('   1. Make sure your email address is valid and active', 'info')
                 flash('   2. Check your internet connection', 'info')
                 flash('   3. Try again in a few moments', 'info')

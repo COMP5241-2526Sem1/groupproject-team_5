@@ -418,16 +418,40 @@ if (typeof io !== 'undefined') {
                     timerElement.className = 'alert alert-warning';
                 }
                 
-                // 更新按钮状态(教师/管理员视图)
+                // Update button state (teacher/admin view)
                 const startBtn = document.getElementById('start-activity');
                 const stopBtn = document.getElementById('stop-activity');
+                
+                console.log('[Socket] Start button:', startBtn);
+                console.log('[Socket] Stop button:', stopBtn);
+                
+                if (stopBtn) {
+                    stopBtn.style.display = 'none';
+                    console.log('[Socket] Hid stop button');
+                }
+                
                 if (startBtn) {
+                    // Start button exists, update it
                     startBtn.style.display = 'inline-block';
                     startBtn.className = 'btn btn-success';
                     startBtn.innerHTML = '<i class="bi bi-play-circle"></i> restart Activity';
-                }
-                if (stopBtn) {
-                    stopBtn.style.display = 'none';
+                    console.log('[Socket] Updated start button to green restart');
+                } else if (stopBtn) {
+                    // Start button doesn't exist, create it by replacing stop button
+                    console.log('[Socket] Start button missing, creating new one');
+                    const newStartBtn = document.createElement('button');
+                    newStartBtn.id = 'start-activity';
+                    newStartBtn.className = 'btn btn-success';
+                    newStartBtn.innerHTML = '<i class="bi bi-play-circle"></i> restart Activity';
+                    newStartBtn.onclick = function() {
+                        startActivity();
+                    };
+                    
+                    // Replace stop button with start button
+                    if (stopBtn.parentNode) {
+                        stopBtn.parentNode.replaceChild(newStartBtn, stopBtn);
+                        console.log('[Socket] Replaced stop button with green restart button');
+                    }
                 }
                 
                 // 禁用提交表单(学生视图)

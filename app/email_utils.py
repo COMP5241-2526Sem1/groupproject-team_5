@@ -24,7 +24,7 @@ def send_temp_password_email(recipient_email, user_name, temp_password):
     """
     try:
         # Email subject
-        subject = "欢迎！您的临时密码"
+        subject = "Welcome! Your Temporary Password"
         
         # HTML email template
         html_body = f"""
@@ -95,44 +95,44 @@ def send_temp_password_email(recipient_email, user_name, temp_password):
         </head>
         <body>
             <div class="header">
-                <h1>🎓 欢迎加入问答平台</h1>
+                <h1>🎓 Welcome to Q&A Platform</h1>
             </div>
             
             <div class="content">
-                <h2>你好，{user_name}！</h2>
+                <h2>Hello, {user_name}!</h2>
                 
-                <p>您的账号已通过二维码快速注册成功创建。</p>
+                <p>Your account has been successfully created through QR code quick registration.</p>
                 
-                <p>以下是您的临时密码：</p>
+                <p>Here is your temporary password:</p>
                 
                 <div class="password-box">
                     <div class="password">{temp_password}</div>
                 </div>
                 
                 <div class="warning">
-                    <strong>⚠️ 重要安全提示：</strong>
+                    <strong>⚠️ Important Security Notice:</strong>
                     <ul style="margin: 10px 0; padding-left: 20px;">
-                        <li>这是一个<strong>临时密码</strong></li>
-                        <li>请在首次登录后<strong>立即更改密码</strong></li>
-                        <li>不要与任何人分享此密码</li>
-                        <li>更改密码后请妥善保管或删除此邮件</li>
+                        <li>This is a <strong>temporary password</strong></li>
+                        <li>Please <strong>change it immediately</strong> after your first login</li>
+                        <li>Do not share this password with anyone</li>
+                        <li>Keep this email in a safe place or delete it after changing your password</li>
                     </ul>
                 </div>
                 
-                <h3>如何登录：</h3>
+                <h3>How to login:</h3>
                 <ol>
-                    <li>访问平台登录页面</li>
-                    <li>输入您的邮箱：<strong>{recipient_email}</strong></li>
-                    <li>输入上面的临时密码</li>
-                    <li>进入个人资料页面更改密码</li>
+                    <li>Visit the platform login page</li>
+                    <li>Enter your email: <strong>{recipient_email}</strong></li>
+                    <li>Enter the temporary password above</li>
+                    <li>Go to your profile and change your password</li>
                 </ol>
                 
-                <p style="margin-top: 30px;">如果您没有请求此账号，请忽略此邮件。</p>
+                <p style="margin-top: 30px;">If you didn't request this account, please ignore this email.</p>
             </div>
             
             <div class="footer">
-                <p>这是一封自动发送的邮件，请勿回复。</p>
-                <p>© 2024 问答教育平台。保留所有权利。</p>
+                <p>This is an automated email. Please do not reply.</p>
+                <p>© 2024 Q&A Education Platform. All rights reserved.</p>
             </div>
         </body>
         </html>
@@ -288,4 +288,126 @@ This link will expire in 24 hours.
         
     except Exception as e:
         logger.error(f"Failed to send password reset email to {recipient_email}: {str(e)}")
+        return False
+
+
+def send_verification_code_email(recipient_email, user_name, code, purpose='Verification'):
+    """
+    Send verification code email
+    
+    Args:
+        recipient_email: User's email address
+        user_name: User's name
+        code: Verification code
+        purpose: Purpose of the code (e.g., 'Change Password', 'Verification')
+    
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    try:
+        subject = f"Q&A Platform - {purpose} Code"
+        
+        html_body = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 20px;
+                }}
+                .header {{
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 30px;
+                    border-radius: 10px 10px 0 0;
+                    text-align: center;
+                }}
+                .content {{
+                    background: #f8f9fa;
+                    padding: 30px;
+                    border-radius: 0 0 10px 10px;
+                }}
+                .code-box {{
+                    background: white;
+                    border: 2px dashed #667eea;
+                    border-radius: 8px;
+                    padding: 20px;
+                    text-align: center;
+                    margin: 20px 0;
+                }}
+                .code {{
+                    font-size: 32px;
+                    font-weight: bold;
+                    color: #667eea;
+                    letter-spacing: 5px;
+                }}
+                .footer {{
+                    text-align: center;
+                    margin-top: 20px;
+                    padding-top: 20px;
+                    border-top: 1px solid #dee2e6;
+                    color: #6c757d;
+                    font-size: 0.9em;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h2>🔐 {purpose}</h2>
+            </div>
+            <div class="content">
+                <p>Dear {user_name},</p>
+                
+                <p>You requested to {purpose.lower()}. Please use the verification code below:</p>
+                
+                <div class="code-box">
+                    <div class="code">{code}</div>
+                </div>
+                
+                <p><strong>⏱️ This code is valid for 5 minutes.</strong></p>
+                
+                <p>If you didn't request this, please ignore this email and your account will remain secure.</p>
+                
+                <div class="footer">
+                    <p>Q&A Education Platform Team</p>
+                    <p>This is an automated email, please do not reply.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        text_body = f"""
+Dear {user_name},
+
+You requested to {purpose.lower()}.
+
+Your verification code is: {code}
+
+This code is valid for 5 minutes.
+
+If you didn't request this, please ignore this email.
+
+Q&A Education Platform Team
+        """
+        
+        msg = Message(
+            subject=subject,
+            recipients=[recipient_email],
+            body=text_body,
+            html=html_body
+        )
+        
+        mail.send(msg)
+        logger.info(f"{purpose} code email sent successfully to {recipient_email}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Failed to send {purpose.lower()} code email to {recipient_email}: {str(e)}")
         return False
