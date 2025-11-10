@@ -65,9 +65,16 @@ def list_activities():
     
     return render_template('activities/activity_list.html', activities=activities.items, pagination=activities)
 
-def auto_end_activity(activity_id, duration_seconds):
-    """后台任务：自动结束活动"""
-    print(f"Starting timer for activity {activity_id}, will end in {duration_seconds} seconds")
+def auto_end_activity(activity_id, duration_seconds, started_at_timestamp):
+    """后台任务：自动结束活动
+    
+    Args:
+        activity_id: 活动ID
+        duration_seconds: 持续秒数
+        started_at_timestamp: 活动启动时的时间戳(用于验证是否是当前启动)
+    """
+    print(f"[AUTO-END] Starting timer for activity {activity_id}, will end in {duration_seconds} seconds")
+    print(f"[AUTO-END] Started at timestamp: {started_at_timestamp}")
     time.sleep(duration_seconds)
     
     try:
@@ -78,30 +85,41 @@ def auto_end_activity(activity_id, duration_seconds):
         
         # 不需要app_context，因为我们在同一个应用进程中
         activity = Activity.query.get(activity_id)
-        if activity and activity.is_active:
-            print(f"Auto-ending activity {activity_id}")
-            activity.is_active = False
-            activity.ended_at = datetime.utcnow()
-            db.session.commit()
+        if activity:
+            # 检查活动的started_at是否与任务启动时一致
+            current_started_timestamp = activity.started_at.timestamp() if activity.started_at else 0
             
-            print(f"Activity {activity_id} ended at {activity.ended_at}")
+            print(f"[AUTO-END] Activity {activity_id} current started_at: {activity.started_at}")
+            print(f"[AUTO-END] Current timestamp: {current_started_timestamp}")
+            print(f"[AUTO-END] Expected timestamp: {started_at_timestamp}")
             
-            # 通知所有用户活动已结束
-            socketio.emit('activity_update', {
-                'activity_id': activity_id,
-                'update_type': 'auto_ended',
-                'data': {
-                    'is_active': False,
-                    'ended_at': activity.ended_at.isoformat(),
-                    'message': 'Activity has ended automatically'
-                }
-            }, room=f'activity_{activity_id}')
-            
-            print(f"Notification sent for activity {activity_id}")
+            # 只有当时间戳匹配时才结束(说明是当前这次启动的任务)
+            if activity.is_active and abs(current_started_timestamp - started_at_timestamp) < 1:
+                print(f"[AUTO-END] Auto-ending activity {activity_id}")
+                activity.is_active = False
+                activity.ended_at = datetime.utcnow()
+                db.session.commit()
+                
+                print(f"[AUTO-END] Activity {activity_id} ended at {activity.ended_at}")
+                
+                # 通知所有用户活动已结束
+                socketio.emit('activity_update', {
+                    'activity_id': activity_id,
+                    'update_type': 'auto_ended',
+                    'data': {
+                        'is_active': False,
+                        'ended_at': activity.ended_at.isoformat(),
+                        'message': 'Activity has ended automatically'
+                    }
+                }, room=f'activity_{activity_id}')
+                
+                print(f"[AUTO-END] Notification sent for activity {activity_id}")
+            else:
+                print(f"[AUTO-END] Activity {activity_id} was restarted or already ended, skipping auto-end")
         else:
-            print(f"Activity {activity_id} not found or already ended")
+            print(f"[AUTO-END] Activity {activity_id} not found")
     except Exception as e:
-        print(f"Error in auto_end_activity: {e}")
+        print(f"[AUTO-END] Error in auto_end_activity: {e}")
         import traceback
         traceback.print_exc()
 
@@ -208,12 +226,24 @@ def start_activity(activity_id):
     activity.ended_at = None
     db.session.commit()
     
+    print(f"[START] Activity {activity_id} started at {activity.started_at}")
+    print(f"[START] is_active: {activity.is_active}")
+    
+    # 获取启动时间戳,用于验证自动结束任务
+    started_at_timestamp = activity.started_at.timestamp()
+    
     # 计算预计结束时间（仅用于显示）
     from datetime import timedelta
     will_end_at = activity.started_at + timedelta(minutes=activity.duration_minutes)
     
     # 启动后台任务，在指定时间后自动结束活动
-    socketio.start_background_task(target=auto_end_activity, activity_id=activity_id, duration_seconds=activity.duration_minutes * 60)
+    # 传递时间戳,确保只有当前启动的任务会结束活动
+    socketio.start_background_task(
+        target=auto_end_activity, 
+        activity_id=activity_id, 
+        duration_seconds=activity.duration_minutes * 60,
+        started_at_timestamp=started_at_timestamp
+    )
     
     # Broadcast to all users in the activity room
     socketio.emit('activity_update', {
@@ -296,18 +326,24 @@ def submit_response(activity_id):
     
     activity = Activity.query.get_or_404(activity_id)
     
+    # 添加调试信息
+    print(f"[DEBUG] Activity {activity_id} submission attempt")
+    print(f"[DEBUG] is_active: {activity.is_active}")
+    print(f"[DEBUG] started_at: {activity.started_at}")
+    print(f"[DEBUG] ended_at: {activity.ended_at}")
+    
     if not activity.is_active:
-        return jsonify({'success': False, 'message': 'Activity not started or already ended'})
+        return jsonify({'success': False, 'message': '活动未开始或已结束'})
     
     enrollment = Enrollment.query.filter_by(student_id=current_user.id, course_id=activity.course_id).first()
     if not enrollment:
-        return jsonify({'success': False, 'message': 'You are not enrolled in this course'})
+        return jsonify({'success': False, 'message': '你未加入此课程'})
     
     data = request.get_json()
     answer = data.get('answer', '').strip()
     
     if not answer:
-        return jsonify({'success': False, 'message': 'Answer cannot be empty'})
+        return jsonify({'success': False, 'message': '答案不能为空'})
     
     # Check if there's already a response
     existing_response = Response.query.filter_by(student_id=current_user.id, activity_id=activity_id).first()
@@ -331,7 +367,7 @@ def submit_response(activity_id):
         'message': 'New response submitted'
     }, room=f'activity_{activity_id}')
     
-    return jsonify({'success': True, 'message': 'Answer submitted successfully'})
+    return jsonify({'success': True, 'message': '答案提交成功'})
 
 @bp.route('/activities/<int:activity_id>/results')
 @login_required
@@ -839,7 +875,7 @@ def quick_register(token):
         
         if existing_user:
             # 如果用户已存在,提示用户登录
-            flash(f'This email is already registered. Please login with your password.', 'info')
+            flash(f'该邮箱已注册，请使用密码登录', 'info')
             return redirect(url_for('auth.login', next=url_for('activities.quick_join', token=token)))
         else:
             # 创建新用户
@@ -892,22 +928,25 @@ def quick_register(token):
                 # 邮件发送成功,提交用户
                 try:
                     db.session.commit()
-                    flash(f'✅ Account created successfully! Your temporary password has been sent to {email}.', 'success')
-                    flash(f'📧 Please check your email inbox (and spam folder) to get your password.', 'info')
+                    flash(f'✅ 账号创建成功！临时密码已发送到 {email}', 'success')
+                    flash(f'📧 请查收邮件（包括垃圾邮件箱）获取密码', 'info')
                     # 重定向到登录页面,登录后会自动跳转到活动
                     return redirect(url_for('auth.login', next=url_for('activities.quick_join', token=token)))
                 except Exception as db_error:
                     db.session.rollback()
-                    flash(f'Failed to create account: {str(db_error)}', 'error')
+                    flash(f'创建账号失败: {str(db_error)}', 'error')
                     return render_template('activities/quick_register.html', 
                                          activity=activity, 
                                          course=activity.course)
             else:
                 # 邮件发送失败,回滚用户创建
                 db.session.rollback()
-                flash('❌ Account creation failed: Unable to send verification email.', 'error')
-                flash(f'🔍 Reason: {email_error}', 'warning')
-                flash('💡 Please check:', 'info')
+                flash('❌ 账号创建失败：无法发送验证邮件', 'error')
+                flash(f'🔍 原因: {email_error}', 'warning')
+                flash('💡 请检查:', 'info')
+                flash('   1. 确认邮箱地址有效且可用', 'info')
+                flash('   2. 检查网络连接', 'info')
+                flash('   3. 稍后重试', 'info')
                 flash('   1. Make sure your email address is valid and active', 'info')
                 flash('   2. Check your internet connection', 'info')
                 flash('   3. Try again in a few moments', 'info')
