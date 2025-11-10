@@ -1,0 +1,405 @@
+{% extends "base.html" %}
+
+{% block title %}{{ activity.title }} - Analysis of Results{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2><i class="bi bi-graph-up"></i> {{ activity.title }} - Results Analysis</h2>
+        <p class="text-muted mb-0">{{ activity.course.name }} | {{ activity.type }}</p>
+    </div>
+    <div>
+        <a href="{{ url_for('activities.activity_analytics', activity_id=activity.id) }}" class="btn btn-info me-2">
+            <i class="bi bi-graph-up"></i> Analytics
+        </a>
+        <a href="{{ url_for('activities.export_activity_results', activity_id=activity.id) }}" class="btn btn-success me-2">
+            <i class="bi bi-download"></i> Export CSV
+        </a>
+        <a href="{{ url_for('activities.activity_detail', activity_id=activity.id) }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Activity
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        {% if results.type == 'poll' %}
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-bar-chart"></i> Poll Results</h5>
+            </div>
+            <div class="card-body">
+                {% if results.options %}
+                    {% for option, count in results.options.items() %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span>{{ option }}</span>
+                            <span class="badge bg-primary">{{ count }} votes</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar" role="progressbar" 
+                                 style="width: {{ (count / results.total_responses * 100) if results.total_responses > 0 else 0 }}%">
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">No poll data available</p>
+                {% endif %}
+                
+                <div class="mt-3">
+                    <small class="text-muted">Total votes: {{ results.total_responses }}</small>
+                </div>
+            </div>
+        </div>
+        {% elif results.type == 'quiz' %}
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-check-circle"></i> Quiz Results</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center mb-4">
+                    <div class="col-md-4">
+                        <h4 class="text-success">{{ results.correct_count }}</h4>
+                        <small class="text-muted">Correct Answers</small>
+                    </div>
+                    <div class="col-md-4">
+                        <h4 class="text-primary">{{ results.total_responses }}</h4>
+                        <small class="text-muted">Total Responses</small>
+                    </div>
+                    <div class="col-md-4">
+                        <h4 class="text-warning">{{ "%.1f"|format(results.average_score * 100) }}%</h4>
+                        <small class="text-muted">Average Score</small>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Answer</th>
+                                <th>Result</th>
+                                <th>Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for response in results.responses %}
+                            <tr>
+                                <td>{{ response.student }}</td>
+                                <td>{{ response.answer }}</td>
+                                <td>
+                                    {% if response.is_correct %}
+                                        <span class="badge bg-success">Correct</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Incorrect</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ response.score }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% elif results.type == 'word_cloud' %}
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-cloud"></i> Word Cloud</h5>
+            </div>
+            <div class="card-body">
+                <div class="word-cloud">
+                    {% for word, freq in results.word_frequency %}
+                    <span class="badge bg-secondary me-1 mb-1" style="font-size: {{ (freq / results.word_frequency[0][1] * 20 + 12) }}px;">
+                        {{ word }} ({{ freq }})
+                    </span>
+                    {% endfor %}
+                </div>
+                <div class="mt-3">
+                    <small class="text-muted">Total responses: {{ results.total_responses }}</small>
+                </div>
+            </div>
+        </div>
+        {% elif results.type == 'memory_game' %}
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-controller"></i> Memory Game Results</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Submitted Sequence</th>
+                                <th>Submitted At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for response in responses %}
+                            <tr>
+                                <td>{{ response.student.name }}</td>
+                                <td>{{ response.answer }}</td>
+                                <td>{{ response.submitted_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-3">
+                    <small class="text-muted">Total responses: {{ results.total_responses }}</small>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        {% if results.word_frequency %}
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-cloud"></i> Word Frequency Analysis</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Total Responses:</strong> {{ results.total_responses }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Unique Words:</strong> {{ results.unique_words }}</p>
+                    </div>
+                </div>
+                <div class="word-cloud-container" style="
+                    width: 100%;
+                    height: 500px;
+                    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                    border-radius: 15px;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    padding: 20px;
+                    overflow: hidden;
+                    position: relative;">
+                    <canvas id="wordcloud-canvas-{{ activity.id }}"></canvas>
+                </div>
+                <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.2/src/wordcloud2.min.js"></script>
+                <script>
+                (function() {
+                    function generateWordCloud() {
+                        const canvas = document.getElementById('wordcloud-canvas-{{ activity.id }}');
+                        if (!canvas) return;
+                        
+                        const container = canvas.parentElement;
+                        // 确保有足够的边距，防止词被裁剪
+                        const padding = 30;
+                        const containerWidth = container.offsetWidth - (padding * 2);
+                        const containerHeight = container.offsetHeight - (padding * 2);
+                        
+                        // 设置canvas尺寸，留出边距
+                        canvas.width = containerWidth;
+                        canvas.height = containerHeight;
+                        canvas.style.width = containerWidth + 'px';
+                        canvas.style.height = containerHeight + 'px';
+                        
+                        {% set word_list = results.word_frequency %}
+                        {% set max_freq = word_list[0][1] if word_list else 1 %}
+                        
+                        const wordList = [
+                            {% for word, freq in word_list %}
+                            ['{{ word }}', {{ freq }}]{% if not loop.last %},{% endif %}
+                            {% endfor %}
+                        ];
+                        
+                        if (wordList.length === 0) return;
+                        
+                        // Color function with random color assignment
+                        const maxFreq = {{ max_freq }};
+                        
+                        // 丰富的颜色调色板
+                        const colorPalette = [
+                            '#0d6efd', // Blue
+                            '#6610f2', // Purple
+                            '#d63384', // Pink
+                            '#dc3545', // Red
+                            '#fd7e14', // Orange
+                            '#ffc107', // Yellow
+                            '#20c997', // Teal
+                            '#198754', // Green
+                            '#0dcaf0', // Cyan
+                            '#6f42c1', // Indigo
+                            '#e83e8c', // Magenta
+                            '#0056b3', // Dark Blue
+                            '#4a148c', // Dark Purple
+                            '#a02669', // Dark Pink
+                            '#b02a37', // Dark Red
+                            '#c4620a', // Dark Orange
+                            '#cc9a00', // Dark Yellow
+                            '#146c43', // Dark Green
+                            '#087990', // Dark Cyan
+                            '#4a0e4e'  // Dark Indigo
+                        ];
+                        
+                        // 为每个词预先分配随机颜色（确保同一词每次都是相同颜色）
+                        const wordColorMap = {};
+                        wordList.forEach((wordData, idx) => {
+                            const word = wordData[0];
+                            // 使用词的哈希值来确保同一词总是得到相同颜色
+                            let hash = 0;
+                            for (let i = 0; i < word.length; i++) {
+                                hash = word.charCodeAt(i) + ((hash << 5) - hash);
+                            }
+                            wordColorMap[word] = colorPalette[Math.abs(hash) % colorPalette.length];
+                        });
+                        
+                        const getColor = function(word, weight, fontSize, distance, theta) {
+                            // 返回预先分配的随机颜色
+                            return wordColorMap[word] || colorPalette[0];
+                        };
+                        
+                        // Generate word cloud
+                        if (typeof WordCloud !== 'undefined') {
+                            // 计算字体大小范围
+                            const maxFreq = Math.max(...wordList.map(w => w[1]));
+                            const minFreq = Math.min(...wordList.map(w => w[1]));
+                            const freqRange = maxFreq - minFreq;
+                            
+                            // 设置字体大小范围：增大高频词字体
+                            const maxFontSize = Math.min(containerWidth / 5, 120); // 最大字体120px，增大高频词
+                            const minFontSize = Math.max(containerWidth / 45, 14); // 最小字体14px
+                            
+                            WordCloud(canvas, {
+                                list: wordList,
+                                gridSize: Math.round(6 * containerWidth / 1024), // 减小网格大小，让词更紧密
+                                weightFactor: function(size) {
+                                    if (freqRange === 0) return (maxFontSize + minFontSize) / 2;
+                                    
+                                    // 归一化频率 (0-1)
+                                    const normalizedFreq = (size - minFreq) / freqRange;
+                                    
+                                    // 使用0.6次方，让高频词更大更突出
+                                    const scaledFreq = Math.pow(normalizedFreq, 0.6);
+                                    
+                                    // 计算字体大小
+                                    const fontSize = minFontSize + (maxFontSize - minFontSize) * scaledFreq;
+                                    
+                                    return fontSize;
+                                },
+                                fontFamily: 'Arial, sans-serif',
+                                color: getColor,
+                                rotateRatio: 0,
+                                rotationSteps: 0,
+                                backgroundColor: 'transparent',
+                                minSize: minFontSize,
+                                drawOutOfBound: false,
+                                shrinkToFit: true,
+                                ellipticity: 0.7,
+                                shuffle: false,
+                                shape: 'circle'
+                            });
+                        } else {
+                            console.error('WordCloud library not loaded');
+                        }
+                    }
+                    
+                    // Run on page load and handle resize
+                    function initWordCloud() {
+                        if (document.readyState === 'loading') {
+                            document.addEventListener('DOMContentLoaded', generateWordCloud);
+                        } else {
+                            setTimeout(generateWordCloud, 100);
+                        }
+                    }
+                    
+                    initWordCloud();
+                    
+                    // 处理窗口大小变化
+                    let resizeTimer;
+                    window.addEventListener('resize', function() {
+                        clearTimeout(resizeTimer);
+                        resizeTimer = setTimeout(generateWordCloud, 250);
+                    });
+                })();
+                </script>
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle"></i> 
+                        Common words (articles, prepositions, pronouns) have been filtered out to show meaningful content.
+                    </small>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-chat-text"></i> Student Responses ({{ results.total_responses }})</h5>
+            </div>
+            <div class="card-body">
+                {% if results.answers %}
+                    {% for answer in results.answers %}
+                    <div class="card mb-3 border-start border-primary border-3">
+                        <div class="card-body">
+                            <div class="d-flex align-items-start">
+                                <i class="bi bi-chat-quote text-primary me-2" style="font-size: 1.2rem;"></i>
+                                <p class="mb-0">{{ answer }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">No answers available</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-info-circle"></i> Statistics </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4>{{ results.total_responses }}</h4>
+                        <small class="text-muted">Total Responses</small>
+                    </div>
+                    <div class="col-6">
+                        <h4>{{ activity.course.enrollments|length }}</h4>
+                        <small class="text-muted">Number of Students Enrolled</small>
+                    </div>
+                </div>
+                <hr>
+                <div class="text-center">
+                    <h4>{{ "%.1f"|format((results.total_responses / activity.course.enrollments|length * 100) if activity.course.enrollments|length > 0 else 0) }}%</h4>
+                    <small class="text-muted">Participation Rate</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5><i class="bi bi-people"></i> Participating Students</h5>
+            </div>
+            <div class="card-body">
+                {% if responses %}
+                    <div class="list-group list-group-flush">
+                        {% for response in responses %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ response.student.name }}</strong>
+                                {% if response.student.student_id %}
+                                <br><small class="text-muted">{{ response.student.student_id }}</small>
+                                {% endif %}
+                            </div>
+                            <small class="text-muted">{{ response.submitted_at.strftime('%H:%M') }}</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">No participating students</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

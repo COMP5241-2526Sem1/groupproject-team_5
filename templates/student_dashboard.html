@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard - Classroom Platform{% endblock %}
+
+{% block content %}
+<style>
+.student-dashboard-header {
+    background: linear-gradient(135deg, #ffffff20, #ffffff10);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.stat-card {
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0));
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover::before {
+    opacity: 1;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 25px rgba(0,0,0,0.1);
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+.stat-label {
+    font-size: 1rem;
+    opacity: 0.9;
+    letter-spacing: 0.5px;
+}
+
+.stat-icon {
+    font-size: 3rem;
+    opacity: 0.8;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover .stat-icon {
+    transform: scale(1.1) rotate(5deg);
+    opacity: 1;
+}
+
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+}
+
+.floating-icon {
+    animation: float 3s ease-in-out infinite;
+}
+
+/* 为内容卡片添加现代化样式 */
+.content-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.content-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.course-item, .reply-item {
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #f8f9fa, #ffffff);
+    transition: all 0.3s ease;
+}
+
+.course-item:hover, .reply-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+</style>
+
+<div class="student-dashboard-header">
+    <div class="d-flex align-items-center gap-3">
+        <i class="bi bi-mortarboard-fill text-primary floating-icon" style="font-size: 2.5rem;"></i>
+        <div>
+            <h2 class="mb-0">Student Dashboard</h2>
+            <p class="text-muted mb-0">Track your academic progress and activities</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card stat-card bg-primary text-white h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-number">{{ stats.enrolled_courses }}</div>
+                        <p class="stat-label mb-0">Enrolled Courses</p>
+                    </div>
+                    <i class="bi bi-book stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card bg-success text-white h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-number">{{ stats.active_activities }}</div>
+                        <p class="stat-label mb-0">Active Activities</p>
+                    </div>
+                    <i class="bi bi-play-circle stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card bg-warning text-white h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-number">{{ stats.others_replies }}</div>
+                        <p class="stat-label mb-0">Replies to My Questions</p>
+                    </div>
+                    <i class="bi bi-chat-dots stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card content-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-book"></i> My Courses</h5>
+                <small class="text-muted">Recently Enrolled</small>
+            </div>
+            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                {% if courses %}
+                    {% for course in courses %}
+                    <div class="course-item border-bottom pb-3 mb-3 p-2">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">
+                                    <a href="{{ url_for('courses.course_detail', course_id=course.id) }}" class="text-decoration-none">
+                                        {{ course.name }}
+                                    </a>
+                                </h6>
+                                <p class="mb-1 small text-muted">
+                                    Instructor: {{ course.instructor.name if course.instructor else 'Not Assigned' }}
+                                </p>
+                                <div class="d-flex align-items-center">
+                                    <small class="text-muted me-2">
+                                        <i class="bi bi-calendar-event"></i> {{ course.created_at.strftime('%Y-%m-%d') if course.created_at else 'Unknown' }}
+                                    </small>
+                                    {% if course.activities %}
+                                        <span class="badge bg-info me-2" style="font-size: 0.7em;">{{ course.activities|length }} Activities</span>
+                                    {% endif %}
+                                    {% if course.questions %}
+                                        <span class="badge bg-success" style="font-size: 0.7em;">{{ course.questions|length }} Questions</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <a href="{{ url_for('qa.course_qa_list', course_id=course.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-question-circle"></i> Q&A
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    {% if has_more_courses %}
+                    <div class="text-center">
+                        <a href="{{ url_for('main.my_courses') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-plus-circle"></i> View All Courses ({{ all_courses_count }})
+                        </a>
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-book display-4 text-muted"></i>
+                        <p class="text-muted mt-2">No courses enrolled yet</p>
+                        <p class="text-muted small">Browse and enroll in some courses!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card content-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-chat-dots"></i> Recent Replies</h5>
+                {% if has_more_replies %}
+                    <small class="text-muted">Latest 4 replies</small>
+                {% endif %}
+            </div>
+            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                {% if others_replies %}
+                    {% for reply_data in others_replies %}
+                    <div class="reply-item border-bottom pb-2 mb-3 p-2">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">
+                                    <a href="{{ url_for('qa.question_detail', course_id=reply_data.course.id, question_id=reply_data.question.id) }}" class="text-decoration-none">
+                                        {{ reply_data.question.title }}
+                                    </a>
+                                </h6>
+                                <p class="mb-1 small text-muted">
+                                    "{{ reply_data.answer.content[:50] }}{% if reply_data.answer.content|length > 50 %}...{% endif %}"
+                                </p>
+                                <div class="d-flex align-items-center">
+                                    <small class="text-muted me-2">
+                                        <i class="bi bi-person"></i> {{ reply_data.answer.author.name }}
+                                    </small>
+                                    {% if reply_data.answer.is_instructor_answer %}
+                                        <span class="badge bg-primary me-2" style="font-size: 0.7em;">Instructor</span>
+                                    {% endif %}
+                                    {% if reply_data.total_replies_for_question > 1 %}
+                                        <span class="badge bg-info me-2" style="font-size: 0.7em;">{{ reply_data.total_replies_for_question }} Replies</span>
+                                    {% endif %}
+                                    {% if reply_data.answer.upvotes > 0 %}
+                                        <small class="text-success">
+                                            <i class="bi bi-hand-thumbs-up"></i> {{ reply_data.answer.upvotes }}
+                                        </small>
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted">{{ reply_data.answer.created_at|local_time }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    {% if has_more_replies %}
+                    <div class="text-center">
+                        <a href="{{ url_for('main.my_replies') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-plus-circle"></i> View All Replies ({{ stats.others_replies }})
+                        </a>
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-chat-dots display-4 text-muted"></i>
+                        <p class="text-muted mt-2">No one has replied to your questions yet</p>
+                        <p class="text-muted small">Post some questions to get started!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

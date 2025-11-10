@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Classroom Platform{% endblock %}
+
+{% block content %}
+<style>
+/* 与其他页面视觉一致的样式 */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg,#1e88e5 0%, #6ab7ff 50%, #6dd3c9 100%);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  box-sizing: border-box;
+  background-attachment: fixed;
+}
+
+/* 容器与白卡 */
+.body-hero {
+  padding: 12px 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+}
+.main-panel {
+  width: calc(100vw - 32px);
+  max-width: none;
+  margin: 18px auto;
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 28px 36px;
+  box-shadow: 0 40px 90px rgba(8,35,70,0.12);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+
+/* 页面标题卡片 */
+.page-title-card {
+  background: linear-gradient(90deg, rgba(240,255,255,0.90), rgba(255,255,255,0.82));
+  padding: 20px 24px;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(12,45,80,0.04);
+  border: 1px solid rgba(12,45,80,0.04);
+}
+
+.page-title-card h2 {
+  font-weight: 800;
+  color: #153d5a;
+  font-size: 24px;
+}
+
+/* 统计卡片样式 */
+.dashboard-stat {
+  border: none;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+
+.dashboard-stat:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+}
+
+.stat-icon {
+  font-size: 2.5rem;
+  opacity: 0.9;
+}
+
+.stat-value {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+.stat-label {
+  font-size: 0.95rem;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+/* 主要内容卡片 */
+.card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(12,45,80,0.04);
+  border: 1px solid rgba(12,45,80,0.04);
+  overflow: hidden;
+}
+
+.card-header {
+  border-bottom: 1px solid rgba(12,45,80,0.06);
+}
+
+/* 表格样式 */
+.admin-table {
+  background: white;
+}
+
+.admin-table thead th {
+  background: #f8f9fa;
+  border: none;
+  font-weight: 600;
+  color: #495057;
+  padding: 16px 12px;
+  font-size: 0.9rem;
+}
+
+.admin-table tbody td {
+  padding: 16px 12px;
+  border-top: 1px solid #e9ecef;
+  vertical-align: middle;
+}
+
+.admin-table tbody tr:hover {
+  background: rgba(0,123,255,0.02);
+}
+
+/* 快速操作按钮 */
+.quick-action-btn {
+  background: transparent;
+  border: 1px solid rgba(12,45,80,0.06);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.quick-action-btn:hover {
+  background: rgba(0,123,255,0.02);
+  border-color: rgba(0,123,255,0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0,123,255,0.1);
+}
+
+.quick-action-btn i {
+  font-size: 1.5rem;
+  margin-right: 12px;
+  vertical-align: middle;
+}
+
+/* 间距优化 */
+.g-4 > * {
+  padding: 0.75rem;
+}
+
+/* 响应式 */
+@media (max-width: 992px) {
+  .main-panel { 
+    padding:20px; 
+    width: calc(100vw - 28px); 
+  }
+  .stat-value {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .main-panel { 
+    padding:16px; 
+    width: calc(100vw - 20px); 
+  }
+  .page-title-card {
+    padding: 16px 20px;
+  }
+  .dashboard-stat .card-body {
+    padding: 1.5rem !important;
+  }
+}
+</style>
+
+<div class="body-hero">
+  <div class="main-panel">
+
+    <div class="page-title-card d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="mb-0"><i class="bi bi-speedometer2 text-primary"></i> Admin Dashboard</h2>
+        <p class="text-muted mb-0">Platform overview and management</p>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-md-3">
+        <div class="card dashboard-stat h-100" style="background: linear-gradient(135deg, #0d6efd, #0099ff);">
+          <div class="card-body p-4">
+            <div class="d-flex flex-column h-100">
+              <div class="stat-icon text-white mb-3">
+                <i class="bi bi-book"></i>
+              </div>
+              <div class="stat-value text-white">{{ stats.total_courses }}</div>
+              <div class="stat-label text-white">Total Courses</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card dashboard-stat h-100" style="background: linear-gradient(135deg, #198754, #28a745);">
+          <div class="card-body p-4">
+            <div class="d-flex flex-column h-100">
+              <div class="stat-icon text-white mb-3">
+                <i class="bi bi-chat-dots"></i>
+              </div>
+              <div class="stat-value text-white">{{ stats.total_activities }}</div>
+              <div class="stat-label text-white">Total Activities</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card dashboard-stat h-100" style="background: linear-gradient(135deg, #ffc107, #ffca2c);">
+          <div class="card-body p-4">
+            <div class="d-flex flex-column h-100">
+              <div class="stat-icon text-white mb-3">
+                <i class="bi bi-people"></i>
+              </div>
+              <div class="stat-value text-white">{{ stats.total_students }}</div>
+              <div class="stat-label text-white">Total Students</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card dashboard-stat h-100" style="background: linear-gradient(135deg, #0dcaf0, #39d4ff);">
+          <div class="card-body p-4">
+            <div class="d-flex flex-column h-100">
+              <div class="stat-icon text-white mb-3">
+                <i class="bi bi-person-gear"></i>
+              </div>
+              <div class="stat-value text-white">{{ stats.total_instructors }}</div>
+              <div class="stat-label text-white">Total Instructors</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-8">
+        <div class="card shadow-sm h-100">
+          <div class="card-header bg-white py-3">
+            <div class="d-flex justify-content-between align-items-center">
+              <h5 class="mb-0">
+                <i class="bi bi-book text-primary"></i> All Courses
+              </h5>
+              <a href="{{ url_for('courses.list_courses') }}" class="btn btn-sm btn-outline-primary">
+                View All
+              </a>
+            </div>
+          </div>
+          <div class="card-body p-0">
+            {% if courses %}
+              <div class="table-responsive">
+                <table class="table admin-table mb-0">
+                  <thead>
+                    <tr>
+                      <th class="px-4">Course Name</th>
+                      <th>Semester</th>
+                      <th>Instructor</th>
+                      <th class="text-center">Activities</th>
+                      <th>Created</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for course in courses %}
+                    <tr>
+                      <td class="px-4">
+                        <a href="{{ url_for('courses.course_detail', course_id=course.id) }}" class="text-decoration-none text-primary fw-medium">
+                          {{ course.name }}
+                        </a>
+                      </td>
+                      <td>{{ course.semester }}</td>
+                      <td>{{ course.instructor.name }}</td>
+                      <td class="text-center">
+                        <span class="badge bg-light text-dark">{{ course.activities|length }}</span>
+                      </td>
+                      <td>{{ course.created_at.strftime('%Y-%m-%d') }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <div class="text-center py-5">
+                <i class="bi bi-inbox text-muted" style="font-size: 2rem;"></i>
+                <p class="text-muted mt-2 mb-0">No courses available</p>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+          <div class="card-header bg-white py-3">
+            <h5 class="mb-0">
+              <i class="bi bi-lightning text-primary"></i> Quick Actions
+            </h5>
+          </div>
+          <div class="card-body">
+            <a href="{{ url_for('courses.list_courses') }}" class="quick-action-btn btn d-block text-start">
+              <i class="bi bi-list text-primary"></i>
+              <span class="fw-medium">View All Courses</span>
+              <small class="d-block text-muted mt-1">Browse and manage all courses</small>
+            </a>
+            
+            <a href="{{ url_for('activities.list_activities') }}" class="quick-action-btn btn d-block text-start">
+              <i class="bi bi-chat-dots text-success"></i>
+              <span class="fw-medium">View All Activities</span>
+              <small class="d-block text-muted mt-1">Monitor ongoing activities</small>
+            </a>
+            
+            <a href="{{ url_for('main.leaderboard') }}" class="quick-action-btn btn d-block text-start">
+              <i class="bi bi-trophy text-warning"></i>
+              <span class="fw-medium">View Leaderboard</span>
+              <small class="d-block text-muted mt-1">Check student rankings</small>
+            </a>
+            
+            <a href="#" onclick="showQAManagement()" class="quick-action-btn btn d-block text-start">
+              <i class="bi bi-question-circle text-danger"></i>
+              <span class="fw-medium">QA Management</span>
+              <small class="d-block text-muted mt-1">Manage questions and answers</small>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}{% block scripts %}
+<script>
+function showQAManagement() {
+    alert('💡 Management Tips\n\nAdministrators can access the Q&A pages of each course:\n\n✅ Delete any question\n✅ Delete any answer\n✅ Manage user votes\n\nPlease visit the QA page of the specific course for management operations.');
+}
+</script>
+{% endblock %}

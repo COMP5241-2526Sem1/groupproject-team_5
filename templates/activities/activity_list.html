@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}Activity List - Classroom Platform{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-chat-dots"></i> Activity List</h2>
+</div>
+
+<div class="row">
+    {% for activity in activities %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 activity-card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <a href="{{ url_for('activities.activity_detail', activity_id=activity.id) }}" class="text-decoration-none">
+                        {{ activity.title }}
+                    </a>
+                    {% if activity.is_active %}
+                        <span class="badge bg-success status-badge">Active</span>
+                    {% else %}
+                        <span class="badge bg-secondary status-badge">Ended</span>
+                    {% endif %}
+                </h5>
+                <p class="card-text text-muted">{{ activity.course.name }}</p>
+                <p class="card-text">{{ activity.question[:100] }}{% if activity.question|length > 100 %}...{% endif %}</p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">
+                        <i class="bi bi-tag"></i> {{ activity.type }} | 
+                        <i class="bi bi-clock"></i> {{ activity.created_at.strftime('%m-%d %H:%M') }}
+                    </small>
+                    <div class="btn-group btn-group-sm" role="group">
+                        {% if current_user.role in ['admin', 'instructor'] and (current_user.role == 'admin' or activity.course.instructor_id == current_user.id) %}
+                        <a href="{{ url_for('activities.activity_results', activity_id=activity.id) }}" 
+                           class="btn btn-outline-info" title="View Results">
+                            <i class="bi bi-graph-up"></i>
+                        </a>
+                        <button type="button" class="btn btn-outline-danger delete-activity-btn" 
+                                data-activity-title="{{ activity.title }}"
+                                data-delete-url="{{ url_for('activities.delete_activity', activity_id=activity.id) }}"
+                                title="Delete Activity">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                        {% else %}
+                        <a href="{{ url_for('activities.activity_detail', activity_id=activity.id) }}" 
+                           class="btn btn-outline-primary" title="View Details">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="text-center py-5">
+            <i class="bi bi-chat-dots display-1 text-muted"></i>
+            <h4 class="text-muted mt-3">No Activities</h4>
+            <p class="text-muted">No activities yet, waiting for instructors to create them!</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination navigation -->
+{% if pagination.pages > 1 %}
+<nav aria-label="Activity pagination">
+    <ul class="pagination justify-content-center mt-4">
+        {% if pagination.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('activities.list_activities', page=pagination.prev_num) }}">
+                    <i class="bi bi-chevron-left"></i> Previous
+                </a>
+            </li>
+        {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">
+                    <i class="bi bi-chevron-left"></i> Previous
+                </span>
+            </li>
+        {% endif %}
+        
+        {% for page_num in pagination.iter_pages() %}
+            {% if page_num %}
+                {% if page_num != pagination.page %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('activities.list_activities', page=page_num) }}">{{ page_num }}</a>
+                    </li>
+                {% else %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ page_num }}</span>
+                    </li>
+                {% endif %}
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">…</span>
+                </li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if pagination.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('activities.list_activities', page=pagination.next_num) }}">
+                    Next <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+        {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">
+                    Next <i class="bi bi-chevron-right"></i>
+                </span>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+
+<div class="text-center text-muted mt-3">
+    <small>
+        Showing page {{ pagination.page }} of {{ pagination.pages }}
+        ({{ pagination.total }} activities total)
+    </small>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Simple confirm dialog for delete functionality
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Activity list page loaded');
+    
+    // Handle delete activity buttons
+    const deleteActivityButtons = document.querySelectorAll('.delete-activity-btn');
+    console.log('Found delete activity buttons:', deleteActivityButtons.length);
+    
+    deleteActivityButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const activityTitle = this.getAttribute('data-activity-title');
+            const deleteUrl = this.getAttribute('data-delete-url');
+            
+            console.log('Delete button clicked for activity:', activityTitle);
+            
+            const confirmed = confirm(
+                `Are you sure you want to delete activity "${activityTitle}"?\n\n` +
+                'WARNING: This action will delete:\n' +
+                '• All student answers and responses\n' +
+                '• All statistical data for this activity\n' +
+                '• The activity itself\n\n' +
+                'This action cannot be undone!'
+            );
+            
+            if (confirmed) {
+                console.log('Deletion confirmed, submitting form');
+                
+                // Create a form and submit it
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = deleteUrl;
+                form.style.display = 'none';
+                
+                document.body.appendChild(form);
+                form.submit();
+            } else {
+                console.log('Deletion cancelled');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+            }
+        });
+    });
+});
+</script>

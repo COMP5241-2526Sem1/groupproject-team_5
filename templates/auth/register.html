@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}Register - Classroom Platform{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center h-100">
+    <div class="col-md-6">
+        <div class="text-center mb-4">
+            <h2 class="text-primary">
+                <i class="bi bi-mortarboard"></i> Classroom Platform
+            </h2>
+            <p class="text-muted">Create your account to get started.</p>
+        </div>
+        
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h4 class="card-title text-center mb-4">
+                    <i class="bi bi-person-plus text-primary"></i> Register
+                </h4>
+                
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.name.label(class="form-label") }}
+                        {{ form.name(class="form-control form-control-lg", placeholder="Enter your full name") }}
+                        {% if form.name.errors %}
+                            <div class="text-danger">
+                                {% for error in form.name.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.email.label(class="form-label") }}
+                        <div class="input-group">
+                            {{ form.email(class="form-control form-control-lg", id="email", placeholder="Enter your email") }}
+                            <button type="button" class="btn btn-outline-primary" id="send-captcha-btn">发送验证码</button>
+                        </div>
+                        {% if form.email.errors %}
+                            <div class="text-danger">
+                                {% for error in form.email.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.captcha.label(class="form-label") }}
+                        {{ form.captcha(class="form-control form-control-lg", placeholder="请输入6位验证码") }}
+                        {% if form.captcha.errors %}
+                            <div class="text-danger">
+                                {% for error in form.captcha.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.password.label(class="form-label") }}
+                        {{ form.password(class="form-control form-control-lg", placeholder="Enter your password") }}
+                        {% if form.password.errors %}
+                            <div class="text-danger">
+                                {% for error in form.password.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.password2.label(class="form-label") }}
+                        {{ form.password2(class="form-control form-control-lg", placeholder="Confirm your password") }}
+                        {% if form.password2.errors %}
+                            <div class="text-danger">
+                                {% for error in form.password2.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.role.label(class="form-label") }}
+                        {{ form.role(class="form-select form-select-lg") }}
+                        {% if form.role.errors %}
+                            <div class="text-danger">
+                                {% for error in form.role.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-4" id="student-id-field" style="display: none;">
+                        {{ form.student_id.label(class="form-label") }}
+                        {{ form.student_id(class="form-control form-control-lg", placeholder="Enter your student ID (optional)") }}
+                        {% if form.student_id.errors %}
+                            <div class="text-danger">
+                                {% for error in form.student_id.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-4" id="student-id-info" style="display: none;">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> Student ID will be automatically generated for you after registration.
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        {{ form.submit(class="btn btn-primary btn-lg") }}
+                    </div>
+                </form>
+                
+                <div class="text-center mt-4">
+                    <p class="mb-0">Already have an account? <a href="{{ url_for('auth.login') }}" class="text-primary">Login Now</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 角色选择功能
+    document.getElementById('role').addEventListener('change', function() {
+        const studentIdField = document.getElementById('student-id-field');
+        const studentIdInfo = document.getElementById('student-id-info');
+        
+        if (this.value === 'student') {
+            studentIdField.style.display = 'none';  // 学生不需要输入学号
+            studentIdInfo.style.display = 'block';  // 显示自动生成提示
+        } else if (this.value === 'instructor') {
+            studentIdField.style.display = 'block'; // 教师可以选择性输入学号
+            studentIdInfo.style.display = 'none';
+        } else {
+            studentIdField.style.display = 'none';
+            studentIdInfo.style.display = 'none';
+        }
+    });
+
+    // 发送验证码功能
+    document.getElementById('send-captcha-btn').addEventListener('click', function() {
+        const email = document.getElementById('email').value;
+        const btn = this;
+        
+        if (!email) {
+            alert('请先输入邮箱地址');
+            return;
+        }
+        
+        // 邮箱格式验证
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            alert('请输入有效的邮箱地址');
+            return;
+        }
+        
+        // 禁用按钮
+        btn.disabled = true;
+        btn.textContent = '发送中...';
+        
+        // 发送请求
+        fetch('{{ url_for("auth.send_email_captcha") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({email: email})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.code === 200) {
+                alert(data.message);
+                // 开始倒计时
+                let countdown = 60;
+                const timer = setInterval(() => {
+                    btn.textContent = `${countdown}秒后重发`;
+                    countdown--;
+                    if (countdown < 0) {
+                        clearInterval(timer);
+                        btn.disabled = false;
+                        btn.textContent = '发送验证码';
+                    }
+                }, 1000);
+            } else {
+                alert(data.message);
+                btn.disabled = false;
+                btn.textContent = '发送验证码';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('发送失败，请重试');
+            btn.disabled = false;
+            btn.textContent = '发送验证码';
+        });
+    });
+});
+</script>
+{% endblock %}

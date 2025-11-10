@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Activity - Online Classroom{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-xl-8 col-lg-10">
+            <!-- Page title -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold text-primary">
+                    <i class="fas fa-edit me-2"></i>Edit Activity
+                </h2>
+                <a href="{{ url_for('activities.list_activities') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Activity List
+                </a>
+            </div>
+
+            <!-- Course info -->
+            <div class="alert alert-info mb-4">
+                <h6 class="mb-0">
+                    <i class="fas fa-book me-2"></i>Course: {{ course.name }}
+                    <span class="badge bg-primary ms-2">{{ course.semester }}</span>
+                </h6>
+            </div>
+
+            <!-- Form card -->
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-body p-4">
+                    <form method="POST" id="editActivityForm">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Activity title -->
+                        <div class="mb-3">
+                            {{ form.title.label(class="form-label fw-bold") }}
+                            {{ form.title(class="form-control form-control-lg", placeholder="Enter activity title") }}
+                            {% if form.title.errors %}
+                                {% for error in form.title.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <!-- Activity type -->
+                        <div class="mb-3">
+                            {{ form.type.label(class="form-label fw-bold") }}
+                            {{ form.type(class="form-select form-select-lg") }}
+                            {% if form.type.errors %}
+                                {% for error in form.type.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <!-- Activity question -->
+                        <div class="mb-3">
+                            {{ form.question.label(class="form-label fw-bold") }}
+                            {{ form.question(class="form-control", rows="4", placeholder="Enter activity question or description") }}
+                            {% if form.question.errors %}
+                                {% for error in form.question.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <!-- Multiple choice options -->
+                        <div class="mb-4" id="optionsContainer" style="display: none;">
+                            {{ form.options.label(class="form-label fw-bold") }}
+                            {{ form.options(class="form-control", rows="3", placeholder="For multiple choice questions, enter options (one per line)") }}
+                            <div class="form-text">Enter one option per line, leave empty if this activity type doesn't need options</div>
+                            {% if form.options.errors %}
+                                {% for error in form.options.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <!-- Button group -->
+                        <div class="d-flex gap-3 justify-content-end">
+                            <a href="{{ url_for('activities.activity_detail', activity_id=activity.id) }}" 
+                               class="btn btn-outline-secondary btn-lg px-4">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg px-4" id="submitBtn">
+                                <i class="fas fa-save me-2"></i>Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+.card {
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.btn {
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #f8d7da 0%, #f1c0c3 100%);
+    border: none;
+}
+
+.card.border-danger {
+    box-shadow: 0 0 15px rgba(220, 53, 69, 0.1);
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('editActivityForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const typeSelect = document.getElementById('type');
+    const optionsContainer = document.getElementById('optionsContainer');
+    
+    // Show/hide options input
+    function toggleOptionsVisibility() {
+        if (typeSelect.value === 'choice') {
+            optionsContainer.style.display = 'block';
+        } else {
+            optionsContainer.style.display = 'none';
+        }
+    }
+    
+    // Initialize display state
+    toggleOptionsVisibility();
+    
+    // Listen for type changes
+    typeSelect.addEventListener('change', toggleOptionsVisibility);
+    
+    form.addEventListener('submit', function(e) {
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+        submitBtn.disabled = true;
+    });
+    
+    // Form validation hints
+    const inputs = form.querySelectorAll('input, textarea, select');
+    inputs.forEach(input => {
+        input.addEventListener('blur', function() {
+            if (this.value.trim() === '' && this.hasAttribute('required')) {
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.remove('is-invalid');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

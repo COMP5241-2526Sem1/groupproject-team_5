@@ -1,0 +1,415 @@
+{% extends "base.html" %}
+
+{% block title %}Create Activity - {{ course.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="bi bi-plus-circle"></i> Create Activity in {{ course.name }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.title.label(class="form-label") }}
+                        {{ form.title(class="form-control") }}
+                        {% if form.title.errors %}
+                            <div class="text-danger">
+                                {% for error in form.title.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.type.label(class="form-label") }}
+                        {{ form.type(class="form-select") }}
+                        {% if form.type.errors %}
+                            <div class="text-danger">
+                                {% for error in form.type.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.question.label(class="form-label") }}
+                        {{ form.question(class="form-control", rows="4") }}
+                        {% if form.question.errors %}
+                            <div class="text-danger">
+                                {% for error in form.question.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3" id="options-field" style="display: none;">
+                        {{ form.options.label(class="form-label") }}
+                        {{ form.options(class="form-control", rows="4", placeholder="Enter options separated by new lines") }}
+                        {% if form.options.errors %}
+                            <div class="text-danger">
+                                {% for error in form.options.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3" id="quiz-fields" style="display: none;">
+                        <label class="form-label">Quiz Type</label>
+                        <select id="quiz-type" class="form-select">
+                            <option value="multiple_choice">Multiple Choice</option>
+                            <option value="true_false">True/False</option>
+                            <option value="fill_blank">Fill in the Blank</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3" id="correct-answer-field" style="display: none;">
+                        <label class="form-label">Correct Answer</label>
+                        <input type="text" id="correct-answer" class="form-control" placeholder="Enter correct answer">
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.duration_minutes.label(class="form-label") }}
+                        {{ form.duration_minutes(class="form-select") }}
+                        <div class="form-text">Set a time limit for student responses</div>
+                        {% if form.duration_minutes.errors %}
+                            <div class="text-danger">
+                                {% for error in form.duration_minutes.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="allow_quick_join" name="allow_quick_join" checked>
+                                    <label class="form-check-label" for="allow_quick_join">
+                                        <i class="bi bi-qr-code"></i> <strong>允许二维码快速加入</strong>
+                                    </label>
+                                </div>
+                                <small class="text-muted d-block mt-2">
+                                    <i class="bi bi-info-circle"></i> 启用后，学生可以通过扫描二维码快速注册并加入此活动
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        {{ form.submit(class="btn btn-primary") }}
+                        <a href="{{ url_for('courses.course_detail', course_id=course.id) }}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5><i class="bi bi-robot"></i> AI-Assisted Question Generation</h5>
+            </div>
+            <div class="card-body">
+                <!-- Tab navigation -->
+                <ul class="nav nav-tabs" id="aiTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="text-tab" data-bs-toggle="tab" data-bs-target="#text-panel" type="button" role="tab">
+                            <i class="bi bi-file-text"></i> Text Input
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="file-tab" data-bs-toggle="tab" data-bs-target="#file-panel" type="button" role="tab">
+                            <i class="bi bi-file-earmark-arrow-up"></i> File Upload
+                        </button>
+                    </li>
+                </ul>
+                
+                <!-- Tab content -->
+                <div class="tab-content mt-3" id="aiTabContent">
+                    <!-- Text input tab -->
+                    <div class="tab-pane fade show active" id="text-panel" role="tabpanel">
+                        <div class="mb-3">
+                            <label for="ai-text" class="form-label">Paste Teaching Text</label>
+                            <textarea id="ai-text" class="form-control" rows="4" placeholder="Paste your teaching text here, and AI will generate related questions..."></textarea>
+                        </div>
+                        <button id="generate-questions-text" class="btn btn-outline-primary">
+                            <i class="bi bi-robot"></i> Generate Questions
+                        </button>
+                    </div>
+                    
+                    <!-- File upload tab -->
+                    <div class="tab-pane fade" id="file-panel" role="tabpanel">
+                        <div class="mb-3">
+                            <label for="ai-file" class="form-label">Upload Document</label>
+                            <div class="custom-file-upload">
+                                <input type="file" id="ai-file" class="d-none" accept=".pdf,.docx,.pptx" />
+                                <button type="button" class="btn btn-outline-secondary" id="file-upload-btn">
+                                    <i class="bi bi-file-earmark-arrow-up"></i> Choose File
+                                </button>
+                                <span id="file-upload-status" class="ms-2 text-muted">No file selected</span>
+                            </div>
+                            <div class="form-text mt-2">
+                                <i class="bi bi-info-circle"></i> Supported formats: PDF (.pdf), Word Document (.docx), PowerPoint (.pptx). Maximum size: 10MB
+                            </div>
+                        </div>
+                        <button id="generate-questions-file" class="btn btn-outline-primary">
+                            <i class="bi bi-robot"></i> Generate Questions from File
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="generated-questions" class="mt-3" style="display: none;">
+                    <h6>Generated Questions:</h6>
+                    <div id="questions-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('type').addEventListener('change', function() {
+    const optionsField = document.getElementById('options-field');
+    const quizFields = document.getElementById('quiz-fields');
+    const correctAnswerField = document.getElementById('correct-answer-field');
+    
+    // Hide all fields first
+    optionsField.style.display = 'none';
+    quizFields.style.display = 'none';
+    correctAnswerField.style.display = 'none';
+    
+    if (this.value === 'poll') {
+        optionsField.style.display = 'block';
+    } else if (this.value === 'quiz') {
+        quizFields.style.display = 'block';
+        correctAnswerField.style.display = 'block';
+    } else if (this.value === 'word_cloud') {
+        // Word cloud doesn't need additional fields
+    }
+});
+
+// 处理文本输入的问题生成
+document.getElementById('generate-questions-text').addEventListener('click', function() {
+    const text = document.getElementById('ai-text').value.trim();
+    if (!text) {
+        alert('Please enter teaching text');
+        return;
+    }
+    
+    generateQuestionsFromText(text, this);
+});
+
+// 处理文件上传的问题生成
+document.getElementById('generate-questions-file').addEventListener('click', function() {
+    const fileInput = document.getElementById('ai-file');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        alert('Please select a file');
+        return;
+    }
+    
+    // 验证文件类型
+    const allowedTypes = ['.pdf', '.docx', '.pptx'];
+    const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+    if (!allowedTypes.includes(fileExtension)) {
+        alert('Please upload a PDF, Word document, or PowerPoint presentation');
+        return;
+    }
+    
+    // 验证文件大小 (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+        alert('File size must be less than 10MB');
+        return;
+    }
+    
+    generateQuestionsFromFile(file, this);
+});
+
+// 从文本生成问题的函数
+function generateQuestionsFromText(text, button) {
+    button.disabled = true;
+    button.innerHTML = '<i class="bi bi-hourglass-split"></i> Generating...';
+    
+    fetch('{{ url_for("activities.generate_questions_route") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({text: text})
+    })
+    .then(response => response.json())
+    .then(data => {
+        handleGeneratedQuestions(data);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Generation failed, please try again');
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.innerHTML = '<i class="bi bi-robot"></i> Generate Questions';
+    });
+}
+
+// 从文件生成问题的函数
+function generateQuestionsFromFile(file, button) {
+    button.disabled = true;
+    button.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing file...';
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    fetch('{{ url_for("activities.generate_questions_route") }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        handleGeneratedQuestions(data);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('File processing failed, please try again');
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.innerHTML = '<i class="bi bi-robot"></i> Generate Questions from File';
+    });
+}
+
+// 处理生成的问题
+function handleGeneratedQuestions(data) {
+    if (data.success) {
+        const questionsList = document.getElementById('questions-list');
+        questionsList.innerHTML = '';
+        
+        data.questions.forEach((question, index) => {
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'card mb-2';
+            questionDiv.innerHTML = `
+                <div class="card-body">
+                    <p class="card-text">${question}</p>
+                    <button class="btn btn-sm btn-outline-primary use-question" data-question="${question}">
+                        Use this question
+                    </button>
+                </div>
+            `;
+            questionsList.appendChild(questionDiv);
+        });
+        
+        document.getElementById('generated-questions').style.display = 'block';
+        
+        // 滚动到生成的问题区域
+        document.getElementById('generated-questions').scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+        });
+    } else {
+        alert('Generation failed: ' + data.message);
+    }
+}
+
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('use-question')) {
+        const question = e.target.getAttribute('data-question');
+        const questionTextarea = document.querySelector('textarea[name="question"]');
+        const currentValue = questionTextarea.value.trim();
+        
+        // 追加问题到问题字段
+        if (currentValue) {
+            // 如果已有内容，追加新问题（换行分隔）
+            questionTextarea.value = currentValue + '\n\n' + question;
+        } else {
+            // 如果为空，直接填入
+            questionTextarea.value = question;
+        }
+        
+        // 标记该问题为已使用，但不移除整个列表
+        const questionCard = e.target.closest('.card');
+        if (questionCard) {
+            // 添加已使用的视觉标记
+            questionCard.style.opacity = '0.6';
+            questionCard.style.borderLeft = '4px solid #28a745';
+            e.target.disabled = true;
+            e.target.innerHTML = '<i class="bi bi-check-circle"></i> Added';
+            e.target.classList.remove('btn-outline-primary');
+            e.target.classList.add('btn-success');
+        }
+        
+        // 滚动到问题输入框，方便用户查看
+        questionTextarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        questionTextarea.focus();
+        
+        // 将光标移到文本末尾
+        questionTextarea.setSelectionRange(questionTextarea.value.length, questionTextarea.value.length);
+    }
+});
+
+// 处理自定义文件上传按钮点击
+document.getElementById('file-upload-btn').addEventListener('click', function() {
+    document.getElementById('ai-file').click();
+});
+
+// 处理文件选择的显示文字
+document.getElementById('ai-file').addEventListener('change', function() {
+    const fileInput = this;
+    const statusSpan = document.getElementById('file-upload-status');
+    const uploadBtn = document.getElementById('file-upload-btn');
+    
+    if (fileInput.files && fileInput.files.length > 0) {
+        const fileName = fileInput.files[0].name;
+        // 如果文件名太长，截取显示
+        const displayName = fileName.length > 30 ? fileName.substring(0, 27) + '...' : fileName;
+        statusSpan.textContent = displayName;
+        statusSpan.classList.remove('text-muted');
+        statusSpan.classList.add('text-success');
+        
+        // 更新按钮样式
+        uploadBtn.classList.remove('btn-outline-secondary');
+        uploadBtn.classList.add('btn-outline-success');
+        uploadBtn.innerHTML = '<i class="bi bi-file-earmark-check"></i> File Selected';
+    } else {
+        statusSpan.textContent = 'No file selected';
+        statusSpan.classList.remove('text-success');
+        statusSpan.classList.add('text-muted');
+        
+        // 恢复按钮样式
+        uploadBtn.classList.remove('btn-outline-success');
+        uploadBtn.classList.add('btn-outline-secondary');
+        uploadBtn.innerHTML = '<i class="bi bi-file-earmark-arrow-up"></i> Choose File';
+    }
+});
+</script>
+
+<style>
+.custom-file-upload {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.custom-file-upload .btn {
+    white-space: nowrap;
+}
+
+#file-upload-status {
+    font-size: 0.9em;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#file-upload-status.text-success {
+    font-weight: 500;
+}
+</style>
+{% endblock %}

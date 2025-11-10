@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Leaderboard - Classroom Platform{% endblock %}
+
+{% block content %}
+<style>
+.leaderboard-header {
+    background: linear-gradient(135deg, #ffffff20, #ffffff10);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.leaderboard-card {
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+.leaderboard-item {
+    padding: 1rem;
+    margin: 0.5rem 0;
+    border-radius: 10px;
+    border: none;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+}
+
+.leaderboard-item:hover {
+    transform: translateX(10px);
+    background: #fff;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.rank-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    color: #495057;
+    transition: all 0.3s ease;
+}
+
+.rank-1 { background: linear-gradient(135deg, #ffd700, #ffc107); color: #fff; }
+.rank-2 { background: linear-gradient(135deg, #c0c0c0, #adb5bd); color: #fff; }
+.rank-3 { background: linear-gradient(135deg, #cd7f32, #bc6c25); color: #fff; }
+
+.response-count {
+    background: linear-gradient(135deg, #0d6efd, #0099ff);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+}
+</style>
+
+<div class="leaderboard-header">
+    <div class="d-flex align-items-center gap-3">
+        <i class="bi bi-trophy text-warning" style="font-size: 2.5rem;"></i>
+        <div>
+            <h2 class="mb-0">Student Participation Leaderboard</h2>
+            <p class="text-muted mb-0">Top performers in classroom activities</p>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="leaderboard-card">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-ol text-primary me-2"></i>
+                    Overall Rankings
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                {% if student_stats %}
+                    <div class="list-group">
+                        {% for stat in student_stats %}
+                        <div class="leaderboard-item d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rank-icon {% if loop.index <= 3 %}rank-{{ loop.index }}{% endif %}">
+                                    {% if loop.index == 1 %}
+                                        <i class="bi bi-trophy-fill"></i>
+                                    {% elif loop.index == 2 %}
+                                        <i class="bi bi-award-fill"></i>
+                                    {% elif loop.index == 3 %}
+                                        <i class="bi bi-award-fill"></i>
+                                    {% else %}
+                                        {{ loop.index }}
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <h6 class="mb-1 fw-bold">{{ stat.student.name }}</h6>
+                                    {% if stat.student.student_id %}
+                                    <small class="text-muted">ID: {{ stat.student.student_id }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <div class="response-count">
+                                    {{ stat.response_count }}
+                                </div>
+                                <small class="text-muted d-block mt-1">Responses</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-trophy display-1 text-muted"></i>
+                        <h5 class="text-muted mt-3">No Data</h5>
+                        <p class="text-muted">No students have participated in activities yet</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-info-circle"></i> Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4>{{ student_stats|length }}</h4>
+                        <small class="text-muted">Participating Students</small>
+                    </div>
+                    <div class="col-6">
+                        <h4>{{ student_stats|sum(attribute='response_count') if student_stats else 0 }}</h4>
+                        <small class="text-muted">Total Responses</small>
+                    </div>
+                </div>
+                <hr>
+                {% if student_stats %}
+                <div class="text-center">
+                    <h4>{{ "%.1f"|format(student_stats|sum(attribute='response_count') / student_stats|length) }}</h4>
+                    <small class="text-muted">Average Responses</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5><i class="bi bi-star"></i> Top 3</h5>
+            </div>
+            <div class="card-body">
+                {% if student_stats %}
+                    {% for stat in student_stats[:3] %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="d-flex align-items-center">
+                            {% if loop.index == 1 %}
+                                <i class="bi bi-trophy-fill text-warning me-2"></i>
+                            {% elif loop.index == 2 %}
+                                <i class="bi bi-award-fill text-secondary me-2"></i>
+                            {% elif loop.index == 3 %}
+                                <i class="bi bi-award-fill text-warning me-2"></i>
+                            {% endif %}
+                            <span>{{ stat.student.name }}</span>
+                        </div>
+                        <span class="badge bg-primary">{{ stat.response_count }}</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">No data</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

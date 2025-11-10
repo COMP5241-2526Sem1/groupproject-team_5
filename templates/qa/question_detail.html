@@ -1,0 +1,473 @@
+{% extends "base.html" %}
+
+{% block title %}{{ question.title }} - {{ course.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <!-- 返回链接 -->
+            <div class="mb-3">
+                <a href="{{ url_for('qa.course_qa_list', course_id=course.id) }}" 
+                   class="btn btn-secondary btn-sm">
+                    <i class="fas fa-arrow-left"></i> Back to Questions List
+                </a>
+            </div>
+
+            <!-- 问题详情 -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">{{ question.title }}</h4>
+                    <div class="d-flex align-items-center">
+                        {% if question.is_resolved %}
+                            <span class="badge badge-success badge-lg mr-2">
+                                <i class="fas fa-check"></i> Resolved
+                            </span>
+                        {% endif %}
+                        
+                        <!-- 管理员删除按钮 -->
+                        {% if current_user.role == 'admin' or (current_user.role == 'instructor' and course.instructor_id == current_user.id) %}
+                            <button class="btn btn-danger btn-sm" 
+                                    onclick="deleteQuestion({{ question.id }})"
+                                    title="Delete this question">
+                                <i class="fas fa-trash"></i> Delete Question
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="question-content mb-3">
+                        {{ question.content|replace('\n', '<br>')|safe }}
+                    </div>
+                    <div class="question-meta text-muted">
+                        <small>
+                            <i class="fas fa-user"></i> {{ question.author.name }}
+                            <i class="fas fa-clock ml-3"></i> {{ question.created_at|local_time }}
+                            <i class="fas fa-book ml-3"></i> {{ course.name }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 回答列表 -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        Answers ({% if answers_pagination %}{{ answers_pagination.total }}{% else %}{{ answers|length }}{% endif %})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if answers %}
+                        {% for answer in answers %}
+                        <div class="answer-item mb-4 pb-3 {% if not loop.last %}border-bottom{% endif %}">
+                            <div class="d-flex">
+                                <!-- 投票区域 -->
+                                <div class="vote-section mr-3 text-center">
+                                    <button class="btn btn-outline-success vote-btn mb-1" 
+                                            data-answer-id="{{ answer.id }}" 
+                                            data-vote-type="upvote"
+                                            title="Approve this answer">
+                                        <i class="fas fa-thumbs-up"></i> Approve
+                                    </button>
+                                    <div class="vote-count font-weight-bold text-center">
+                                        {% if answer.upvotes > 0 %}
+                                            {{ answer.upvotes }}
+                                        {% endif %}
+                                    </div>
+                                    <button class="btn btn-outline-danger vote-btn mt-1" 
+                                            data-answer-id="{{ answer.id }}" 
+                                            data-vote-type="downvote"
+                                            title="Disapprove this answer">
+                                        <i class="fas fa-thumbs-down"></i> Disapprove
+                                    </button>
+                                </div>
+
+                                <!-- 回答内容 -->
+                                <div class="answer-content flex-grow-1">
+                                    {% if answer.id == question.best_answer_id %}
+                                        <div class="alert alert-success mb-2">
+                                            <i class="fas fa-check-circle"></i> <strong>Best Answer</strong>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    {% if answer.is_instructor_answer %}
+                                        <div class="mb-2">
+                                            <span class="badge badge-primary">
+                                                <i class="fas fa-chalkboard-teacher"></i> Instructor Answer
+                                            </span>
+                                        </div>
+                                    {% endif %}
+
+                                    <div class="answer-text mb-2">
+                                        {{ answer.content|replace('\n', '<br>')|safe }}
+                                    </div>
+
+                                    <div class="answer-meta d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="fas fa-user"></i> {{ answer.author.name }}
+                                            <i class="fas fa-clock ml-2"></i> {{ answer.created_at|local_time }}
+                                        </small>
+                                        
+                                        <div class="answer-actions">
+                                            <!-- 标记最佳答案按钮（仅教师可见） -->
+                                            {% if current_user.role == 'instructor' and course.instructor_id == current_user.id and not question.is_resolved %}
+                                                <button class="btn btn-outline-success btn-sm mark-best-btn mr-2" 
+                                                        data-question-id="{{ question.id }}" 
+                                                        data-answer-id="{{ answer.id }}">
+                                                    <i class="fas fa-star"></i> Mark as Best Answer
+                                                </button>
+                                            {% endif %}
+                                            
+                                            <!-- 删除回答按钮 -->
+                                            {% if current_user.role == 'admin' or (current_user.role == 'instructor' and course.instructor_id == current_user.id) or answer.user_id == current_user.id %}
+                                                <button class="btn btn-outline-danger btn-sm delete-answer-btn" 
+                                                        data-question-id="{{ question.id }}" 
+                                                        data-answer-id="{{ answer.id }}"
+                                                        title="Delete this answer">
+                                                    <i class="fas fa-trash"></i> Delete
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-comments fa-2x text-muted mb-3"></i>
+                            <p class="text-muted">No answers yet, be the first to answer!</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- 回答分页导航 -->
+                {% if answers_pagination and answers_pagination.pages > 1 %}
+                <div class="card-footer">
+                    <nav aria-label="Answer pagination">
+                        <ul class="pagination justify-content-center mb-0">
+                            <!-- 上一页 -->
+                            {% if answers_pagination.has_prev %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('qa.question_detail', course_id=course.id, question_id=question.id, page=answers_pagination.prev_num) }}">
+                                        <i class="fas fa-chevron-left"></i> 上一页
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">
+                                        <i class="fas fa-chevron-left"></i> 上一页
+                                    </span>
+                                </li>
+                            {% endif %}
+
+                            <!-- 页码数字 -->
+                            <!-- 第一页 -->
+                            {% if answers_pagination.page > 3 %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('qa.question_detail', course_id=course.id, question_id=question.id, page=1) }}">1</a>
+                                </li>
+                                {% if answers_pagination.page > 4 %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                {% endif %}
+                            {% endif %}
+
+                            <!-- 当前页附近的页码 -->
+                            {% for page_num in range([1, answers_pagination.page-2]|max, [answers_pagination.pages, answers_pagination.page+2]|min + 1) %}
+                                {% if page_num == answers_pagination.page %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('qa.question_detail', course_id=course.id, question_id=question.id, page=page_num) }}">{{ page_num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            <!-- 最后一页 -->
+                            {% if answers_pagination.page < answers_pagination.pages - 2 %}
+                                {% if answers_pagination.page < answers_pagination.pages - 3 %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                {% endif %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('qa.question_detail', course_id=course.id, question_id=question.id, page=answers_pagination.pages) }}">{{ answers_pagination.pages }}</a>
+                                </li>
+                            {% endif %}
+
+                            <!-- 下一页 -->
+                            {% if answers_pagination.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('qa.question_detail', course_id=course.id, question_id=question.id, page=answers_pagination.next_num) }}">
+                                        下一页 <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">
+                                        下一页 <i class="fas fa-chevron-right"></i>
+                                    </span>
+                                </li>
+                            {% endif %}
+                        </ul>
+
+                        <!-- 分页信息 -->
+                        <div class="text-center mt-2">
+                            <small class="text-muted">
+                                The {{ answers_pagination.page }} page, total {{ answers_pagination.pages }} pages, {{ answers_pagination.total }} answers
+                            </small>
+                        </div>
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- 回答表单 -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Add Answer</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('qa.submit_answer', course_id=course.id, question_id=question.id) }}" method="POST">
+                        <div class="form-group">
+                            <textarea class="form-control" 
+                                      name="content" 
+                                      rows="6" 
+                                      placeholder="Please enter your answer..." 
+                                      required></textarea>
+                        </div>
+                        <div class="form-group text-right">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-reply"></i> Submit Answer
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 投票功能
+document.querySelectorAll('.vote-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const answerId = this.dataset.answerId;
+        const voteType = this.dataset.voteType;
+        
+        fetch(`/answer/${answerId}/vote`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({vote_type: voteType})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // 更新投票数显示
+                const voteCountElement = this.parentElement.querySelector('.vote-count');
+                if (data.upvotes > 0) {
+                    voteCountElement.textContent = data.upvotes;
+                } else {
+                    voteCountElement.textContent = '';
+                }
+                
+                // 更新按钮状态
+                const upBtn = this.parentElement.querySelector('[data-vote-type="upvote"]');
+                const downBtn = this.parentElement.querySelector('[data-vote-type="downvote"]');
+                
+                // 重置所有按钮样式
+                upBtn.className = 'btn btn-outline-success vote-btn mb-1';
+                downBtn.className = 'btn btn-outline-danger vote-btn mt-1';
+                
+                // 高亮当前投票按钮
+                if (voteType === 'upvote' && data.upvotes > 0) {
+                    upBtn.className = 'btn btn-success vote-btn mb-1';
+                } else if (voteType === 'downvote') {
+                    downBtn.className = 'btn btn-danger vote-btn mt-1';
+                }
+            } else {
+                alert('Vote failed: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while voting');
+        });
+    });
+});
+
+// 标记最佳答案功能
+document.querySelectorAll('.mark-best-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const questionId = this.dataset.questionId;
+        const answerId = this.dataset.answerId;
+
+        if (confirm('Are you sure you want to mark this answer as the best answer?')) {
+            fetch(`/question/${questionId}/mark_best/${answerId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload(); // Reload the page to show updates
+                } else {
+                    alert('Operation failed: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while marking the best answer');
+            });
+        }
+    });
+});
+
+// 删除问题功能
+function deleteQuestion(questionId) {
+    if (confirm('Warning: Deleting a question will simultaneously delete all related answers and voting records.\n\nAre you sure you want to delete this question? This action cannot be undone.')) {
+        fetch(`/course/{{ course.id }}/qa/${questionId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ ' + data.message);
+                // Redirect to question list
+                if (data.redirect_url) {
+                    window.location.href = data.redirect_url;
+                } else {
+                    window.location.href = '{{ url_for("qa.course_qa_list", course_id=course.id) }}';
+                }
+            } else {
+                alert('❌ Fail to delete: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('❌ An error occurred while deleting');
+        });
+    }
+}
+
+// 删除回答功能
+document.querySelectorAll('.delete-answer-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const questionId = this.dataset.questionId;
+        const answerId = this.dataset.answerId;
+
+        if (confirm('Are you sure you want to delete this answer? This action cannot be undone.')) {
+            fetch(`/course/{{ course.id }}/qa/${questionId}/delete_answer/${answerId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ ' + data.message);
+                    location.reload(); // Reload the page to show updates
+                } else {
+                    alert('❌ Fail to delete: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('❌ An error occurred while deleting');
+            });
+        }
+    });
+});
+</script>
+
+<style>
+.answer-item {
+    position: relative;
+}
+
+.vote-section {
+    min-width: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.vote-btn {
+    padding: 8px 12px !important;
+    border-radius: 20px !important;
+    transition: all 0.3s ease !important;
+    font-size: 16px;
+    min-width: 50px;
+}
+
+.vote-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.vote-btn i {
+    font-size: 18px;
+}
+
+.vote-count {
+    font-size: 1.3em;
+    margin: 8px 0;
+    min-height: 25px;
+    color: #495057;
+    font-weight: bold;
+    background: #f8f9fa;
+    padding: 5px 10px;
+    border-radius: 15px;
+    min-width: 40px;
+}
+
+.answer-text {
+    line-height: 1.6;
+    white-space: pre-line;
+}
+
+.mark-best-btn {
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.mark-best-btn:hover {
+    opacity: 1;
+}
+
+/* 投票按钮动画效果 */
+.btn-success.vote-btn {
+    animation: thumbsUp 0.3s ease;
+}
+
+.btn-danger.vote-btn {
+    animation: thumbsDown 0.3s ease;
+}
+
+@keyframes thumbsUp {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+@keyframes thumbsDown {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}快速加入活动 - {{ activity.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-qrcode fa-3x text-primary mb-3"></i>
+                        <h3>快速加入活动</h3>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-book"></i> {{ course.name }}</h5>
+                        <h6><i class="fas fa-clipboard-list"></i> {{ activity.title }}</h6>
+                        <p class="mb-0 small text-muted">{{ course.semester }}</p>
+                    </div>
+                    
+                    <p class="text-muted mb-4">
+                        请输入您的信息以快速加入此活动。如果您已经有账号，将自动为您登录；如果没有，将为您创建一个新账号。
+                    </p>
+                    
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">
+                                <i class="fas fa-user"></i> 姓名 <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="name" 
+                                   name="name" 
+                                   placeholder="请输入您的姓名"
+                                   required>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="email" class="form-label">
+                                <i class="fas fa-envelope"></i> 邮箱 <span class="text-danger">*</span>
+                            </label>
+                            <input type="email" 
+                                   class="form-control" 
+                                   id="email" 
+                                   name="email" 
+                                   placeholder="your.email@example.com"
+                                   required>
+                            <small class="form-text text-muted">
+                                如果您已有账号，请使用注册时的邮箱
+                            </small>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-sign-in-alt"></i> 加入活动
+                            </button>
+                            <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> 取消
+                            </a>
+                        </div>
+                    </form>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="text-center">
+                        <p class="mb-2 small text-muted">已有完整账号？</p>
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-user-circle"></i> 前往登录页面
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-3 bg-light">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-info-circle text-info"></i> 提示
+                    </h6>
+                    <ul class="small mb-0">
+                        <li>新用户将自动创建账号并生成临时密码</li>
+                        <li>您将自动加入该课程</li>
+                        <li>加入后即可参与活动</li>
+                        <li>请记住临时密码，以便下次登录</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border-radius: 15px;
+}
+
+.card-body {
+    padding: 2rem;
+}
+
+.btn-lg {
+    padding: 12px;
+    font-size: 1.1rem;
+}
+
+.alert-info {
+    background-color: #e3f2fd;
+    border-color: #90caf9;
+}
+
+.form-control:focus {
+    border-color: #4285f4;
+    box-shadow: 0 0 0 0.2rem rgba(66, 133, 244, 0.25);
+}
+</style>
+{% endblock %}
