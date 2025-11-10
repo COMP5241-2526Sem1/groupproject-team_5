@@ -4,7 +4,9 @@ from app import db, socketio
 from app.models import Course, Activity, Response, User, Enrollment
 from app.forms import ActivityForm, AIQuestionForm
 from app.ai_utils import generate_questions, generate_activity_from_content, group_answers, extract_text_from_file, validate_file_upload
+from app.email_utils import send_temp_password_email
 from datetime import datetime, timedelta
+from werkzeug.security import generate_password_hash
 import json
 import re
 import csv
@@ -12,6 +14,8 @@ import io
 import time
 import os
 import tempfile
+import secrets
+import string
 from collections import Counter
 from flask import make_response
 from werkzeug.utils import secure_filename
@@ -839,11 +843,6 @@ def quick_register(token):
             flash('欢迎回来！', 'success')
         else:
             # 创建新用户
-            from werkzeug.security import generate_password_hash
-            import secrets
-            import string
-            from app.email_utils import send_temp_password_email
-            
             # 生成易读的随机密码（8位，包含字母和数字）
             characters = string.ascii_letters + string.digits
             temp_password = ''.join(secrets.choice(characters) for _ in range(8))
@@ -859,13 +858,18 @@ def quick_register(token):
             db.session.commit()
             
             # 发送临时密码到邮箱
-            email_sent = send_temp_password_email(email, name, temp_password)
-            
-            if email_sent:
-                flash(f'Account created successfully! Your temporary password has been sent to {email}. Please check your email and login.', 'success')
-            else:
-                # 如果邮件发送失败，显示密码（备用方案）
-                flash(f'Account created! Email delivery failed. Your temporary password is: {temp_password}. Please save it and change it after login.', 'warning')
+            try:
+                email_sent = send_temp_password_email(email, name, temp_password)
+                
+                if email_sent:
+                    flash(f'Account created successfully! Your temporary password has been sent to {email}. Please check your email.', 'success')
+                else:
+                    # 如果邮件发送失败，显示密码（备用方案）
+                    flash(f'Account created! Email delivery failed. Your temporary password is: {temp_password}. Please save it and change it after login.', 'warning')
+            except Exception as e:
+                # 捕获任何异常，显示密码
+                flash(f'Account created! Your temporary password is: {temp_password}. Please save it and change it after login.', 'warning')
+                print(f"Email sending error: {str(e)}")
             
             # 自动登录
             login_user(user)
