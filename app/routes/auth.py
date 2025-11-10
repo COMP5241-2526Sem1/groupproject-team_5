@@ -3,10 +3,9 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask_mail import Message
 from app import db, mail
-from app.models import User, EmailCaptcha
+from app.models import User, EmailCaptcha, get_beijing_time
 from app.forms import LoginForm, RegistrationForm
 from app.email_utils import send_temp_password_email
-from app.utils import beijing_now
 import string
 import random
 import secrets
@@ -59,7 +58,7 @@ def register():
                 return render_template('auth/register.html', form=form)
             
             # 检查验证码是否过期（5分钟）
-            if beijing_now().replace(tzinfo=None) - email_captcha.create_time > timedelta(minutes=5):
+            if get_beijing_time() - email_captcha.create_time > timedelta(minutes=5):
                 flash('验证码已过期，请重新获取', 'error')
                 EmailCaptcha.query.filter_by(email=form.email.data).delete()
                 db.session.commit()
@@ -215,7 +214,7 @@ def forgot_password():
             return render_template('auth/forgot_password.html')
         
         # 检查验证码是否过期（5分钟）
-        if beijing_now().replace(tzinfo=None) - email_captcha.create_time > timedelta(minutes=5):
+        if get_beijing_time() - email_captcha.create_time > timedelta(minutes=5):
             flash('Verification code expired. Please request a new one.', 'error')
             EmailCaptcha.query.filter_by(email=email).delete()
             db.session.commit()

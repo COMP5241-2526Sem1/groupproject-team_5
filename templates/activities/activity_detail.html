@@ -313,9 +313,15 @@ document.getElementById('response-form').addEventListener('submit', function(e) 
     
     const answer = document.getElementById('answer').value.trim();
     if (!answer) {
-        alert('请输入答案');
+        alert('Please enter an answer');
         return;
     }
+    
+    // Show submitting status
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
     
     fetch('{{ url_for("activities.submit_response", activity_id=activity.id) }}', {
         method: 'POST',
@@ -327,42 +333,31 @@ document.getElementById('response-form').addEventListener('submit', function(e) 
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // 显示成功消息和提交的内容
+            // Display success message
             const alertDiv = document.createElement('div');
             alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
             alertDiv.innerHTML = `
-                <strong>✅ ${data.message}</strong>
-                <p class="mb-1 mt-2"><strong>您提交的答案：</strong></p>
-                <div class="bg-light p-3 rounded border">
-                    ${answer}
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <strong><i class="bi bi-check-circle"></i> Submission Successful!</strong>
+                <p class="mb-0">Your answer has been submitted successfully</p>
             `;
-            
-            // 插入提示到表单上方
-            const form = document.getElementById('response-form');
-            form.parentNode.insertBefore(alertDiv, form);
-            
-            // 禁用表单
-            document.getElementById('answer').disabled = true;
-            const submitBtn = form.querySelector('button[type="submit"]');
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> 已提交';
-                submitBtn.className = 'btn btn-success';
+            const container = document.querySelector('.container');
+            if (container && container.firstChild) {
+                container.insertBefore(alertDiv, container.firstChild);
             }
             
-            // 3秒后刷新页面
-            setTimeout(() => {
-                location.reload();
-            }, 3000);
+            // Reload page after 1 second to show submitted answer
+            setTimeout(() => location.reload(), 1000);
         } else {
-            alert('提交失败: ' + data.message);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+            alert('Submission failed: ' + data.message);
         }
     })
     .catch(error => {
-        console.error('错误:', error);
-        alert('提交失败，请重试');
+        console.error('Error:', error);
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+        alert('Submission failed, please try again');
     });
 });
 
@@ -411,16 +406,28 @@ if (typeof io !== 'undefined') {
             const timerElement = document.getElementById('activity-timer');
             
             if (data.data.is_active) {
-                statusElement.innerHTML = '<span class="text-success">活动中</span>';
+                statusElement.innerHTML = '<span class="text-success">Active</span>';
             } else {
-                // 活动已结束
-                statusElement.innerHTML = '<span class="text-muted">已结束</span>';
-                isActivityActive = false;  // 更新全局状态
+                // Activity ended
+                statusElement.innerHTML = '<span class="text-muted">Ended</span>';
+                isActivityActive = false;  // Update global state
                 
-                // 更新倒计时显示
+                // Update countdown display
                 if (remainingTimeElement && timerElement) {
-                    remainingTimeElement.textContent = '活动已结束';
+                    remainingTimeElement.textContent = 'Activity has ended';
                     timerElement.className = 'alert alert-warning';
+                }
+                
+                // 更新按钮状态(教师/管理员视图)
+                const startBtn = document.getElementById('start-activity');
+                const stopBtn = document.getElementById('stop-activity');
+                if (startBtn) {
+                    startBtn.style.display = 'inline-block';
+                    startBtn.className = 'btn btn-success';
+                    startBtn.innerHTML = '<i class="bi bi-play-circle"></i> restart Activity';
+                }
+                if (stopBtn) {
+                    stopBtn.style.display = 'none';
                 }
                 
                 // 禁用提交表单(学生视图)
@@ -429,32 +436,27 @@ if (typeof io !== 'undefined') {
                 const answerInput = document.getElementById('answer');
                 if (submitBtn) {
                     submitBtn.disabled = true;
-                    submitBtn.innerHTML = '<i class="bi bi-ban"></i> 活动已结束';
+                    submitBtn.innerHTML = '<i class="bi bi-ban"></i> Activity Ended';
                     submitBtn.className = 'btn btn-secondary';
                 }
                 if (answerInput) {
                     answerInput.disabled = true;
-                    answerInput.placeholder = '活动已结束，无法提交';
+                    answerInput.placeholder = 'Activity has ended, cannot submit';
                 }
                 
-                // 显示提示消息
+                // Display notification message
                 if (data.update_type === 'auto_ended') {
                     const alertDiv = document.createElement('div');
                     alertDiv.className = 'alert alert-info alert-dismissible fade show mt-3';
                     alertDiv.innerHTML = `
-                        <strong>⏰ 活动自动结束</strong>
-                        <p class="mb-0">倒计时已结束，活动已自动停止。页面将在2秒后刷新...</p>
+                        <strong>⏰ Activity Auto-Ended</strong>
+                        <p class="mb-0">Countdown finished, activity has been automatically stopped.</p>
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     `;
                     const container = document.querySelector('.container');
                     if (container && container.firstChild) {
                         container.insertBefore(alertDiv, container.firstChild);
                     }
-                    
-                    // 2秒后刷新页面以显示正确的按钮状态
-                    setTimeout(() => {
-                        location.reload();
-                    }, 2000);
                 }
             }
         }
@@ -616,23 +618,23 @@ function initializeCountdown() {
         
         if (!remainingTimeElement || !timerElement) return false;
         
-        // 如果活动已被标记为结束
+        // If activity is marked as ended
         if (!isActivityActive) {
-            remainingTimeElement.textContent = '活动已结束';
+            remainingTimeElement.textContent = 'Activity has ended';
             timerElement.className = 'alert alert-warning';
             return false;
         }
         
-        // 计算剩余时间（使用本地时间）
+        // Calculate remaining time (using local time)
         const now = new Date();
         const remainingMs = endTime.getTime() - now.getTime();
         
         if (remainingMs <= 0) {
-            remainingTimeElement.textContent = '活动已结束';
+            remainingTimeElement.textContent = 'Activity has ended';
             timerElement.className = 'alert alert-warning';
             isActivityActive = false;
             
-            // 倒计时结束，不刷新页面，等待Socket.IO实时更新按钮状态
+            // Countdown ended, don't reload page, wait for Socket.IO real-time update
             console.log('[Countdown] Local countdown ended, waiting for server update via Socket.IO');
             return false;
         }
@@ -640,9 +642,9 @@ function initializeCountdown() {
         const minutes = Math.floor(remainingMs / (1000 * 60));
         const seconds = Math.floor((remainingMs % (1000 * 60)) / 1000);
         
-        remainingTimeElement.textContent = `剩余时间: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+        remainingTimeElement.textContent = `Remaining Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
         
-        // 根据剩余时间调整样式
+        // Adjust style based on remaining time
         if (remainingMs < 60000) {
             timerElement.className = 'alert alert-danger';
         } else if (remainingMs < 180000) {
@@ -668,11 +670,11 @@ function initializeCountdown() {
                     const remainingTimeElement = document.getElementById('remaining-time');
                     const timerElement = document.getElementById('activity-timer');
                     if (remainingTimeElement && timerElement) {
-                        remainingTimeElement.textContent = '活动已结束';
+                        remainingTimeElement.textContent = 'Activity has ended';
                         timerElement.className = 'alert alert-warning';
                     }
                     
-                    // 不再刷新页面，等待Socket.IO实时更新
+                    // Don't reload page, wait for Socket.IO real-time update
                     console.log('[Status Check] Activity ended on server, waiting for Socket.IO update');
                 }
             })
@@ -698,11 +700,11 @@ function initializeCountdown() {
         checkServerStatus();
     }
     {% else %}
-    // 如果活动没有开始时间或持续时间，显示未开始状态
+    // If activity has no start time or duration, show not started status
     const remainingTimeElement = document.getElementById('remaining-time');
     const timerElement = document.getElementById('activity-timer');
     if (remainingTimeElement && timerElement) {
-        remainingTimeElement.textContent = '活动未开始';
+        remainingTimeElement.textContent = 'Activity has not started';
         timerElement.className = 'alert alert-secondary';
     }
     {% endif %}
