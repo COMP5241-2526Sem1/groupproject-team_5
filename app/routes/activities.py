@@ -841,9 +841,12 @@ def quick_register(token):
             # 创建新用户
             from werkzeug.security import generate_password_hash
             import secrets
+            import string
+            from app.email_utils import send_temp_password_email
             
-            # 生成随机密码
-            temp_password = secrets.token_urlsafe(8)
+            # 生成易读的随机密码（8位，包含字母和数字）
+            characters = string.ascii_letters + string.digits
+            temp_password = ''.join(secrets.choice(characters) for _ in range(8))
             
             user = User(
                 email=email,
@@ -855,9 +858,17 @@ def quick_register(token):
             db.session.add(user)
             db.session.commit()
             
+            # 发送临时密码到邮箱
+            email_sent = send_temp_password_email(email, name, temp_password)
+            
+            if email_sent:
+                flash(f'Account created successfully! Your temporary password has been sent to {email}. Please check your email and login.', 'success')
+            else:
+                # 如果邮件发送失败，显示密码（备用方案）
+                flash(f'Account created! Email delivery failed. Your temporary password is: {temp_password}. Please save it and change it after login.', 'warning')
+            
             # 自动登录
             login_user(user)
-            flash(f'注册成功！您的临时密码是：{temp_password}（请记住或稍后修改）', 'success')
         
         # 自动选课
         enrollment = Enrollment.query.filter_by(

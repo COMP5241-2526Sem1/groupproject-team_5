@@ -151,6 +151,38 @@ def profile():
     """用户个人信息页面"""
     return render_template('auth/profile.html', user=current_user)
 
+@bp.route('/change-password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    """修改密码"""
+    if request.method == 'POST':
+        current_password = request.form.get('current_password')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+        
+        # 验证当前密码
+        if not check_password_hash(current_user.password_hash, current_password):
+            flash('Current password is incorrect', 'error')
+            return render_template('auth/change_password.html')
+        
+        # 验证新密码
+        if len(new_password) < 6:
+            flash('New password must be at least 6 characters long', 'error')
+            return render_template('auth/change_password.html')
+        
+        if new_password != confirm_password:
+            flash('New passwords do not match', 'error')
+            return render_template('auth/change_password.html')
+        
+        # 更新密码
+        current_user.password_hash = generate_password_hash(new_password)
+        db.session.commit()
+        
+        flash('Password changed successfully!', 'success')
+        return redirect(url_for('auth.profile'))
+    
+    return render_template('auth/change_password.html')
+
 @bp.route('/logout')
 def logout():
     logout_user()

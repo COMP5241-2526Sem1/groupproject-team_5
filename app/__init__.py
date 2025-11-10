@@ -63,20 +63,16 @@ def create_app():
     }
     
     # Email Configuration
-    app.config['MAIL_SERVER'] = "smtp.163.com"
-    app.config['MAIL_USE_SSL'] = True
-    app.config['MAIL_PORT'] = 465
-    app.config['MAIL_USERNAME'] = "ruonan111421@163.com"
-    app.config['MAIL_PASSWORD'] = "UNxNyYZdKXiEvH6U"
-    app.config['MAIL_DEFAULT_SENDER'] = "ruonan111421@163.com"
-     
-     # Email Configuration
-    app.config['MAIL_SERVER'] = "smtp.qq.com"
-    app.config['MAIL_USE_SSL'] = True
-    app.config['MAIL_PORT'] = 465
-    app.config['MAIL_USERNAME'] = "2966602258@qq.com"
-    app.config['MAIL_PASSWORD'] = "nihtjcxaseuedcdd"
-    app.config['MAIL_DEFAULT_SENDER'] = "2966602258@qq.com"
+    # 支持从环境变量配置邮件服务器（用于生产环境）
+    # 如果环境变量未设置，则使用默认配置（开发环境）
+    app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.qq.com')
+    app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 465))
+    app.config['MAIL_USE_SSL'] = os.getenv('MAIL_USE_SSL', 'True').lower() == 'true'
+    app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'False').lower() == 'true'
+    app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', '2966602258@qq.com')
+    app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD', 'nihtjcxaseuedcdd')
+    app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER', '2966602258@qq.com')
+
 
     # Initialize extensions
     db.init_app(app)
