@@ -6,11 +6,6 @@ from app import db, login_manager
 from flask_login import UserMixin
 from datetime import datetime, timedelta
 
-# 获取北京时间的函数
-def get_beijing_time():
-    """返回当前北京时间 (UTC+8)"""
-    return datetime.utcnow() + timedelta(hours=8)
-
 class User(UserMixin, db.Model):
     """用户模型"""
     id = db.Column(db.Integer, primary_key=True)
@@ -19,7 +14,7 @@ class User(UserMixin, db.Model):
     name = db.Column(db.String(100), nullable=False)
     role = db.Column(db.String(20), nullable=False)  # student, instructor, admin
     student_id = db.Column(db.String(50), unique=True, nullable=True)
-    created_at = db.Column(db.DateTime, default=get_beijing_time)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships
     courses = db.relationship('Course', backref='instructor', lazy=True)
@@ -55,7 +50,7 @@ class EmailCaptcha(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     email = db.Column(db.String(100), nullable=False)
     captcha = db.Column(db.String(100), nullable=False)
-    create_time = db.Column(db.DateTime, default=get_beijing_time)
+    create_time = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Course(db.Model):
     """课程模型"""
@@ -64,7 +59,7 @@ class Course(db.Model):
     semester = db.Column(db.String(50), nullable=False)
     description = db.Column(db.Text)
     instructor_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=get_beijing_time)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships
     enrollments = db.relationship('Enrollment', backref='course', lazy=True)
@@ -76,7 +71,7 @@ class Enrollment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
-    enrolled_at = db.Column(db.DateTime, default=get_beijing_time)
+    enrolled_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     __table_args__ = (db.UniqueConstraint('student_id', 'course_id'),)
 
@@ -93,7 +88,7 @@ class Activity(db.Model):
     instructor_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     is_active = db.Column(db.Boolean, default=False)
     duration_minutes = db.Column(db.Integer, default=5)  # 活动持续时间（分钟）
-    created_at = db.Column(db.DateTime, default=get_beijing_time)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     started_at = db.Column(db.DateTime, nullable=True)
     ended_at = db.Column(db.DateTime, nullable=True)
     
@@ -158,7 +153,7 @@ class Response(db.Model):
     is_correct = db.Column(db.Boolean, default=False)  # Whether the answer is correct
     score = db.Column(db.Integer, default=0)  # Score for this response
     points_earned = db.Column(db.Integer, default=0)
-    submitted_at = db.Column(db.DateTime, default=get_beijing_time)
+    submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     __table_args__ = (db.UniqueConstraint('student_id', 'activity_id'),)
 
@@ -173,8 +168,8 @@ class Question(db.Model):
     best_answer_id = db.Column(db.Integer, db.ForeignKey('answer.id'), nullable=True)
     is_resolved = db.Column(db.Boolean, default=False)
     view_count = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=get_beijing_time)
-    updated_at = db.Column(db.DateTime, default=get_beijing_time, onupdate=get_beijing_time)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
     answers = db.relationship('Answer', backref='question', lazy=True, 
@@ -188,8 +183,8 @@ class Answer(db.Model):
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     upvotes = db.Column(db.Integer, default=0)
     is_instructor_answer = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=get_beijing_time)
-    updated_at = db.Column(db.DateTime, default=get_beijing_time, onupdate=get_beijing_time)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
     votes = db.relationship('AnswerVote', backref='answer', lazy=True, cascade='all, delete-orphan')
@@ -200,7 +195,7 @@ class AnswerVote(db.Model):
     answer_id = db.Column(db.Integer, db.ForeignKey('answer.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     vote_type = db.Column(db.String(10), nullable=False)  # 'upvote' or 'downvote'
-    created_at = db.Column(db.DateTime, default=get_beijing_time)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships
     user = db.relationship('User', backref='answer_votes')

@@ -597,9 +597,9 @@ document.addEventListener('DOMContentLoaded', function() {
 <script>
 // 优化的倒计时功能 - 本地计时 + 定期服务器检查
 function initializeCountdown() {
-    {% if activity.started_at and activity.duration_minutes %}
-    // 处理UTC时间，确保时区正确
-    const startTime = new Date('{{ activity.started_at.isoformat() }}Z');
+    {% if started_at_timestamp and activity.duration_minutes %}
+    // 使用后端传递的时间戳，避免时区问题
+    const startTime = new Date({{ started_at_timestamp }});
     const durationMs = {{ activity.duration_minutes }} * 60 * 1000;
     const endTime = new Date(startTime.getTime() + durationMs);
     

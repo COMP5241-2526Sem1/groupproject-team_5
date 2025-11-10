@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user, login_user
 from app import db, socketio
-from app.models import Course, Activity, Response, User, Enrollment, get_beijing_time
+from app.models import Course, Activity, Response, User, Enrollment
 from app.forms import ActivityForm, AIQuestionForm
 from app.ai_utils import generate_questions, generate_activity_from_content, group_answers, extract_text_from_file, validate_file_upload
 from app.email_utils import send_temp_password_email
@@ -97,7 +97,7 @@ def auto_end_activity(activity_id, duration_seconds, started_at_timestamp):
             if activity.is_active and abs(current_started_timestamp - started_at_timestamp) < 1:
                 print(f"[AUTO-END] Auto-ending activity {activity_id}")
                 activity.is_active = False
-                activity.ended_at = get_beijing_time()
+                activity.ended_at = datetime.utcnow()
                 db.session.commit()
                 
                 print(f"[AUTO-END] Activity {activity_id} ended at {activity.ended_at}")
@@ -207,10 +207,17 @@ def activity_detail(activity_id):
                 except ImportError:
                     pass  # qrcode库未安装
     
+    # 计算时间戳用于前端倒计时（避免时区问题）
+    started_at_timestamp = None
+    if activity.started_at:
+        # 数据库存储UTC时间，直接转换为毫秒时间戳
+        started_at_timestamp = int(activity.started_at.timestamp() * 1000)
+    
     return render_template('activities/activity_detail.html', 
                          activity=activity, 
                          my_response=my_response,
-                         qr_code=qr_code)
+                         qr_code=qr_code,
+                         started_at_timestamp=started_at_timestamp)
 
 @bp.route('/activities/<int:activity_id>/start', methods=['POST'])
 @login_required
@@ -221,7 +228,7 @@ def start_activity(activity_id):
         return jsonify({'success': False, 'message': 'Insufficient permissions'})
     
     activity.is_active = True
-    activity.started_at = get_beijing_time()
+    activity.started_at = datetime.utcnow()
     # 清除之前的结束时间，活动现在是活跃的
     activity.ended_at = None
     db.session.commit()
@@ -273,7 +280,7 @@ def stop_activity(activity_id):
         return jsonify({'success': False, 'message': 'Insufficient permissions'})
     
     activity.is_active = False
-    activity.ended_at = get_beijing_time()
+    activity.ended_at = datetime.utcnow()
     db.session.commit()
     
     # Broadcast to all users in the activity room
@@ -349,7 +356,7 @@ def submit_response(activity_id):
     existing_response = Response.query.filter_by(student_id=current_user.id, activity_id=activity_id).first()
     if existing_response:
         existing_response.answer = answer
-        existing_response.submitted_at = get_beijing_time()
+        existing_response.submitted_at = datetime.utcnow()
     else:
         response = Response(
             student_id=current_user.id,
