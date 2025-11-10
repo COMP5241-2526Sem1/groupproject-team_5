@@ -10,6 +10,10 @@ from flask_mail import Mail
 from werkzeug.security import generate_password_hash
 import os
 from datetime import datetime, timezone, timedelta
+from dotenv import load_dotenv
+
+# 加载环境变量
+load_dotenv()
 
 # Initialize extensions
 db = SQLAlchemy()
