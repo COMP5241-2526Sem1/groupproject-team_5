@@ -98,7 +98,7 @@
                     
                     <div class="mb-4" id="student-id-field" style="display: none;">
                         {{ form.student_id.label(class="form-label") }}
-                        {{ form.student_id(class="form-control form-control-lg", placeholder="Enter your student ID") }}
+                        {{ form.student_id(class="form-control form-control-lg", placeholder="Enter your student ID (optional)") }}
                         {% if form.student_id.errors %}
                             <div class="text-danger">
                                 {% for error in form.student_id.errors %}
@@ -106,6 +106,12 @@
                                 {% endfor %}
                             </div>
                         {% endif %}
+                    </div>
+                    
+                    <div class="mb-4" id="student-id-info" style="display: none;">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> Student ID will be automatically generated for you after registration.
+                        </div>
                     </div>
                     
                     <div class="d-grid">
@@ -126,10 +132,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // 角色选择功能
     document.getElementById('role').addEventListener('change', function() {
         const studentIdField = document.getElementById('student-id-field');
+        const studentIdInfo = document.getElementById('student-id-info');
+        
         if (this.value === 'student') {
-            studentIdField.style.display = 'block';
+            studentIdField.style.display = 'none';  // 学生不需要输入学号
+            studentIdInfo.style.display = 'block';  // 显示自动生成提示
+        } else if (this.value === 'instructor') {
+            studentIdField.style.display = 'block'; // 教师可以选择性输入学号
+            studentIdInfo.style.display = 'none';
         } else {
             studentIdField.style.display = 'none';
+            studentIdInfo.style.display = 'none';
         }
     });
 

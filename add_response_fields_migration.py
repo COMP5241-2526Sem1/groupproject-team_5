@@ -1,5 +1,5 @@
 """
-Database Migration: Add is_correct and score fields to Response model
+Database Migration: Add is_correct, score and points_earned fields to Response model
 This script adds the missing fields to the response table.
 """
 
@@ -13,7 +13,7 @@ from app import create_app, db
 from sqlalchemy import text
 
 def migrate_database():
-    """Add is_correct and score columns to response table"""
+    """Add is_correct, score and points_earned columns to response table"""
     app = create_app()
     
     with app.app_context():
@@ -51,6 +51,15 @@ def migrate_database():
                     else:
                         raise
                 
+                try:
+                    db.session.execute(text("ALTER TABLE response ADD COLUMN points_earned INTEGER DEFAULT 0"))
+                    print("✓ Added points_earned column")
+                except Exception as e:
+                    if "duplicate column" in str(e).lower():
+                        print("ℹ️  points_earned column already exists")
+                    else:
+                        raise
+                
                 db.session.commit()
                 
             elif 'mysql' in db_type:
@@ -81,12 +90,22 @@ def migrate_database():
                     print("✓ Added score column")
                 else:
                     print("ℹ️  score column already exists")
+                
+                if 'points_earned' not in existing_columns:
+                    db.session.execute(text(
+                        "ALTER TABLE response ADD COLUMN points_earned INT DEFAULT 0"
+                    ))
+                    db.session.commit()
+                    print("✓ Added points_earned column")
+                else:
+                    print("ℹ️  points_earned column already exists")
             
             else:
                 print(f"Unsupported database type: {db_type}")
                 print("Please manually add the following columns to the response table:")
                 print("  - is_correct BOOLEAN DEFAULT FALSE")
                 print("  - score INTEGER DEFAULT 0")
+                print("  - points_earned INTEGER DEFAULT 0")
                 return
             
             print()
@@ -94,7 +113,7 @@ def migrate_database():
             print("  Migration completed successfully!")
             print("=" * 60)
             print()
-            print("✅ The response table now has is_correct and score fields.")
+            print("✅ The response table now has is_correct, score and points_earned fields.")
             print()
             
         except Exception as e:
@@ -104,6 +123,7 @@ def migrate_database():
                 print("If you're using MySQL, you can manually run:")
                 print("ALTER TABLE response ADD COLUMN is_correct TINYINT(1) DEFAULT 0;")
                 print("ALTER TABLE response ADD COLUMN score INT DEFAULT 0;")
+                print("ALTER TABLE response ADD COLUMN points_earned INT DEFAULT 0;")
             db.session.rollback()
             sys.exit(1)
 

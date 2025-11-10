@@ -15,7 +15,7 @@ class RegistrationForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
     password2 = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
     role = SelectField('Role', choices=[('student', 'Student'), ('instructor', 'Instructor')], validators=[DataRequired()])
-    student_id = StringField('Student ID (Required for students)')
+    student_id = StringField('Student ID (Optional for instructors)')
     submit = SubmitField('Register')
     
     def validate_email(self, email):
@@ -24,8 +24,7 @@ class RegistrationForm(FlaskForm):
             raise ValidationError('This email is already registered')
     
     def validate_student_id(self, student_id):
-        if self.role.data == 'student' and not student_id.data:
-            raise ValidationError('Students must provide a student ID')
+        # 只验证重复性，不再要求学生必须输入（会自动生成）
         if student_id.data:
             user = User.query.filter_by(student_id=student_id.data).first()
             if user:

@@ -22,6 +22,27 @@ class User(UserMixin, db.Model):
     responses = db.relationship('Response', backref='student', lazy=True)
     questions = db.relationship('Question', backref='author', lazy=True)
     answers = db.relationship('Answer', backref='author', lazy=True)
+    
+    @staticmethod
+    def generate_student_id():
+        """生成下一个学生ID"""
+        from app import db
+        # 查找最大的学生ID
+        last_student = db.session.query(User).filter(
+            User.student_id.like('2025%'),
+            User.role == 'student'
+        ).order_by(User.student_id.desc()).first()
+        
+        if last_student and last_student.student_id:
+            # 从最后一个学生ID中提取数字并加1
+            try:
+                last_number = int(last_student.student_id)
+                return str(last_number + 1)
+            except ValueError:
+                pass
+        
+        # 如果没有找到或解析失败，从2025001开始
+        return '2025001'
 
 class EmailCaptcha(db.Model):
     """邮箱验证码模型"""

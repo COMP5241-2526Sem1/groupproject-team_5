@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - Classroom Platform{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-md-10">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="card-title mb-0">
+                    <i class="bi bi-person-circle"></i> Personal Information
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <div class="row">
+                    <div class="col-md-4 text-center mb-4">
+                        <div class="profile-avatar mb-3">
+                            <i class="bi bi-person-circle text-primary" style="font-size: 6rem;"></i>
+                        </div>
+                        <div class="profile-role">
+                            <span class="badge bg-{% if user.role == 'student' %}success{% elif user.role == 'instructor' %}warning{% else %}danger{% endif %} fs-6 px-3 py-2">
+                                <i class="bi bi-{% if user.role == 'student' %}mortarboard{% elif user.role == 'instructor' %}person-workspace{% else %}shield-check{% endif %}"></i>
+                                {{ user.role.title() }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-8">
+                        <div class="profile-info">
+                            <div class="info-item mb-4">
+                                <label class="form-label text-muted mb-1">
+                                    <i class="bi bi-person me-2"></i>Full Name
+                                </label>
+                                <div class="info-value">
+                                    <h5 class="mb-0">{{ user.name }}</h5>
+                                </div>
+                            </div>
+                            
+                            <div class="info-item mb-4">
+                                <label class="form-label text-muted mb-1">
+                                    <i class="bi bi-envelope me-2"></i>Email Address
+                                </label>
+                                <div class="info-value">
+                                    <p class="mb-0 text-dark">{{ user.email }}</p>
+                                </div>
+                            </div>
+                            
+                            {% if user.student_id %}
+                            <div class="info-item mb-4">
+                                <label class="form-label text-muted mb-1">
+                                    <i class="bi bi-card-text me-2"></i>Student ID
+                                </label>
+                                <div class="info-value">
+                                    <p class="mb-0 text-dark font-monospace">{{ user.student_id }}</p>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="info-item mb-4">
+                                <label class="form-label text-muted mb-1">
+                                    <i class="bi bi-calendar-plus me-2"></i>Registration Date
+                                </label>
+                                <div class="info-value">
+                                    <p class="mb-0 text-dark">{{ user.created_at|local_date }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if user.role == 'student' %}
+                <hr class="my-4">
+                <div class="student-stats">
+                    <h6 class="text-muted mb-3">
+                        <i class="bi bi-graph-up me-2"></i>Academic Statistics
+                    </h6>
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div class="stat-item">
+                                <div class="stat-icon text-primary mb-2">
+                                    <i class="bi bi-book" style="font-size: 2rem;"></i>
+                                </div>
+                                <div class="stat-number h4">{{ user.enrollments|length }}</div>
+                                <div class="stat-label text-muted">Enrolled Courses</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-item">
+                                <div class="stat-icon text-success mb-2">
+                                    <i class="bi bi-chat-dots" style="font-size: 2rem;"></i>
+                                </div>
+                                <div class="stat-number h4">{{ user.responses|length }}</div>
+                                <div class="stat-label text-muted">Activity Responses</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-item">
+                                <div class="stat-icon text-warning mb-2">
+                                    <i class="bi bi-question-circle" style="font-size: 2rem;"></i>
+                                </div>
+                                <div class="stat-number h4">{{ user.questions|length }}</div>
+                                <div class="stat-label text-muted">Questions Asked</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% elif user.role == 'instructor' %}
+                <hr class="my-4">
+                <div class="instructor-stats">
+                    <h6 class="text-muted mb-3">
+                        <i class="bi bi-graph-up me-2"></i>Teaching Statistics
+                    </h6>
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div class="stat-item">
+                                <div class="stat-icon text-primary mb-2">
+                                    <i class="bi bi-book" style="font-size: 2rem;"></i>
+                                </div>
+                                <div class="stat-number h4">{{ user.courses|length }}</div>
+                                <div class="stat-label text-muted">Courses Created</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-item">
+                                <div class="stat-icon text-success mb-2">
+                                    <i class="bi bi-chat-dots" style="font-size: 2rem;"></i>
+                                </div>
+                                <div class="stat-number h4">
+                                    {% set activity_count = 0 %}
+                                    {% for course in user.courses %}
+                                        {% set activity_count = activity_count + course.activities|length %}
+                                    {% endfor %}
+                                    {{ activity_count }}
+                                </div>
+                                <div class="stat-label text-muted">Activities Created</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-item">
+                                <div class="stat-icon text-warning mb-2">
+                                    <i class="bi bi-people" style="font-size: 2rem;"></i>
+                                </div>
+                                <div class="stat-number h4">
+                                    {% set student_count = 0 %}
+                                    {% for course in user.courses %}
+                                        {% set student_count = student_count + course.enrollments|length %}
+                                    {% endfor %}
+                                    {{ student_count }}
+                                </div>
+                                <div class="stat-label text-muted">Total Students</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="mt-4 text-center">
+                    <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">
+                        <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.profile-avatar {
+    transition: transform 0.3s ease;
+}
+.profile-avatar:hover {
+    transform: scale(1.05);
+}
+
+.info-item {
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 0.5rem;
+    border-left: 4px solid #0d6efd;
+}
+
+.info-value h5, .info-value p {
+    font-weight: 500;
+}
+
+.stat-item {
+    padding: 1rem;
+    background: #fff;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.stat-number {
+    color: #0d6efd;
+    font-weight: 600;
+}
+</style>
+{% endblock %}

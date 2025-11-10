@@ -63,13 +63,20 @@ def register():
                 print(f"DEBUG: Captcha expired")
                 return render_template('auth/register.html', form=form)
         
+        # 为学生自动生成学生ID
+        student_id = None
+        if form.role.data == 'student':
+            student_id = User.generate_student_id()
+        elif form.role.data == 'instructor' and form.student_id.data:
+            student_id = form.student_id.data
+        
         # 创建用户
         user = User(
             name=form.name.data,
             email=form.email.data,
             password_hash=generate_password_hash(form.password.data),
             role=form.role.data,
-            student_id=form.student_id.data if form.role.data == 'student' else None
+            student_id=student_id
         )
         db.session.add(user)
         
@@ -79,7 +86,10 @@ def register():
         
         # 自动登录用户
         login_user(user, remember=True)
-        flash(f'注册成功！欢迎您，{user.name}！', 'success')
+        if form.role.data == 'student':
+            flash(f'注册成功！欢迎您，{user.name}！您的学号是：{student_id}', 'success')
+        else:
+            flash(f'注册成功！欢迎您，{user.name}！', 'success')
         print(f"DEBUG: User {user.name} registered successfully, redirecting to dashboard")
         return redirect(url_for('main.dashboard'))
     else:
@@ -134,6 +144,12 @@ def send_email_captcha():
         return jsonify({'code': 200, 'message': '验证码发送成功！请查收邮件'})
     except Exception as e:
         return jsonify({'code': 500, 'message': f'验证码发送失败：{str(e)}'})
+
+@bp.route('/profile')
+@login_required
+def profile():
+    """用户个人信息页面"""
+    return render_template('auth/profile.html', user=current_user)
 
 @bp.route('/logout')
 def logout():
