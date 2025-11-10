@@ -208,8 +208,8 @@ def start_activity(activity_id):
     from datetime import timedelta
     will_end_at = activity.started_at + timedelta(minutes=activity.duration_minutes)
     
-    # 启动后台任务，在指定时间后自动结束活动 (暂时禁用)
-    # socketio.start_background_task(target=auto_end_activity, activity_id=activity_id, duration_seconds=activity.duration_minutes * 60)
+    # 启动后台任务，在指定时间后自动结束活动
+    socketio.start_background_task(target=auto_end_activity, activity_id=activity_id, duration_seconds=activity.duration_minutes * 60)
     
     # Broadcast to all users in the activity room
     socketio.emit('activity_update', {

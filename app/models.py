@@ -101,25 +101,48 @@ class Activity(db.Model):
     responses = db.relationship('Response', backref='activity', lazy=True, cascade='all, delete-orphan')
     
     def generate_join_token(self):
-        """生成唯一的加入令牌"""
+        """生成唯一的加入令牌（使用北京时间）"""
         import secrets
+        from datetime import timedelta, timezone
+        
         self.join_token = secrets.token_urlsafe(32)
+        
+        # 获取当前北京时间（UTC+8）
+        beijing_tz = timezone(timedelta(hours=8))
+        now_beijing = datetime.now(beijing_tz)
+        
         # 令牌在活动结束后 24 小时过期
-        from datetime import timedelta
         if self.ended_at:
-            self.token_expires_at = self.ended_at + timedelta(hours=24)
+            # ended_at 是 naive datetime（无时区），假设为 UTC
+            ended_utc = self.ended_at.replace(tzinfo=timezone.utc)
+            ended_beijing = ended_utc.astimezone(beijing_tz)
+            expires_beijing = ended_beijing + timedelta(hours=24)
         else:
-            # 如果活动未结束，设置为创建后 7 天过期
-            self.token_expires_at = datetime.utcnow() + timedelta(days=7)
+            # 如果活动未结束，设置为当前北京时间 + 7 天
+            expires_beijing = now_beijing + timedelta(days=7)
+        
+        # 转换为 UTC 时间存储（naive datetime，不带时区信息）
+        self.token_expires_at = expires_beijing.astimezone(timezone.utc).replace(tzinfo=None)
         return self.join_token
     
     def is_token_valid(self):
         """检查令牌是否有效"""
         if not self.join_token or not self.allow_quick_join:
             return False
-        if self.token_expires_at and datetime.utcnow() > self.token_expires_at:
-            return False
+        if self.token_expires_at:
+            # 使用 UTC 时间进行比较
+            if datetime.utcnow() > self.token_expires_at:
+                return False
         return True
+    
+    def get_token_expires_beijing_time(self):
+        """获取令牌过期时间的北京时间（用于显示）"""
+        if not self.token_expires_at:
+            return None
+        from datetime import timezone, timedelta
+        beijing_tz = timezone(timedelta(hours=8))
+        utc_time = self.token_expires_at.replace(tzinfo=timezone.utc)
+        return utc_time.astimezone(beijing_tz)
 
 class Response(db.Model):
     """活动响应模型"""

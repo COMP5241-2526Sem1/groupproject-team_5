@@ -528,11 +528,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- 公共倒计时功能 - 学生和教师都可以使用 -->
 <script>
-// 倒计时功能
+// 优化的倒计时功能 - 本地计时 + 定期服务器检查
 function initializeCountdown() {
     {% if activity.started_at and activity.duration_minutes %}
     // 处理UTC时间，确保时区正确
-    const startTime = new Date('{{ activity.started_at.isoformat() }}Z'); // 添加Z表示UTC时间
+    const startTime = new Date('{{ activity.started_at.isoformat() }}Z');
     const durationMs = {{ activity.duration_minutes }} * 60 * 1000;
     const endTime = new Date(startTime.getTime() + durationMs);
     
@@ -541,89 +541,97 @@ function initializeCountdown() {
     console.log('Activity end time:', endTime);
     console.log('Current time:', new Date());
     
-    function updateCountdown() {
-        // 首先检查服务器端的活动状态
-        return fetch('{{ url_for("activities.activity_status", activity_id=activity.id) }}')
+    let countdownInterval = null;
+    let isActivityActive = true;
+    
+    // 本地倒计时更新（每秒执行，不调用API）
+    function updateLocalCountdown() {
+        const remainingTimeElement = document.getElementById('remaining-time');
+        const timerElement = document.getElementById('activity-timer');
+        
+        if (!remainingTimeElement || !timerElement) return false;
+        
+        // 如果活动已被标记为结束
+        if (!isActivityActive) {
+            remainingTimeElement.textContent = 'Activity has ended';
+            timerElement.className = 'alert alert-warning';
+            return false;
+        }
+        
+        // 计算剩余时间（使用本地时间）
+        const now = new Date();
+        const remainingMs = endTime.getTime() - now.getTime();
+        
+        if (remainingMs <= 0) {
+            remainingTimeElement.textContent = 'Activity has ended';
+            timerElement.className = 'alert alert-warning';
+            isActivityActive = false;
+            
+            // 倒计时结束，刷新页面以获取最新状态
+            setTimeout(() => location.reload(), 2000);
+            return false;
+        }
+        
+        const minutes = Math.floor(remainingMs / (1000 * 60));
+        const seconds = Math.floor((remainingMs % (1000 * 60)) / 1000);
+        
+        remainingTimeElement.textContent = `Remaining Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        // 根据剩余时间调整样式
+        if (remainingMs < 60000) {
+            timerElement.className = 'alert alert-danger';
+        } else if (remainingMs < 180000) {
+            timerElement.className = 'alert alert-warning';
+        } else {
+            timerElement.className = 'alert alert-info';
+        }
+        
+        return true;
+    }
+    
+    // 检查服务器端活动状态（每30秒执行一次）
+    function checkServerStatus() {
+        fetch('{{ url_for("activities.activity_status", activity_id=activity.id) }}')
             .then(response => response.json())
             .then(data => {
-                const remainingTimeElement = document.getElementById('remaining-time');
-                const timerElement = document.getElementById('activity-timer');
-                
-                if (!remainingTimeElement || !timerElement) return;
-                
-                // 如果活动已经不活跃，显示结束状态
                 if (!data.is_active) {
-                    remainingTimeElement.textContent = 'Activity has ende';
-                    timerElement.className = 'alert alert-warning';
-                    return false; // 返回false表示停止倒计时
+                    isActivityActive = false;
+                    if (countdownInterval) {
+                        clearInterval(countdownInterval);
+                    }
+                    
+                    const remainingTimeElement = document.getElementById('remaining-time');
+                    const timerElement = document.getElementById('activity-timer');
+                    if (remainingTimeElement && timerElement) {
+                        remainingTimeElement.textContent = 'Activity has ended';
+                        timerElement.className = 'alert alert-warning';
+                    }
+                    
+                    // 刷新页面以显示最终状态
+                    setTimeout(() => location.reload(), 2000);
                 }
-                
-                // 如果活动仍然活跃，继续计算剩余时间
-                const now = new Date();
-                const remainingMs = endTime.getTime() - now.getTime();
-                
-                if (remainingMs <= 0) {
-                    remainingTimeElement.textContent = 'Activity has ended';
-                    timerElement.className = 'alert alert-warning';
-                    return false; // 返回false表示停止倒计时
-                }
-                
-                const minutes = Math.floor(remainingMs / (1000 * 60));
-                const seconds = Math.floor((remainingMs % (1000 * 60)) / 1000);
-                
-                remainingTimeElement.textContent = `Remaining Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
-                
-                // 时间少于1分钟时显示红色警告
-                if (remainingMs < 60000) {
-                    timerElement.className = 'alert alert-danger';
-                } else if (remainingMs < 180000) { // 少于3分钟时显示警告
-                    timerElement.className = 'alert alert-warning';
-                } else {
-                    timerElement.className = 'alert alert-info';
-                }
-                
-                return true; // 返回true表示继续倒计时
             })
             .catch(error => {
                 console.error('Failed to check activity status:', error);
-                // 如果网络错误，回退到本地时间计算
-                const now = new Date();
-                const remainingMs = endTime.getTime() - now.getTime();
-                
-                const remainingTimeElement = document.getElementById('remaining-time');
-                const timerElement = document.getElementById('activity-timer');
-                
-                if (!remainingTimeElement || !timerElement) return false;
-                
-                if (remainingMs <= 0) {
-                    remainingTimeElement.textContent = 'Activity has ended';
-                    timerElement.className = 'alert alert-warning';
-                    return false;
-                }
-                
-                const minutes = Math.floor(remainingMs / (1000 * 60));
-                const seconds = Math.floor((remainingMs % (1000 * 60)) / 1000);
-
-                remainingTimeElement.textContent = `Remaining Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
-                return true;
             });
     }
     
-    // 立即执行一次
-    updateCountdown();
-    
-    // 设置定时器，每秒更新倒计时
-    const countdownInterval = setInterval(async () => {
-        try {
-            const shouldContinue = await updateCountdown();
-            if (!shouldContinue) {
+    // 立即执行一次本地倒计时
+    if (updateLocalCountdown()) {
+        // 每秒更新本地倒计时
+        countdownInterval = setInterval(() => {
+            const shouldContinue = updateLocalCountdown();
+            if (!shouldContinue && countdownInterval) {
                 clearInterval(countdownInterval);
             }
-        } catch (error) {
-            console.error('Countdown update error:', error);
-            // 如果更新失败，继续尝试
-        }
-    }, 1000);
+        }, 1000);
+        
+        // 每30秒检查一次服务器状态
+        setInterval(checkServerStatus, 30000);
+        
+        // 初始时也检查一次服务器状态
+        checkServerStatus();
+    }
     {% else %}
     // 如果活动没有开始时间或持续时间，显示未开始状态
     const remainingTimeElement = document.getElementById('remaining-time');
@@ -634,20 +642,7 @@ function initializeCountdown() {
     }
     {% endif %}
 }
-
-// Fallback polling (every 30 seconds, less frequent)
-// setInterval(function() {
-//     fetch('{{ url_for("activities.activity_status", activity_id=activity.id) }}')
-//     .then(response => response.json())
-//     .then(data => {
-//         if (data.error) {
-//             console.error(data.error);
-//             return;
-//         }
-//         
-//         const statusElement = document.getElementById('activity-status');
-//         if (data.is_active) {
-//             statusElement.innerHTML = '<span class="text-success">Active</span>';
+</script>
 //         } else {
 //             statusElement.innerHTML = '<span class="text-muted">Ended</span>';
 //         }
