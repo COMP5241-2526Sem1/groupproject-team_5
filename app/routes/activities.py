@@ -838,9 +838,9 @@ def quick_register(token):
         existing_user = User.query.filter_by(email=email).first()
         
         if existing_user:
-            # 如果用户已存在，直接登录
-            login_user(existing_user)
-            flash('欢迎回来！', 'success')
+            # 如果用户已存在,提示用户登录
+            flash(f'This email is already registered. Please login with your password.', 'info')
+            return redirect(url_for('auth.login', next=url_for('activities.quick_join', token=token)))
         else:
             # 创建新用户
             # 生成易读的随机密码（8位，包含字母和数字）
@@ -855,41 +855,65 @@ def quick_register(token):
                 student_id=User.generate_student_id()
             )
             db.session.add(user)
-            db.session.commit()
             
-            # 发送临时密码到邮箱
+            # 先不提交，等邮件发送成功后再提交
+            db.session.flush()  # 获取user.id但不提交
+            
+            # 发送临时密码到邮箱 (设置超时,不阻塞)
+            email_sent = False
+            email_error = None
+            
             try:
-                email_sent = send_temp_password_email(email, name, temp_password)
+                import signal
                 
-                if email_sent:
-                    flash(f'Account created successfully! Your temporary password has been sent to {email}. Please check your email.', 'success')
-                else:
-                    # 如果邮件发送失败，显示密码（备用方案）
-                    flash(f'Account created! Email delivery failed. Your temporary password is: {temp_password}. Please save it and change it after login.', 'warning')
+                # 定义超时处理
+                def timeout_handler(signum, frame):
+                    raise TimeoutError("Email sending timeout")
+                
+                # 设置10秒超时(仅Unix系统)
+                try:
+                    signal.signal(signal.SIGALRM, timeout_handler)
+                    signal.alarm(10)
+                    email_sent = send_temp_password_email(email, name, temp_password)
+                    signal.alarm(0)  # 取消超时
+                except (AttributeError, ValueError):
+                    # Windows系统不支持signal.SIGALRM,直接发送
+                    email_sent = send_temp_password_email(email, name, temp_password)
+                    
+            except TimeoutError:
+                email_error = "Email sending timeout (10 seconds). Please check your network connection."
+                email_sent = False
             except Exception as e:
-                # 捕获任何异常，显示密码
-                flash(f'Account created! Your temporary password is: {temp_password}. Please save it and change it after login.', 'warning')
-                print(f"Email sending error: {str(e)}")
+                email_error = f"Email sending failed: {str(e)}"
+                email_sent = False
             
-            # 自动登录
-            login_user(user)
-        
-        # 自动选课
-        enrollment = Enrollment.query.filter_by(
-            student_id=current_user.id,
-            course_id=activity.course_id
-        ).first()
-        
-        if not enrollment:
-            enrollment = Enrollment(
-                student_id=current_user.id,
-                course_id=activity.course_id
-            )
-            db.session.add(enrollment)
-            db.session.commit()
-        
-        # 重定向到活动详情页
-        return redirect(url_for('activities.activity_detail', activity_id=activity.id))
+            # 根据邮件发送结果决定是否创建用户
+            if email_sent:
+                # 邮件发送成功,提交用户
+                try:
+                    db.session.commit()
+                    flash(f'✅ Account created successfully! Your temporary password has been sent to {email}.', 'success')
+                    flash(f'📧 Please check your email inbox (and spam folder) to get your password.', 'info')
+                    # 重定向到登录页面,登录后会自动跳转到活动
+                    return redirect(url_for('auth.login', next=url_for('activities.quick_join', token=token)))
+                except Exception as db_error:
+                    db.session.rollback()
+                    flash(f'Failed to create account: {str(db_error)}', 'error')
+                    return render_template('activities/quick_register.html', 
+                                         activity=activity, 
+                                         course=activity.course)
+            else:
+                # 邮件发送失败,回滚用户创建
+                db.session.rollback()
+                flash('❌ Account creation failed: Unable to send verification email.', 'error')
+                flash(f'🔍 Reason: {email_error}', 'warning')
+                flash('💡 Please check:', 'info')
+                flash('   1. Make sure your email address is valid and active', 'info')
+                flash('   2. Check your internet connection', 'info')
+                flash('   3. Try again in a few moments', 'info')
+                return render_template('activities/quick_register.html', 
+                                     activity=activity, 
+                                     course=activity.course)
     
     return render_template('activities/quick_register.html', 
                          activity=activity, 

@@ -174,13 +174,17 @@ This is an automated email. Please do not reply.
             html=html_body
         )
         
-        # Send email
-        mail.send(msg)
-        logger.info(f"Temporary password email sent successfully to {recipient_email}")
-        return True
+        # Send email with timeout handling
+        try:
+            mail.send(msg)
+            logger.info(f"Temporary password email sent successfully to {recipient_email}")
+            return True
+        except Exception as mail_error:
+            logger.error(f"Failed to send email to {recipient_email}: {str(mail_error)}")
+            return False
         
     except Exception as e:
-        logger.error(f"Failed to send email to {recipient_email}: {str(e)}")
+        logger.error(f"Error preparing email for {recipient_email}: {str(e)}")
         return False
 
 

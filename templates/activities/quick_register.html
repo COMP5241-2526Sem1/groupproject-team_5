@@ -46,9 +46,9 @@
                                    name="email" 
                                    placeholder="your.email@example.com"
                                    required>
-                            <small class="form-text text-muted">
-                                <i class="fas fa-exclamation-circle"></i> 
-                                <strong>Important:</strong> Your temporary password will be sent to this email. Please ensure it's valid!
+                            <small class="form-text text-danger">
+                                <i class="fas fa-exclamation-triangle"></i> 
+                                <strong>Must be a valid email!</strong> Your temporary password will be sent here. Invalid emails will be rejected.
                             </small>
                         </div>
                         
@@ -79,11 +79,12 @@
                         <i class="fas fa-info-circle text-info"></i> Important Information
                     </h6>
                     <ul class="small mb-0">
-                        <li><strong>New users:</strong> A temporary password will be sent to your email</li>
-                        <li><strong>Check your email inbox</strong> (including spam folder) after registration</li>
-                        <li><strong>Change your password</strong> immediately after first login for security</li>
-                        <li><strong>Existing users:</strong> Simply enter your registered email to join</li>
-                        <li>You will be automatically enrolled in this course and activity</li>
+                        <li><strong class="text-danger">MUST use a valid email address!</strong></li>
+                        <li>Your temporary password will be sent to your email</li>
+                        <li>Check your inbox (and spam folder) after registration</li>
+                        <li>If email is invalid, account creation will fail</li>
+                        <li>Change your password immediately after first login</li>
+                        <li>Existing users: Simply enter your registered email to join</li>
                     </ul>
                 </div>
             </div>
