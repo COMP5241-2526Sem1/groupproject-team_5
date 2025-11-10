@@ -5,6 +5,7 @@ from app.models import Course, Activity, Response, User, Enrollment
 from app.forms import ActivityForm, AIQuestionForm
 from app.ai_utils import generate_questions, generate_activity_from_content, group_answers, extract_text_from_file, validate_file_upload
 from app.email_utils import send_temp_password_email
+from app.utils import beijing_now
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash
 import json
@@ -97,7 +98,7 @@ def auto_end_activity(activity_id, duration_seconds, started_at_timestamp):
             if activity.is_active and abs(current_started_timestamp - started_at_timestamp) < 1:
                 print(f"[AUTO-END] Auto-ending activity {activity_id}")
                 activity.is_active = False
-                activity.ended_at = datetime.utcnow()
+                activity.ended_at = beijing_now().replace(tzinfo=None)
                 db.session.commit()
                 
                 print(f"[AUTO-END] Activity {activity_id} ended at {activity.ended_at}")
@@ -221,7 +222,7 @@ def start_activity(activity_id):
         return jsonify({'success': False, 'message': 'Insufficient permissions'})
     
     activity.is_active = True
-    activity.started_at = datetime.utcnow()
+    activity.started_at = beijing_now().replace(tzinfo=None)
     # 清除之前的结束时间，活动现在是活跃的
     activity.ended_at = None
     db.session.commit()
@@ -273,7 +274,7 @@ def stop_activity(activity_id):
         return jsonify({'success': False, 'message': 'Insufficient permissions'})
     
     activity.is_active = False
-    activity.ended_at = datetime.utcnow()
+    activity.ended_at = beijing_now().replace(tzinfo=None)
     db.session.commit()
     
     # Broadcast to all users in the activity room
@@ -349,7 +350,7 @@ def submit_response(activity_id):
     existing_response = Response.query.filter_by(student_id=current_user.id, activity_id=activity_id).first()
     if existing_response:
         existing_response.answer = answer
-        existing_response.submitted_at = datetime.utcnow()
+        existing_response.submitted_at = beijing_now().replace(tzinfo=None)
     else:
         response = Response(
             student_id=current_user.id,
@@ -947,9 +948,6 @@ def quick_register(token):
                 flash('   1. 确认邮箱地址有效且可用', 'info')
                 flash('   2. 检查网络连接', 'info')
                 flash('   3. 稍后重试', 'info')
-                flash('   1. Make sure your email address is valid and active', 'info')
-                flash('   2. Check your internet connection', 'info')
-                flash('   3. Try again in a few moments', 'info')
                 return render_template('activities/quick_register.html', 
                                      activity=activity, 
                                      course=activity.course)

@@ -24,7 +24,7 @@ def send_temp_password_email(recipient_email, user_name, temp_password):
     """
     try:
         # Email subject
-        subject = "Welcome! Your Temporary Password"
+        subject = "欢迎！您的临时密码"
         
         # HTML email template
         html_body = f"""
@@ -95,44 +95,44 @@ def send_temp_password_email(recipient_email, user_name, temp_password):
         </head>
         <body>
             <div class="header">
-                <h1>🎓 Welcome to Q&A Platform</h1>
+                <h1>🎓 欢迎加入问答平台</h1>
             </div>
             
             <div class="content">
-                <h2>Hello, {user_name}!</h2>
+                <h2>你好，{user_name}！</h2>
                 
-                <p>Your account has been successfully created through QR code quick registration.</p>
+                <p>您的账号已通过二维码快速注册成功创建。</p>
                 
-                <p>Here is your temporary password:</p>
+                <p>以下是您的临时密码：</p>
                 
                 <div class="password-box">
                     <div class="password">{temp_password}</div>
                 </div>
                 
                 <div class="warning">
-                    <strong>⚠️ Important Security Notice:</strong>
+                    <strong>⚠️ 重要安全提示：</strong>
                     <ul style="margin: 10px 0; padding-left: 20px;">
-                        <li>This is a <strong>temporary password</strong></li>
-                        <li>Please <strong>change it immediately</strong> after your first login</li>
-                        <li>Do not share this password with anyone</li>
-                        <li>Keep this email in a safe place or delete it after changing your password</li>
+                        <li>这是一个<strong>临时密码</strong></li>
+                        <li>请在首次登录后<strong>立即更改密码</strong></li>
+                        <li>不要与任何人分享此密码</li>
+                        <li>更改密码后请妥善保管或删除此邮件</li>
                     </ul>
                 </div>
                 
-                <h3>How to login:</h3>
+                <h3>如何登录：</h3>
                 <ol>
-                    <li>Visit the platform login page</li>
-                    <li>Enter your email: <strong>{recipient_email}</strong></li>
-                    <li>Enter the temporary password above</li>
-                    <li>Go to your profile and change your password</li>
+                    <li>访问平台登录页面</li>
+                    <li>输入您的邮箱：<strong>{recipient_email}</strong></li>
+                    <li>输入上面的临时密码</li>
+                    <li>进入个人资料页面更改密码</li>
                 </ol>
                 
-                <p style="margin-top: 30px;">If you didn't request this account, please ignore this email.</p>
+                <p style="margin-top: 30px;">如果您没有请求此账号，请忽略此邮件。</p>
             </div>
             
             <div class="footer">
-                <p>This is an automated email. Please do not reply.</p>
-                <p>© 2024 Q&A Education Platform. All rights reserved.</p>
+                <p>这是一封自动发送的邮件，请勿回复。</p>
+                <p>© 2024 问答教育平台。保留所有权利。</p>
             </div>
         </body>
         </html>
