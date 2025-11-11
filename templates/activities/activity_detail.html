@@ -3,6 +3,42 @@
 {% block title %}{{ activity.title }} - interaction activity{% endblock %}
 
 {% block content %}
+<style>
+.option-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.option-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.04);
+}
+
+.option-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #0d6efd;
+    color: #fff;
+    font-weight: 600;
+}
+
+.option-text {
+    flex: 1;
+    font-size: 1rem;
+    color: #212529;
+}
+</style>
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h2><i class="bi bi-chat-dots"></i> {{ activity.title }}</h2>
@@ -62,15 +98,19 @@
                 </div>
                 
                 {% if activity.type == 'poll' and activity.options %}
+                {% set letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' %}
                 <div class="mt-4">
                     <h6>Options:</h6>
-                    <ul class="list-group">
+                    <div class="option-stack">
                         {% for option in activity.options.split('\n') %}
                         {% if option.strip() %}
-                        <li class="list-group-item">{{ option.strip() }}</li>
+                        <div class="option-card">
+                            <span class="option-label">{{ letters[loop.index0] if loop.index0 < letters|length else loop.index }}</span>
+                            <span class="option-text">{{ option.strip() }}</span>
+                        </div>
                         {% endif %}
                         {% endfor %}
-                    </ul>
+                    </div>
                 </div>
                 {% elif activity.type == 'quiz' %}
                 <div class="mt-4">
@@ -78,14 +118,18 @@
                     <h6>Quiz Type: {{ activity.quiz_type.replace('_', ' ').title() }}</h6>
                     {% endif %}
                     {% if activity.options %}
+                    {% set letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' %}
                     <h6>Options:</h6>
-                    <ul class="list-group">
+                    <div class="option-stack">
                         {% for option in activity.options.split('\n') %}
                         {% if option.strip() %}
-                        <li class="list-group-item">{{ option.strip() }}</li>
+                        <div class="option-card">
+                            <span class="option-label">{{ letters[loop.index0] if loop.index0 < letters|length else loop.index }}</span>
+                            <span class="option-text">{{ option.strip() }}</span>
+                        </div>
                         {% endif %}
                         {% endfor %}
-                    </ul>
+                    </div>
                     {% endif %}
                 </div>
                 {% elif activity.type == 'word_cloud' %}

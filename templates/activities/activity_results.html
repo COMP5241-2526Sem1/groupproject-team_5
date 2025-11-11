@@ -127,33 +127,65 @@
                 <h5><i class="bi bi-controller"></i> Memory Game Results</h5>
             </div>
             <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h3 class="mb-0">{{ results.total_responses }}</h3>
+                                <small class="text-muted">Total Responses</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-success text-white">
+                            <div class="card-body text-center">
+                                <h3 class="mb-0">{{ results.correct_count }}</h3>
+                                <small>Correct</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body text-center">
+                                <h3 class="mb-0">{{ "%.1f"|format(results.accuracy) }}%</h3>
+                                <small>Accuracy</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="table-responsive">
                     <table class="table table-striped">
                         <thead>
                             <tr>
                                 <th>Student</th>
                                 <th>Submitted Sequence</th>
+                                <th>Result</th>
                                 <th>Submitted At</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for response in responses %}
+                            {% for response in results.responses %}
                             <tr>
                                 <td>{{ response.student.name }}</td>
                                 <td>{{ response.answer }}</td>
+                                <td>
+                                    {% if response.is_correct %}
+                                    <span class="badge bg-success"><i class="bi bi-check-circle"></i> Correct</span>
+                                    {% elif response.is_correct == False %}
+                                    <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Incorrect</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Not Graded</span>
+                                    {% endif %}
+                                </td>
                                 <td>{{ response.submitted_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
-                <div class="mt-3">
-                    <small class="text-muted">Total responses: {{ results.total_responses }}</small>
-                </div>
             </div>
         </div>
-        {% else %}
-        {% if results.word_frequency %}
+        {% elif results.word_frequency %}
         <div class="card mb-4">
             <div class="card-header bg-info text-white">
                 <h5 class="mb-0"><i class="bi bi-cloud"></i> Word Frequency Analysis</h5>

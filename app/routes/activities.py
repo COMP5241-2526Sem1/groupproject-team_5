@@ -351,17 +351,51 @@ def submit_response(activity_id):
     
     if not answer:
         return jsonify({'success': False, 'message': '答案不能为空'})
+
+    is_correct = None
+    score = 0
+    points = 0
+
+    if activity.type == 'quiz':
+        correct_answer = (activity.correct_answer or '').strip()
+        quiz_type = (activity.quiz_type or '').strip()
+        normalized_answer = answer.lower().strip()
+        normalized_correct = correct_answer.lower().strip()
+        
+        if quiz_type == 'fill_blank':
+            is_correct = normalized_answer == normalized_correct
+        elif quiz_type == 'true_false':
+            is_correct = normalized_answer in ['true', 'false'] and normalized_answer == normalized_correct
+        else:
+            is_correct = normalized_answer == normalized_correct
+        
+        score = 1 if is_correct else 0
+        points = score
+    elif activity.type == 'memory_game':
+        correct_sequence = (data.get('correct_sequence', '') or '').strip()
+        if correct_sequence:
+            def normalize_sequence(seq):
+                return [part.strip().lower() for part in seq.split(',') if part.strip()]
+            is_correct = normalize_sequence(answer) == normalize_sequence(correct_sequence)
+            score = 1 if is_correct else 0
+            points = score
     
     # Check if there's already a response
     existing_response = Response.query.filter_by(student_id=current_user.id, activity_id=activity_id).first()
     if existing_response:
         existing_response.answer = answer
         existing_response.submitted_at = get_beijing_time()
+        existing_response.is_correct = is_correct
+        existing_response.score = score
+        existing_response.points_earned = points
     else:
         response = Response(
             student_id=current_user.id,
             activity_id=activity_id,
-            answer=answer
+            answer=answer,
+            is_correct=is_correct,
+            score=score,
+            points_earned=points
         )
         db.session.add(response)
     
@@ -413,6 +447,20 @@ def activity_results(activity_id):
             'total_responses': len(responses),
             'average_score': average_score,
             'responses': [{'answer': r.answer, 'is_correct': r.is_correct, 'score': r.score, 'student': r.student.name} for r in responses]
+        }
+    elif activity.type == 'memory_game':
+        correct_count = sum(1 for r in responses if r.is_correct)
+        results = {
+            'type': 'memory_game',
+            'total_responses': len(responses),
+            'correct_count': correct_count,
+            'accuracy': (correct_count / len(responses) * 100) if responses else 0,
+            'responses': [{
+                'student': r.student,
+                'answer': r.answer,
+                'is_correct': r.is_correct,
+                'submitted_at': r.submitted_at
+            } for r in responses]
         }
     elif activity.type == 'word_cloud':
         # Process word cloud data
