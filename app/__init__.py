@@ -10,6 +10,10 @@ from flask_mail import Mail
 from werkzeug.security import generate_password_hash
 import os
 from datetime import datetime, timezone, timedelta
+from dotenv import load_dotenv
+
+# 加载环境变量
+load_dotenv()
 
 # Initialize extensions
 db = SQLAlchemy()
@@ -35,24 +39,40 @@ def create_app():
     PASSWORD = os.getenv('MYSQL_PASSWORD', '1234')
     DATABASE = os.getenv('MYSQL_DATABASE', 'platform')
     
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{USERNAME}:{PASSWORD}@{HOSTNAME}:{PORT}/{DATABASE}?charset=utf8mb4'
+    # 构建数据库 URI
+    # 生产环境（Railway）需要 SSL 配置
+    if 'railway' in HOSTNAME or 'rlwy.net' in HOSTNAME or os.getenv('FLASK_ENV') == 'production':
+        # Railway 连接配置
+        app.config['SQLALCHEMY_DATABASE_URI'] = (
+            f'mysql+pymysql://{USERNAME}:{PASSWORD}@{HOSTNAME}:{PORT}/{DATABASE}'
+            f'?charset=utf8mb4&ssl_ca=&ssl_verify_cert=false'
+        )
+    else:
+        # 本地开发连接
+        app.config['SQLALCHEMY_DATABASE_URI'] = (
+            f'mysql+pymysql://{USERNAME}:{PASSWORD}@{HOSTNAME}:{PORT}/{DATABASE}'
+            f'?charset=utf8mb4'
+        )
+    
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_recycle': 280,  # 避免 MySQL 连接超时
+        'pool_pre_ping': True,  # 连接前测试可用性
+        'pool_size': 10,  # 连接池大小
+        'max_overflow': 20  # 最大溢出连接数
+    }
     
     # Email Configuration
-    app.config['MAIL_SERVER'] = "smtp.163.com"
-    app.config['MAIL_USE_SSL'] = True
-    app.config['MAIL_PORT'] = 465
-    app.config['MAIL_USERNAME'] = "ruonan111421@163.com"
-    app.config['MAIL_PASSWORD'] = "UNxNyYZdKXiEvH6U"
-    app.config['MAIL_DEFAULT_SENDER'] = "ruonan111421@163.com"
-     
-     # Email Configuration
-    app.config['MAIL_SERVER'] = "smtp.qq.com"
-    app.config['MAIL_USE_SSL'] = True
-    app.config['MAIL_PORT'] = 465
-    app.config['MAIL_USERNAME'] = "2966602258@qq.com"
-    app.config['MAIL_PASSWORD'] = "nihtjcxaseuedcdd"
-    app.config['MAIL_DEFAULT_SENDER'] = "2966602258@qq.com"
+    # 支持从环境变量配置邮件服务器（用于生产环境）
+    # 如果环境变量未设置，则使用默认配置（开发环境）
+    app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.qq.com')
+    app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 465))
+    app.config['MAIL_USE_SSL'] = os.getenv('MAIL_USE_SSL', 'True').lower() == 'true'
+    app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'False').lower() == 'true'
+    app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', '2966602258@qq.com')
+    app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD', 'nihtjcxaseuedcdd')
+    app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER', '2966602258@qq.com')
+
 
     # Initialize extensions
     db.init_app(app)

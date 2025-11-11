@@ -1,0 +1,94 @@
+{
+  "activity": [],
+  "answer": [],
+  "answer_vote": [],
+  "course": [
+    {
+      "id": 69,
+      "name": "人工智能",
+      "semester": "26fall",
+      "description": "",
+      "instructor_id": 112,
+      "created_at": "2025-11-08T02:05:44"
+    },
+    {
+      "id": 70,
+      "name": "机器学习",
+      "semester": "25fall",
+      "description": "welcome to 机器学习！",
+      "instructor_id": 116,
+      "created_at": "2025-11-10T08:07:18"
+    }
+  ],
+  "email_captcha": [
+    {
+      "id": 1,
+      "email": "ruonan1114@163.com",
+      "captcha": "493299",
+      "create_time": "2025-10-17T14:06:41"
+    },
+    {
+      "id": 7,
+      "email": "1395606934@qq.com",
+      "captcha": "793693",
+      "create_time": "2025-11-07T01:57:08"
+    },
+    {
+      "id": 8,
+      "email": "brady_sun@yeah.net",
+      "captcha": "448991",
+      "create_time": "2025-11-07T02:04:45"
+    },
+    {
+      "id": 9,
+      "email": "zhenzewen321@163.com",
+      "captcha": "652861",
+      "create_time": "2025-11-07T02:05:56"
+    },
+    {
+      "id": 11,
+      "email": "2966602258@qq.com",
+      "captcha": "391171",
+      "create_time": "2025-11-10T02:44:23"
+    }
+  ],
+  "enrollment": [
+    {
+      "id": 1014,
+      "student_id": 113,
+      "course_id": 69,
+      "enrolled_at": "2025-11-10T04:19:00"
+    }
+  ],
+  "question": [],
+  "response": [],
+  "user": [
+    {
+      "id": 112,
+      "email": "admin@example.com",
+      "password_hash": "scrypt:32768:8:1$o3FmNABnB6U0yGJe$4bfb144937c770f6f612c23676f7dfc12fc0ef0b055b66731474db54be3ee1547bd6f25abfa329d7a9aae840ade1ba97a4181a4d754bc537fe972e1d5fe4ccd2",
+      "name": "Administrator",
+      "role": "admin",
+      "student_id": null,
+      "created_at": "2025-11-08T02:04:45"
+    },
+    {
+      "id": 113,
+      "email": "ruonan111421@163.com",
+      "password_hash": "scrypt:32768:8:1$w3ffR7F4nz6Tktti$2265444bacda3ff4889abc5e9a10c309684650f144039e0a7782c17c9b3b48f6b250cc8277c6e88b090ddeba774b37d5d7e8de3293f37019d1049cac3b5fb2ca",
+      "name": "哒哒",
+      "role": "student",
+      "student_id": "",
+      "created_at": "2025-11-10T02:07:31"
+    },
+    {
+      "id": 116,
+      "email": "1487173617@qq.com",
+      "password_hash": "scrypt:32768:8:1$ftVucfKRLvtrCprW$2cf7a2d9aa5fb04134d69152314baca19b857383eda92cee7ed5b29fd6f689bdc0e75dea15b07b1a8bcb3261d83c7ea8e074726c03ad0f93a8691e5dc809265b",
+      "name": "张老师",
+      "role": "instructor",
+      "student_id": null,
+      "created_at": "2025-11-10T08:06:50"
+    }
+  ]
+}

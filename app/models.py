@@ -4,7 +4,7 @@ Q&A Education Platform - Database Models
 
 from app import db, login_manager
 from flask_login import UserMixin
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class User(UserMixin, db.Model):
     """用户模型"""
@@ -92,8 +92,57 @@ class Activity(db.Model):
     started_at = db.Column(db.DateTime, nullable=True)
     ended_at = db.Column(db.DateTime, nullable=True)
     
+    # QR Code quick join fields
+    allow_quick_join = db.Column(db.Boolean, default=True)  # 是否允许二维码快速加入
+    join_token = db.Column(db.String(64), unique=True, nullable=True)  # 加入令牌
+    token_expires_at = db.Column(db.DateTime, nullable=True)  # 令牌过期时间
+    
     # Relationships
     responses = db.relationship('Response', backref='activity', lazy=True, cascade='all, delete-orphan')
+    
+    def generate_join_token(self):
+        """生成唯一的加入令牌（使用北京时间）"""
+        import secrets
+        from datetime import timedelta, timezone
+        
+        self.join_token = secrets.token_urlsafe(32)
+        
+        # 获取当前北京时间（UTC+8）
+        beijing_tz = timezone(timedelta(hours=8))
+        now_beijing = datetime.now(beijing_tz)
+        
+        # 令牌在活动结束后 24 小时过期
+        if self.ended_at:
+            # ended_at 是 naive datetime（无时区），假设为 UTC
+            ended_utc = self.ended_at.replace(tzinfo=timezone.utc)
+            ended_beijing = ended_utc.astimezone(beijing_tz)
+            expires_beijing = ended_beijing + timedelta(hours=24)
+        else:
+            # 如果活动未结束，设置为当前北京时间 + 7 天
+            expires_beijing = now_beijing + timedelta(days=7)
+        
+        # 转换为 UTC 时间存储（naive datetime，不带时区信息）
+        self.token_expires_at = expires_beijing.astimezone(timezone.utc).replace(tzinfo=None)
+        return self.join_token
+    
+    def is_token_valid(self):
+        """检查令牌是否有效"""
+        if not self.join_token or not self.allow_quick_join:
+            return False
+        if self.token_expires_at:
+            # 使用 UTC 时间进行比较
+            if datetime.utcnow() > self.token_expires_at:
+                return False
+        return True
+    
+    def get_token_expires_beijing_time(self):
+        """获取令牌过期时间的北京时间（用于显示）"""
+        if not self.token_expires_at:
+            return None
+        from datetime import timezone, timedelta
+        beijing_tz = timezone(timedelta(hours=8))
+        utc_time = self.token_expires_at.replace(tzinfo=timezone.utc)
+        return utc_time.astimezone(beijing_tz)
 
 class Response(db.Model):
     """活动响应模型"""

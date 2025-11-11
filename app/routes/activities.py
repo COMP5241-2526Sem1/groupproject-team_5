@@ -1,10 +1,12 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
-from flask_login import login_required, current_user
+from flask_login import login_required, current_user, login_user
 from app import db, socketio
 from app.models import Course, Activity, Response, User, Enrollment
 from app.forms import ActivityForm, AIQuestionForm
 from app.ai_utils import generate_questions, generate_activity_from_content, group_answers, extract_text_from_file, validate_file_upload
+from app.email_utils import send_temp_password_email
 from datetime import datetime, timedelta
+from werkzeug.security import generate_password_hash
 import json
 import re
 import csv
@@ -12,6 +14,8 @@ import io
 import time
 import os
 import tempfile
+import secrets
+import string
 from collections import Counter
 from flask import make_response
 from werkzeug.utils import secure_filename
@@ -61,9 +65,16 @@ def list_activities():
     
     return render_template('activities/activity_list.html', activities=activities.items, pagination=activities)
 
-def auto_end_activity(activity_id, duration_seconds):
-    """后台任务：自动结束活动"""
-    print(f"Starting timer for activity {activity_id}, will end in {duration_seconds} seconds")
+def auto_end_activity(activity_id, duration_seconds, started_at_timestamp):
+    """后台任务：自动结束活动
+    
+    Args:
+        activity_id: 活动ID
+        duration_seconds: 持续秒数
+        started_at_timestamp: 活动启动时的时间戳(用于验证是否是当前启动)
+    """
+    print(f"[AUTO-END] Starting timer for activity {activity_id}, will end in {duration_seconds} seconds")
+    print(f"[AUTO-END] Started at timestamp: {started_at_timestamp}")
     time.sleep(duration_seconds)
     
     try:
@@ -74,30 +85,41 @@ def auto_end_activity(activity_id, duration_seconds):
         
         # 不需要app_context，因为我们在同一个应用进程中
         activity = Activity.query.get(activity_id)
-        if activity and activity.is_active:
-            print(f"Auto-ending activity {activity_id}")
-            activity.is_active = False
-            activity.ended_at = datetime.utcnow()
-            db.session.commit()
+        if activity:
+            # 检查活动的started_at是否与任务启动时一致
+            current_started_timestamp = activity.started_at.timestamp() if activity.started_at else 0
             
-            print(f"Activity {activity_id} ended at {activity.ended_at}")
+            print(f"[AUTO-END] Activity {activity_id} current started_at: {activity.started_at}")
+            print(f"[AUTO-END] Current timestamp: {current_started_timestamp}")
+            print(f"[AUTO-END] Expected timestamp: {started_at_timestamp}")
             
-            # 通知所有用户活动已结束
-            socketio.emit('activity_update', {
-                'activity_id': activity_id,
-                'update_type': 'auto_ended',
-                'data': {
-                    'is_active': False,
-                    'ended_at': activity.ended_at.isoformat(),
-                    'message': 'Activity has ended automatically'
-                }
-            }, room=f'activity_{activity_id}')
-            
-            print(f"Notification sent for activity {activity_id}")
+            # 只有当时间戳匹配时才结束(说明是当前这次启动的任务)
+            if activity.is_active and abs(current_started_timestamp - started_at_timestamp) < 1:
+                print(f"[AUTO-END] Auto-ending activity {activity_id}")
+                activity.is_active = False
+                activity.ended_at = datetime.utcnow()
+                db.session.commit()
+                
+                print(f"[AUTO-END] Activity {activity_id} ended at {activity.ended_at}")
+                
+                # 通知所有用户活动已结束
+                socketio.emit('activity_update', {
+                    'activity_id': activity_id,
+                    'update_type': 'auto_ended',
+                    'data': {
+                        'is_active': False,
+                        'ended_at': activity.ended_at.isoformat(),
+                        'message': 'Activity has ended automatically'
+                    }
+                }, room=f'activity_{activity_id}')
+                
+                print(f"[AUTO-END] Notification sent for activity {activity_id}")
+            else:
+                print(f"[AUTO-END] Activity {activity_id} was restarted or already ended, skipping auto-end")
         else:
-            print(f"Activity {activity_id} not found or already ended")
+            print(f"[AUTO-END] Activity {activity_id} not found")
     except Exception as e:
-        print(f"Error in auto_end_activity: {e}")
+        print(f"[AUTO-END] Error in auto_end_activity: {e}")
         import traceback
         traceback.print_exc()
 
@@ -124,6 +146,9 @@ def create_activity(course_id):
             if quiz_type == 'multiple_choice' and form.options.data:
                 options = form.options.data
         
+        # 获取快速加入选项
+        allow_quick_join = request.form.get('allow_quick_join') == 'on'
+        
         activity = Activity(
             title=form.title.data,
             type=form.type.data,
@@ -133,8 +158,14 @@ def create_activity(course_id):
             correct_answer=correct_answer,
             course_id=course_id,
             instructor_id=current_user.id,
-            duration_minutes=form.duration_minutes.data
+            duration_minutes=form.duration_minutes.data,
+            allow_quick_join=allow_quick_join
         )
+        
+        # 如果允许快速加入，生成token
+        if allow_quick_join:
+            activity.generate_join_token()
+        
         db.session.add(activity)
         db.session.commit()
         flash('Activity created successfully!', 'success')
@@ -160,7 +191,33 @@ def activity_detail(activity_id):
     if current_user.role == 'student':
         my_response = Response.query.filter_by(student_id=current_user.id, activity_id=activity_id).first()
     
-    return render_template('activities/activity_detail.html', activity=activity, my_response=my_response)
+    # 为教师和管理员生成二维码
+    qr_code = None
+    if current_user.role in ['admin', 'instructor']:
+        if current_user.role == 'admin' or activity.course.instructor_id == current_user.id:
+            # 如果活动允许快速加入且有token，生成二维码
+            if activity.allow_quick_join:
+                if not activity.join_token:
+                    activity.generate_join_token()
+                    db.session.commit()
+                
+                try:
+                    from app.qr_utils import generate_activity_qr_code
+                    qr_code = generate_activity_qr_code(activity, _external=True)
+                except ImportError:
+                    pass  # qrcode库未安装
+    
+    # 计算时间戳用于前端倒计时（避免时区问题）
+    started_at_timestamp = None
+    if activity.started_at:
+        # 数据库存储UTC时间，直接转换为毫秒时间戳
+        started_at_timestamp = int(activity.started_at.timestamp() * 1000)
+    
+    return render_template('activities/activity_detail.html', 
+                         activity=activity, 
+                         my_response=my_response,
+                         qr_code=qr_code,
+                         started_at_timestamp=started_at_timestamp)
 
 @bp.route('/activities/<int:activity_id>/start', methods=['POST'])
 @login_required
@@ -176,12 +233,24 @@ def start_activity(activity_id):
     activity.ended_at = None
     db.session.commit()
     
+    print(f"[START] Activity {activity_id} started at {activity.started_at}")
+    print(f"[START] is_active: {activity.is_active}")
+    
+    # 获取启动时间戳,用于验证自动结束任务
+    started_at_timestamp = activity.started_at.timestamp()
+    
     # 计算预计结束时间（仅用于显示）
     from datetime import timedelta
     will_end_at = activity.started_at + timedelta(minutes=activity.duration_minutes)
     
-    # 启动后台任务，在指定时间后自动结束活动 (暂时禁用)
-    # socketio.start_background_task(target=auto_end_activity, activity_id=activity_id, duration_seconds=activity.duration_minutes * 60)
+    # 启动后台任务，在指定时间后自动结束活动
+    # 传递时间戳,确保只有当前启动的任务会结束活动
+    socketio.start_background_task(
+        target=auto_end_activity, 
+        activity_id=activity_id, 
+        duration_seconds=activity.duration_minutes * 60,
+        started_at_timestamp=started_at_timestamp
+    )
     
     # Broadcast to all users in the activity room
     socketio.emit('activity_update', {
@@ -264,18 +333,24 @@ def submit_response(activity_id):
     
     activity = Activity.query.get_or_404(activity_id)
     
+    # 添加调试信息
+    print(f"[DEBUG] Activity {activity_id} submission attempt")
+    print(f"[DEBUG] is_active: {activity.is_active}")
+    print(f"[DEBUG] started_at: {activity.started_at}")
+    print(f"[DEBUG] ended_at: {activity.ended_at}")
+    
     if not activity.is_active:
-        return jsonify({'success': False, 'message': 'Activity not started or already ended'})
+        return jsonify({'success': False, 'message': '活动未开始或已结束'})
     
     enrollment = Enrollment.query.filter_by(student_id=current_user.id, course_id=activity.course_id).first()
     if not enrollment:
-        return jsonify({'success': False, 'message': 'You are not enrolled in this course'})
+        return jsonify({'success': False, 'message': '你未加入此课程'})
     
     data = request.get_json()
     answer = data.get('answer', '').strip()
     
     if not answer:
-        return jsonify({'success': False, 'message': 'Answer cannot be empty'})
+        return jsonify({'success': False, 'message': '答案不能为空'})
     
     # Check if there's already a response
     existing_response = Response.query.filter_by(student_id=current_user.id, activity_id=activity_id).first()
@@ -299,7 +374,7 @@ def submit_response(activity_id):
         'message': 'New response submitted'
     }, room=f'activity_{activity_id}')
     
-    return jsonify({'success': True, 'message': 'Answer submitted successfully'})
+    return jsonify({'success': True, 'message': '答案提交成功'})
 
 @bp.route('/activities/<int:activity_id>/results')
 @login_required
@@ -730,3 +805,219 @@ def delete_activity(activity_id):
 #     
 #     return render_template('activities/edit_activity.html', form=form, activity=activity, course=course)
 
+
+# ============ QR Code Quick Join Routes ============
+
+@bp.route('/activity/join/<token>')
+def quick_join(token):
+    """通过二维码令牌快速加入活动"""
+    # 查找活动
+    activity = Activity.query.filter_by(join_token=token).first()
+    
+    if not activity:
+        flash('Invalid activity link', 'error')
+        return redirect(url_for('main.index'))
+    
+    # 检查令牌是否有效
+    if not activity.is_token_valid():
+        flash('This activity link has expired or been disabled', 'error')
+        return redirect(url_for('main.index'))
+    
+    # 如果已登录
+    if current_user.is_authenticated:
+        # 检查是否已选课
+        enrollment = Enrollment.query.filter_by(
+            student_id=current_user.id,
+            course_id=activity.course_id
+        ).first()
+        
+        # 如果未选课，自动选课
+        if not enrollment:
+            enrollment = Enrollment(
+                student_id=current_user.id,
+                course_id=activity.course_id
+            )
+            db.session.add(enrollment)
+            db.session.commit()
+            flash(f'Automatically enrolled in course: {activity.course.name}', 'success')
+        
+        # 重定向到活动详情页
+        return redirect(url_for('activities.activity_detail', activity_id=activity.id))
+    
+    # 如果未登录，跳转到快速注册页面
+    return redirect(url_for('activities.quick_register', token=token))
+
+
+@bp.route('/activity/quick-register/<token>', methods=['GET', 'POST'])
+def quick_register(token):
+    """快速注册并加入活动"""
+    # 如果已登录，直接跳转到加入流程
+    if current_user.is_authenticated:
+        return redirect(url_for('activities.quick_join', token=token))
+    
+    # 查找活动
+    activity = Activity.query.filter_by(join_token=token).first()
+    
+    if not activity:
+        flash('Invalid activity link', 'error')
+        return redirect(url_for('main.index'))
+    
+    # 检查令牌是否有效
+    if not activity.is_token_valid():
+        flash('This activity link has expired or been disabled', 'error')
+        return redirect(url_for('main.index'))
+    
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip()
+        
+        if not name or not email:
+            flash('Please enter name and email', 'error')
+            return render_template('activities/quick_register.html', 
+                                 activity=activity, 
+                                 course=activity.course)
+        
+        # 检查邮箱是否已存在
+        existing_user = User.query.filter_by(email=email).first()
+        
+        if existing_user:
+            # 如果用户已存在,提示用户登录
+            flash(f'This email is already registered, please login with password', 'info')
+            return redirect(url_for('auth.login', next=url_for('activities.quick_join', token=token)))
+        else:
+            # 创建新用户
+            # 生成易读的随机密码（8位，包含字母和数字）
+            characters = string.ascii_letters + string.digits
+            temp_password = ''.join(secrets.choice(characters) for _ in range(8))
+            
+            user = User(
+                email=email,
+                name=name,
+                password_hash=generate_password_hash(temp_password),
+                role='student',
+                student_id=User.generate_student_id()
+            )
+            db.session.add(user)
+            
+            # 先不提交，等邮件发送成功后再提交
+            db.session.flush()  # 获取user.id但不提交
+            
+            # 发送临时密码到邮箱 (设置超时,不阻塞)
+            email_sent = False
+            email_error = None
+            
+            try:
+                import signal
+                
+                # 定义超时处理
+                def timeout_handler(signum, frame):
+                    raise TimeoutError("Email sending timeout")
+                
+                # 设置10秒超时(仅Unix系统)
+                try:
+                    signal.signal(signal.SIGALRM, timeout_handler)
+                    signal.alarm(10)
+                    email_sent = send_temp_password_email(email, name, temp_password)
+                    signal.alarm(0)  # 取消超时
+                except (AttributeError, ValueError):
+                    # Windows系统不支持signal.SIGALRM,直接发送
+                    email_sent = send_temp_password_email(email, name, temp_password)
+                    
+            except TimeoutError:
+                email_error = "Email sending timeout (10 seconds). Please check your network connection."
+                email_sent = False
+            except Exception as e:
+                email_error = f"Email sending failed: {str(e)}"
+                email_sent = False
+            
+            # Decide whether to create user based on email sending result
+            if email_sent:
+                # Email sent successfully, commit user
+                try:
+                    db.session.commit()
+                    flash(f'✅ Account created successfully! Temporary password sent to {email}', 'success')
+                    flash(f'📧 Please check your email (including spam folder) for the password', 'info')
+                    # Redirect to login page, will auto-redirect to activity after login
+                    return redirect(url_for('auth.login', next=url_for('activities.quick_join', token=token)))
+                except Exception as db_error:
+                    db.session.rollback()
+                    flash(f'Account creation failed: {str(db_error)}', 'error')
+                    return render_template('activities/quick_register.html', 
+                                         activity=activity, 
+                                         course=activity.course)
+            else:
+                # 邮件发送失败,回滚用户创建
+                db.session.rollback()
+                flash('❌ Account creation failed: Unable to send verification email', 'error')
+                flash(f'🔍 Reason: {email_error}', 'warning')
+                flash('💡 Please check:', 'info')
+                flash('   1. Make sure your email address is valid and active', 'info')
+                flash('   2. Check your internet connection', 'info')
+                flash('   3. Try again in a few moments', 'info')
+                flash('   1. Make sure your email address is valid and active', 'info')
+                flash('   2. Check your internet connection', 'info')
+                flash('   3. Try again in a few moments', 'info')
+                return render_template('activities/quick_register.html', 
+                                     activity=activity, 
+                                     course=activity.course)
+    
+    return render_template('activities/quick_register.html', 
+                         activity=activity, 
+                         course=activity.course)
+
+
+@bp.route('/activity/<int:activity_id>/regenerate-qr', methods=['POST'])
+@login_required
+def regenerate_qr_code(activity_id):
+    """重新生成活动的二维码令牌"""
+    activity = Activity.query.get_or_404(activity_id)
+    course = Course.query.get_or_404(activity.course_id)
+    
+    # 权限检查
+    if current_user.role == 'admin':
+        pass
+    elif current_user.role == 'instructor' and course.instructor_id == current_user.id:
+        pass
+    else:
+        return jsonify({'success': False, 'message': '无权限'}), 403
+    
+    # 重新生成令牌
+    activity.generate_join_token()
+    db.session.commit()
+    
+    return jsonify({
+        'success': True,
+        'message': '二维码已重新生成',
+        'token': activity.join_token
+    })
+
+
+@bp.route('/activity/<int:activity_id>/toggle-quick-join', methods=['POST'])
+@login_required
+def toggle_quick_join(activity_id):
+    """切换活动的快速加入功能"""
+    activity = Activity.query.get_or_404(activity_id)
+    course = Course.query.get_or_404(activity.course_id)
+    
+    # 权限检查
+    if current_user.role == 'admin':
+        pass
+    elif current_user.role == 'instructor' and course.instructor_id == current_user.id:
+        pass
+    else:
+        return jsonify({'success': False, 'message': '无权限'}), 403
+    
+    # 切换状态
+    activity.allow_quick_join = not activity.allow_quick_join
+    
+    # 如果启用快速加入但没有令牌，生成一个
+    if activity.allow_quick_join and not activity.join_token:
+        activity.generate_join_token()
+    
+    db.session.commit()
+    
+    return jsonify({
+        'success': True,
+        'allow_quick_join': activity.allow_quick_join,
+        'message': '快速加入已' + ('启用' if activity.allow_quick_join else '禁用')
+    })

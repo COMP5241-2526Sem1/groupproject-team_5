@@ -9,6 +9,7 @@ Flask-WTF==1.2.1
 # Database
 PyMySQL==1.1.0
 pymysql==1.1.0
+cryptography==41.0.7  # PlanetScale SSL 支持
 
 # Forms and validation
 WTForms==3.1.1
@@ -21,8 +22,20 @@ python-socketio==5.10.0
 python-engineio>=4.8.0
 
 # Other utilities
-email-validator==2.31.0
+email-validator==2.2.0
 requests==2.31.0
+
+# Production server
+gunicorn==21.2.0  # 生产环境 WSGI 服务器
+python-dotenv==1.0.0  # 环境变量管理
+
+# AI features (optional, for question generation)
+openai>=1.0.0  # OpenAI API support (imported in code)
+volcengine-python-sdk>=1.0.78  # ByteDance Ark API support (optional)
+
+# QR Code generation
+qrcode[pil]==7.4.2
+Pillow>=10.1.0
 
 # Document processing
 PyPDF2==3.0.1
