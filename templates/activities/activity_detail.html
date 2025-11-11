@@ -894,13 +894,13 @@ function copyJoinLink() {
     
     try {
         document.execCommand('copy');
-        alert('链接已复制到剪贴板！');
+        alert('Link copied to clipboard!');
     } catch (err) {
         // Fallback for browsers that don't support execCommand
         navigator.clipboard.writeText(linkInput.value).then(() => {
-            alert('链接已复制到剪贴板！');
+            alert('Link copied to clipboard!');
         }).catch(err => {
-            alert('复制失败，请手动复制');
+            alert('Copy failed, please copy manually');
         });
     }
 }

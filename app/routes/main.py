@@ -1,5 +1,10 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
-from flask_login import login_required, current_user
+from flask_login imp@main.route('/my_courses')
+@login_required
+def my_courses():
+    """显示学生的所有课程"""
+    if current_user.role != 'student':
+        flash('Only students can view this page', 'warning')gin_required, current_user
 from app.models import User, Course, Activity, Response
 from sqlalchemy import func
 
@@ -103,7 +108,7 @@ def dashboard():
 def my_courses():
     """显示学生的所有课程"""
     if current_user.role != 'student':
-        flash('只有学生可以查看此页面', 'warning')
+        flash('Only students can view this page', 'warning')
         return redirect(url_for('main.dashboard'))
     
     # 获取学生的所有课程（分页）
@@ -139,7 +144,7 @@ def my_courses():
 def my_replies():
     """显示所有对我问题的回复"""
     if current_user.role != 'student':
-        flash('只有学生可以查看此页面', 'warning')
+        flash('Only students can view this page', 'warning')
         return redirect(url_for('main.dashboard'))
     
     from app.models import Question, Answer

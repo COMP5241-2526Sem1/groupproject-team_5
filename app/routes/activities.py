@@ -340,17 +340,17 @@ def submit_response(activity_id):
     print(f"[DEBUG] ended_at: {activity.ended_at}")
     
     if not activity.is_active:
-        return jsonify({'success': False, 'message': '活动未开始或已结束'})
+        return jsonify({'success': False, 'message': 'Activity not started or already ended'})
     
     enrollment = Enrollment.query.filter_by(student_id=current_user.id, course_id=activity.course_id).first()
     if not enrollment:
-        return jsonify({'success': False, 'message': '你未加入此课程'})
+        return jsonify({'success': False, 'message': 'You are not enrolled in this course'})
     
     data = request.get_json()
     answer = data.get('answer', '').strip()
     
     if not answer:
-        return jsonify({'success': False, 'message': '答案不能为空'})
+        return jsonify({'success': False, 'message': 'Answer cannot be empty'})
 
     is_correct = None
     score = 0
@@ -408,7 +408,7 @@ def submit_response(activity_id):
         'message': 'New response submitted'
     }, room=f'activity_{activity_id}')
     
-    return jsonify({'success': True, 'message': '答案提交成功'})
+    return jsonify({'success': True, 'message': 'Answer submitted successfully'})
 
 @bp.route('/activities/<int:activity_id>/results')
 @login_required
@@ -1027,7 +1027,7 @@ def regenerate_qr_code(activity_id):
     elif current_user.role == 'instructor' and course.instructor_id == current_user.id:
         pass
     else:
-        return jsonify({'success': False, 'message': '无权限'}), 403
+        return jsonify({'success': False, 'message': 'Permission denied'}), 403
     
     # 重新生成令牌
     activity.generate_join_token()
@@ -1035,7 +1035,7 @@ def regenerate_qr_code(activity_id):
     
     return jsonify({
         'success': True,
-        'message': '二维码已重新生成',
+        'message': 'QR code regenerated successfully',
         'token': activity.join_token
     })
 
@@ -1053,7 +1053,7 @@ def toggle_quick_join(activity_id):
     elif current_user.role == 'instructor' and course.instructor_id == current_user.id:
         pass
     else:
-        return jsonify({'success': False, 'message': '无权限'}), 403
+        return jsonify({'success': False, 'message': 'Permission denied'}), 403
     
     # 切换状态
     activity.allow_quick_join = not activity.allow_quick_join
@@ -1067,5 +1067,5 @@ def toggle_quick_join(activity_id):
     return jsonify({
         'success': True,
         'allow_quick_join': activity.allow_quick_join,
-        'message': '快速加入已' + ('启用' if activity.allow_quick_join else '禁用')
+        'message': 'Quick join ' + ('enabled' if activity.allow_quick_join else 'disabled')
     })

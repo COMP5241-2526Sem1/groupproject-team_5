@@ -53,13 +53,13 @@ def register():
             print(f"DEBUG: Looking for captcha {form.captcha.data} for email {form.email.data}")
             
             if not email_captcha:
-                flash('验证码错误或已过期', 'error')
+                flash('Verification code is incorrect or expired', 'error')
                 print(f"DEBUG: Captcha not found or expired")
                 return render_template('auth/register.html', form=form)
             
             # 检查验证码是否过期（5分钟）
             if get_beijing_time() - email_captcha.create_time > timedelta(minutes=5):
-                flash('验证码已过期，请重新获取', 'error')
+                flash('Verification code expired, please request a new one', 'error')
                 EmailCaptcha.query.filter_by(email=form.email.data).delete()
                 db.session.commit()
                 print(f"DEBUG: Captcha expired")
@@ -89,9 +89,9 @@ def register():
         # 自动登录用户
         login_user(user, remember=True)
         if form.role.data == 'student':
-            flash(f'注册成功！欢迎您，{user.name}！您的学号是：{student_id}', 'success')
+            flash(f'Registration successful! Welcome, {user.name}! Your student ID is: {student_id}', 'success')
         else:
-            flash(f'注册成功！欢迎您，{user.name}！', 'success')
+            flash(f'Registration successful! Welcome, {user.name}!', 'success')
         print(f"DEBUG: User {user.name} registered successfully, redirecting to dashboard")
         return redirect(url_for('main.dashboard'))
     else:
