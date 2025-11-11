@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, TextAreaField, SelectField, FileField, SubmitField, RadioField
+from wtforms import StringField, PasswordField, TextAreaField, SelectField, FileField, SubmitField, RadioField, HiddenField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError
 from app.models import User
 
@@ -41,7 +41,7 @@ class ActivityForm(FlaskForm):
     type = SelectField('Activity Type', choices=[('poll', 'Poll'), ('short_answer', 'Short Answer'), ('quiz', 'Quiz'), ('word_cloud', 'Word Cloud'), ('memory_game', 'Memory Game')], validators=[DataRequired()])
     question = TextAreaField('Question', validators=[DataRequired()])
     options = TextAreaField('Options (Required for polls, one per line)')
-    duration_minutes = SelectField('Activity Duration', choices=[(1, '1 minute'), (3, '3 minutes'), (5, '5 minutes'), (10, '10 minutes'), (15, '15 minutes'), (30, '30 minutes')], coerce=int, default=5)
+    duration_minutes = HiddenField('Activity Duration', default=5)
     submit = SubmitField('Create Activity')
 
 class AIQuestionForm(FlaskForm):
