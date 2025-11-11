@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask_mail import Message
-from app import db, mail
+from app import db, mail, get_beijing_time
 from app.models import User, EmailCaptcha
 from app.forms import LoginForm, RegistrationForm
 from app.email_utils import send_temp_password_email
@@ -58,7 +58,7 @@ def register():
                 return render_template('auth/register.html', form=form)
             
             # 检查验证码是否过期（5分钟）
-            if datetime.utcnow() - email_captcha.create_time > timedelta(minutes=5):
+            if get_beijing_time() - email_captcha.create_time > timedelta(minutes=5):
                 flash('验证码已过期，请重新获取', 'error')
                 EmailCaptcha.query.filter_by(email=form.email.data).delete()
                 db.session.commit()
@@ -173,7 +173,7 @@ def change_password():
             return render_template('auth/change_password.html')
         
         # Check if captcha expired (5 minutes)
-        time_diff = datetime.utcnow() - email_captcha.create_time
+        time_diff = get_beijing_time() - email_captcha.create_time
         if time_diff.total_seconds() > 300:
             db.session.delete(email_captcha)
             db.session.commit()
@@ -221,7 +221,7 @@ def send_change_password_captcha():
     email_captcha = EmailCaptcha(
         email=email,
         captcha=captcha,
-        create_time=datetime.utcnow()
+        create_time=get_beijing_time()
     )
     db.session.add(email_captcha)
     db.session.commit()
@@ -265,7 +265,7 @@ def forgot_password():
             return render_template('auth/forgot_password.html')
         
         # 检查验证码是否过期（5分钟）
-        if datetime.utcnow() - email_captcha.create_time > timedelta(minutes=5):
+        if get_beijing_time() - email_captcha.create_time > timedelta(minutes=5):
             flash('Verification code expired. Please request a new one.', 'error')
             EmailCaptcha.query.filter_by(email=email).delete()
             db.session.commit()

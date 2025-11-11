@@ -21,6 +21,11 @@ login_manager = LoginManager()
 socketio = SocketIO()
 mail = Mail()
 
+# Timezone utility - Beijing Time (UTC+8)
+def get_beijing_time():
+    """Get current Beijing time (UTC+8)"""
+    return datetime.utcnow() + timedelta(hours=8)
+
 def create_app():
     """Application factory pattern"""
     

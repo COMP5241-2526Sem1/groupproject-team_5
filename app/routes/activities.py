@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user, login_user
-from app import db, socketio
+from app import db, socketio, get_beijing_time
 from app.models import Course, Activity, Response, User, Enrollment
 from app.forms import ActivityForm, AIQuestionForm
 from app.ai_utils import generate_questions, generate_activity_from_content, group_answers, extract_text_from_file, validate_file_upload
@@ -97,7 +97,7 @@ def auto_end_activity(activity_id, duration_seconds, started_at_timestamp):
             if activity.is_active and abs(current_started_timestamp - started_at_timestamp) < 1:
                 print(f"[AUTO-END] Auto-ending activity {activity_id}")
                 activity.is_active = False
-                activity.ended_at = datetime.utcnow()
+                activity.ended_at = get_beijing_time()
                 db.session.commit()
                 
                 print(f"[AUTO-END] Activity {activity_id} ended at {activity.ended_at}")
@@ -228,7 +228,7 @@ def start_activity(activity_id):
         return jsonify({'success': False, 'message': 'Insufficient permissions'})
     
     activity.is_active = True
-    activity.started_at = datetime.utcnow()
+    activity.started_at = get_beijing_time()
     # 清除之前的结束时间，活动现在是活跃的
     activity.ended_at = None
     db.session.commit()
@@ -280,7 +280,7 @@ def stop_activity(activity_id):
         return jsonify({'success': False, 'message': 'Insufficient permissions'})
     
     activity.is_active = False
-    activity.ended_at = datetime.utcnow()
+    activity.ended_at = get_beijing_time()
     db.session.commit()
     
     # Broadcast to all users in the activity room
@@ -356,7 +356,7 @@ def submit_response(activity_id):
     existing_response = Response.query.filter_by(student_id=current_user.id, activity_id=activity_id).first()
     if existing_response:
         existing_response.answer = answer
-        existing_response.submitted_at = datetime.utcnow()
+        existing_response.submitted_at = get_beijing_time()
     else:
         response = Response(
             student_id=current_user.id,
