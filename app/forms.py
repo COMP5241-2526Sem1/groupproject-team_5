@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, TextAreaField, SelectField, FileField, SubmitField, RadioField
+from wtforms import StringField, PasswordField, TextAreaField, SelectField, IntegerField, FileField, SubmitField, RadioField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError
 from app.models import User
 
@@ -38,10 +38,15 @@ class CourseForm(FlaskForm):
 
 class ActivityForm(FlaskForm):
     title = StringField('Activity Title', validators=[DataRequired(), Length(min=2, max=200)])
-    type = SelectField('Activity Type', choices=[('poll', 'Poll'), ('short_answer', 'Short Answer'), ('quiz', 'Quiz'), ('word_cloud', 'Word Cloud'), ('memory_game', 'Memory Game')], validators=[DataRequired()])
+    type = SelectField(
+        'Activity Type',
+        choices=[('poll', 'Poll'), ('short_answer', 'Short Answer'), ('quiz', 'Quiz'), ('word_cloud', 'Word Cloud'), ('memory_game', 'Memory Game')],
+        validators=[DataRequired()],
+        default='poll'
+    )
     question = TextAreaField('Question', validators=[DataRequired()])
-    options = TextAreaField('Options (Required for polls, one per line)')
-    duration_minutes = SelectField('Activity Duration', choices=[(1, '1 minute'), (3, '3 minutes'), (5, '5 minutes'), (10, '10 minutes'), (15, '15 minutes'), (30, '30 minutes')], coerce=int, default=5)
+    options = TextAreaField('Options', render_kw={'style': 'display:none;'})
+    duration_minutes = IntegerField('Activity Duration (minutes)', default=5, render_kw={'style': 'display:none;'})
     submit = SubmitField('Create Activity')
 
 class AIQuestionForm(FlaskForm):
