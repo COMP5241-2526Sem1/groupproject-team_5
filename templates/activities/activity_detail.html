@@ -24,7 +24,7 @@
             <i class="bi bi-arrow-clockwise"></i> reset Activity
         </button>
         <a href="{{ url_for('activities.activity_results', activity_id=activity.id) }}" class="btn btn-outline-info">
-            <i class="bi bi-graph-up"></i> 查看结果
+            <i class="bi bi-graph-up"></i> View Results
         </a>
     </div>
     {% endif %}
@@ -55,7 +55,7 @@
                         </span>
                     </div>
                     {% if activity.ended_at %}
-                    <div id="end-time-display">End time: {{ activity.ended_at|local_time }}</div>
+                    <div id="end-time-display">End time: {{ activity.ended_at.strftime('%Y-%m-%d %H:%M:%S') }}</div>
                     {% else %}
                     <div id="end-time-display" style="display: none;"></div>
                     {% endif %}
@@ -117,7 +117,7 @@
                         <div class="card-body">
                             <h6>Your Answer:</h6>
                             <p>{{ my_response.answer }}</p>
-                            <small class="text-muted">Submission Time: {{ my_response.submitted_at|local_time }}</small>
+                            <small class="text-muted">Submission Time: {{ my_response.submitted_at.strftime('%Y-%m-%d %H:%M:%S') }}</small>
                         </div>
                     </div>
                     {% else %}
@@ -211,12 +211,12 @@
                     </div>
                 </div>
                 <hr>
-                <p><strong>Creation Time:</strong> {{ activity.created_at|local_time }}</p>
+                <p><strong>Creation Time:</strong> {{ activity.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
                 {% if activity.started_at %}
-                <p><strong>Start Time:</strong> {{ activity.started_at|local_time }}</p>
+                <p><strong>Start Time:</strong> {{ activity.started_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
                 {% endif %}
                 {% if activity.ended_at %}
-                <p><strong>End Time:</strong> {{ activity.ended_at|local_time }}</p>
+                <p><strong>End Time:</strong> {{ activity.ended_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
                 {% endif %}
             </div>
         </div>
