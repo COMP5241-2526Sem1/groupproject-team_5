@@ -207,17 +207,17 @@ def activity_detail(activity_id):
                 except ImportError:
                     pass  # qrcode库未安装
     
-    # 计算时间戳用于前端倒计时（避免时区问题）
-    started_at_timestamp = None
+    # 传递活动开始时间给前端（使用ISO格式字符串）
+    started_at_iso = None
     if activity.started_at:
-        # 数据库存储UTC时间，直接转换为毫秒时间戳
-        started_at_timestamp = int(activity.started_at.timestamp() * 1000)
+        # 数据库存储的是北京时间，传递ISO字符串给前端
+        started_at_iso = activity.started_at.isoformat()
     
     return render_template('activities/activity_detail.html', 
                          activity=activity, 
                          my_response=my_response,
                          qr_code=qr_code,
-                         started_at_timestamp=started_at_timestamp)
+                         started_at_iso=started_at_iso)
 
 @bp.route('/activities/<int:activity_id>/start', methods=['POST'])
 @login_required
