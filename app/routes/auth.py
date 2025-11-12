@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask_mail import Message
@@ -115,9 +115,6 @@ def send_email_captcha():
     # Generate 6-digit random verification code
     captcha = ''.join(random.choices(string.digits, k=6))
     
-    # Generate 6-digit random verification code
-    captcha = ''.join(random.choices(string.digits, k=6))
-    
     # Delete previous verification codes for this email
     EmailCaptcha.query.filter_by(email=email).delete()
     
@@ -128,6 +125,11 @@ def send_email_captcha():
     
     # Send email
     try:
+        print(f"[EMAIL DEBUG] Attempting to send email to: {email}")
+        print(f"[EMAIL DEBUG] Mail config - server: {current_app.config.get('MAIL_SERVER')}")
+        print(f"[EMAIL DEBUG] Mail config - port: {current_app.config.get('MAIL_PORT')}")
+        print(f"[EMAIL DEBUG] Mail config - username: {current_app.config.get('MAIL_USERNAME')}")
+        
         message = Message(
             subject='Classroom Platform - Email Verification Code',
             recipients=[email],
@@ -145,10 +147,59 @@ If this wasn't you, please ignore this email.
 Classroom Platform Team
             '''
         )
+        print(f"[EMAIL DEBUG] Message created successfully")
         mail.send(message)
+        print(f"[EMAIL DEBUG] Email sent successfully to {email}")
         return jsonify({'code': 200, 'message': 'Verification code sent successfully! Please check your email'})
     except Exception as e:
-        return jsonify({'code': 500, 'message': f'Failed to send verification code: {str(e)}'})@bp.route('/profile')
+        print(f"[EMAIL DEBUG] Email send failed: {str(e)}")
+        print(f"[EMAIL DEBUG] Error type: {type(e).__name__}")
+        import traceback
+        print(f"[EMAIL DEBUG] Traceback: {traceback.format_exc()}")
+        return jsonify({'code': 500, 'message': f'Failed to send verification code: {str(e)}'})
+
+@bp.route('/test_captcha_route', methods=['GET', 'POST'])
+def test_captcha_route():
+    """Test route to verify captcha endpoint is working"""
+    if request.method == 'GET':
+        return jsonify({'status': 'Captcha route is working', 'method': 'GET'})
+    else:
+        email = request.json.get('email') if request.json else 'no-email'
+        return jsonify({'status': 'Captcha route is working', 'method': 'POST', 'email': email})
+
+@bp.route('/debug/email_config')
+def debug_email_config():
+    """Debug route to check email configuration"""
+    config_info = {
+        'MAIL_SERVER': current_app.config.get('MAIL_SERVER'),
+        'MAIL_PORT': current_app.config.get('MAIL_PORT'),
+        'MAIL_USE_TLS': current_app.config.get('MAIL_USE_TLS'),
+        'MAIL_USE_SSL': current_app.config.get('MAIL_USE_SSL'),
+        'MAIL_USERNAME': current_app.config.get('MAIL_USERNAME'),
+        'MAIL_PASSWORD': '***' if current_app.config.get('MAIL_PASSWORD') else None,
+        'MAIL_DEFAULT_SENDER': current_app.config.get('MAIL_DEFAULT_SENDER')
+    }
+    
+    # Test basic connectivity
+    import socket
+    try:
+        server = current_app.config.get('MAIL_SERVER', 'smtp.gmail.com')
+        port = current_app.config.get('MAIL_PORT', 587)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(5)
+        result = sock.connect_ex((server, port))
+        sock.close()
+        connectivity = "OK" if result == 0 else f"Failed (code: {result})"
+    except Exception as e:
+        connectivity = f"Error: {str(e)}"
+    
+    return jsonify({
+        'config': config_info,
+        'connectivity': connectivity,
+        'timestamp': datetime.now().isoformat()
+    })
+
+@bp.route('/profile')@bp.route('/profile')
 @login_required
 def profile():
     """用户个人信息页面"""
