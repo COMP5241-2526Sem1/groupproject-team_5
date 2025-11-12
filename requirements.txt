@@ -27,6 +27,7 @@ requests==2.31.0
 
 # Production server
 gunicorn==21.2.0  # 生产环境 WSGI 服务器
+eventlet==0.33.3  # Async worker for Gunicorn (required for Socket.IO)
 python-dotenv==1.0.0  # 环境变量管理
 
 # AI features (optional, for question generation)
