@@ -199,7 +199,7 @@ def debug_email_config():
         'timestamp': datetime.now().isoformat()
     })
 
-@bp.route('/profile')@bp.route('/profile')
+@bp.route('/profile')
 @login_required
 def profile():
     """用户个人信息页面"""
