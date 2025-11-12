@@ -226,6 +226,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const durationHoursInput = document.getElementById('duration-hours');
     const durationMinutesInput = document.getElementById('duration-minutes');
     const durationSecondsInput = document.getElementById('duration-seconds');
+    
+    // Debug: 检查隐藏字段的属性
+    if (durationHidden) {
+        console.log('[Duration Debug] Hidden field element:', durationHidden);
+        console.log('[Duration Debug] Hidden field name:', durationHidden.name);
+        console.log('[Duration Debug] Hidden field id:', durationHidden.id);
+        console.log('[Duration Debug] Hidden field initial value:', durationHidden.value);
+    } else {
+        console.error('[Duration Debug] duration-hidden element not found!');
+    }
+    
     const generateTextBtn = document.getElementById('generate-questions-text');
     const generateFileBtn = document.getElementById('generate-questions-file');
     const fileUploadBtn = document.getElementById('file-upload-btn');
@@ -470,6 +481,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('[Duration Debug] Setting durationHidden.value to:', totalMinutes);
                 
                 durationHidden.value = totalMinutes;
+                
+                // Verify the value was set
+                console.log('[Duration Debug] After setting - durationHidden.value:', durationHidden.value);
+                console.log('[Duration Debug] After setting - durationHidden.name:', durationHidden.name);
             }
 
             const type = typeSelect.value;
