@@ -126,7 +126,7 @@
                                 </div>
                             </div>
                         </div>
-                        <input type="hidden" id="duration-hidden" name="duration_minutes" value="5">
+                        <input type="hidden" id="duration-hidden" name="duration_seconds" value="300">
                         <div class="form-text mt-2">Specify how long the activity remains open. Set hours, minutes, and seconds, or choose from the dropdown menus.</div>
                     </div>
                     
@@ -465,18 +465,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('[Duration Debug] Seconds:', secondsPart);
                 console.log('[Duration Debug] Total seconds:', totalSeconds);
                 
-                const totalMinutes = Math.max(1, Math.ceil(totalSeconds / 60));
-                
-                console.log('[Duration Debug] Total minutes (calculated):', totalMinutes);
-                console.log('[Duration Debug] Setting durationHidden.value to:', totalMinutes);
+                // 直接使用总秒数，不需要转换成分钟
+                console.log('[Duration Debug] Setting durationHidden.value to:', totalSeconds);
                 
                 // Try multiple ways to set the value
-                durationHidden.value = totalMinutes;
-                durationHidden.setAttribute('value', totalMinutes);
+                durationHidden.value = totalSeconds;
+                durationHidden.setAttribute('value', totalSeconds);
                 
                 // Force the value again right before submit
                 setTimeout(() => {
-                    durationHidden.value = totalMinutes;
+                    durationHidden.value = totalSeconds;
                 }, 0);
                 
                 // Verify the value was set
@@ -486,7 +484,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Create a FormData object to see what will actually be submitted
                 const formData = new FormData(formEl);
-                console.log('[Duration Debug] FormData duration_minutes:', formData.get('duration_minutes'));
+                console.log('[Duration Debug] FormData duration_seconds:', formData.get('duration_seconds'));
                 
                 // Now validate
                 if (totalSeconds <= 0) {

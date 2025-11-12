@@ -134,13 +134,11 @@ def create_activity(course_id):
     
     form = ActivityForm()
     if form.validate_on_submit():
-        # Debug: 检查接收到的duration值
-        print(f"[CREATE DEBUG] Request form - duration_minutes: {request.form.get('duration_minutes')}")
-        print(f"[CREATE DEBUG] All form data: {dict(request.form)}")
+        # 读取活动时长（秒）
+        duration_seconds = int(request.form.get('duration_seconds', 300))  # 默认5分钟=300秒
+        duration_minutes = max(1, round(duration_seconds / 60))  # 计算分钟数用于向后兼容
         
-        # 直接从request.form读取duration_minutes
-        duration_minutes = int(request.form.get('duration_minutes', 5))
-        print(f"[CREATE DEBUG] Using duration_minutes: {duration_minutes}")
+        print(f"[CREATE DEBUG] Duration seconds: {duration_seconds} ({duration_minutes} minutes)")
         
         options = None
         correct_answer = None
@@ -166,7 +164,8 @@ def create_activity(course_id):
             correct_answer=correct_answer,
             course_id=course_id,
             instructor_id=current_user.id,
-            duration_minutes=duration_minutes,  # 使用从request.form直接读取的值
+            duration_minutes=duration_minutes,  # 用于向后兼容和显示
+            duration_seconds=duration_seconds,  # 精确时长（秒）
             allow_quick_join=allow_quick_join
         )
         
@@ -247,16 +246,19 @@ def start_activity(activity_id):
     # 获取启动时间戳,用于验证自动结束任务
     started_at_timestamp = activity.started_at.timestamp()
     
+    # 计算活动时长（秒），优先使用 duration_seconds，否则使用 duration_minutes * 60
+    duration_seconds = activity.duration_seconds if activity.duration_seconds else (activity.duration_minutes * 60)
+    
     # 计算预计结束时间（仅用于显示）
     from datetime import timedelta
-    will_end_at = activity.started_at + timedelta(minutes=activity.duration_minutes)
+    will_end_at = activity.started_at + timedelta(seconds=duration_seconds)
     
     # 启动后台任务，在指定时间后自动结束活动
     # 传递时间戳,确保只有当前启动的任务会结束活动
     socketio.start_background_task(
         target=auto_end_activity, 
         activity_id=activity_id, 
-        duration_seconds=activity.duration_minutes * 60,
+        duration_seconds=duration_seconds,
         started_at_timestamp=started_at_timestamp
     )
     
@@ -267,15 +269,17 @@ def start_activity(activity_id):
         'data': {
             'is_active': True,
             'started_at': activity.started_at.isoformat(),
-            'duration_minutes': activity.duration_minutes,
+            'duration_seconds': duration_seconds,  # 发送秒数
+            'duration_minutes': activity.duration_minutes,  # 向后兼容
             'will_end_at': will_end_at.isoformat()
         }
     }, room=f'activity_{activity_id}')
     
     return jsonify({
         'success': True, 
-        'message': f'Activity started for {activity.duration_minutes} minutes',
-        'duration_minutes': activity.duration_minutes,
+        'message': f'Activity started for {duration_seconds} seconds',
+        'duration_seconds': duration_seconds,  # 发送秒数
+        'duration_minutes': activity.duration_minutes,  # 向后兼容
         'will_end_at': will_end_at.isoformat()
     })
 
