@@ -134,6 +134,12 @@ def create_activity(course_id):
     
     form = ActivityForm()
     if form.validate_on_submit():
+        # Debug: 检查接收到的duration值
+        print(f"[CREATE DEBUG] Form data - duration_minutes: {form.duration_minutes.data}")
+        print(f"[CREATE DEBUG] Request form - duration-hidden: {request.form.get('duration-hidden')}")
+        print(f"[CREATE DEBUG] Request form - duration_minutes: {request.form.get('duration_minutes')}")
+        print(f"[CREATE DEBUG] All form data: {dict(request.form)}")
+        
         options = None
         correct_answer = None
         quiz_type = None
