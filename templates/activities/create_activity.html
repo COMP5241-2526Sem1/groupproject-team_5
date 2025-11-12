@@ -477,11 +477,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('[Duration Debug] Total minutes (calculated):', totalMinutes);
                 console.log('[Duration Debug] Setting durationHidden.value to:', totalMinutes);
                 
+                // Try multiple ways to set the value
                 durationHidden.value = totalMinutes;
+                durationHidden.setAttribute('value', totalMinutes);
+                
+                // Force the value again right before submit
+                setTimeout(() => {
+                    durationHidden.value = totalMinutes;
+                }, 0);
                 
                 // Verify the value was set
                 console.log('[Duration Debug] After setting - durationHidden.value:', durationHidden.value);
+                console.log('[Duration Debug] After setting - durationHidden.getAttribute("value"):', durationHidden.getAttribute('value'));
                 console.log('[Duration Debug] After setting - durationHidden.name:', durationHidden.name);
+                
+                // Create a FormData object to see what will actually be submitted
+                const formData = new FormData(formEl);
+                console.log('[Duration Debug] FormData duration_minutes:', formData.get('duration_minutes'));
                 
                 // Now validate
                 if (totalSeconds <= 0) {
