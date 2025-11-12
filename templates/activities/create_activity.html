@@ -126,7 +126,7 @@
                                 </div>
                             </div>
                         </div>
-                        {{ form.duration_minutes(id="duration-hidden") }}
+                        <input type="hidden" id="duration-hidden" name="duration_minutes" value="5">
                         <div class="form-text mt-2">Specify how long the activity remains open. Set hours, minutes, and seconds, or choose from the dropdown menus.</div>
                         {% if form.duration_minutes.errors %}
                             <div class="text-danger">
@@ -455,6 +455,8 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('[Duration Debug] Adding submit event listener to form');
         formEl.addEventListener('submit', function(event) {
             console.log('[Duration Debug] FORM SUBMITTED! Event triggered');
+            
+            // IMPORTANT: Set duration value FIRST before any validation
             if (durationHidden && durationHoursInput && durationMinutesInput && durationSecondsInput) {
                 console.log('[Duration Debug] All duration fields present, calculating...');
                 clampInputValue(durationHoursInput, 0, null);
@@ -470,11 +472,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('[Duration Debug] Seconds:', secondsPart);
                 console.log('[Duration Debug] Total seconds:', totalSeconds);
                 
-                if (totalSeconds <= 0) {
-                    event.preventDefault();
-                    alert('Please set a duration greater than zero.');
-                    return;
-                }
                 const totalMinutes = Math.max(1, Math.ceil(totalSeconds / 60));
                 
                 console.log('[Duration Debug] Total minutes (calculated):', totalMinutes);
@@ -485,6 +482,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Verify the value was set
                 console.log('[Duration Debug] After setting - durationHidden.value:', durationHidden.value);
                 console.log('[Duration Debug] After setting - durationHidden.name:', durationHidden.name);
+                
+                // Now validate
+                if (totalSeconds <= 0) {
+                    event.preventDefault();
+                    alert('Please set a duration greater than zero.');
+                    return;
+                }
             }
 
             const type = typeSelect.value;
