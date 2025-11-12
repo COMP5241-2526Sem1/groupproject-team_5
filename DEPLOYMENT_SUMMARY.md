@@ -235,6 +235,7 @@ Branch: zmd
 Runtime: Python 3
 Build Command: pip install -r requirements.txt
 Start Command: gunicorn --bind 0.0.0.0:$PORT run:app
+gunicorn --worker-class=eventlet --workers=1 --threads=4 --timeout=120 --bind=0.0.0.0:$PORT --log-level=info wsgi:application
 ```
 
 #### 4. 环境变量（2分钟）
@@ -247,6 +248,7 @@ MYSQL_PORT=53176
 MYSQL_USER=root
 MYSQL_PASSWORD=HGbKlRAozMzZiIbvMcEXeiZUKgHoJxXr
 MYSQL_DATABASE=railway
+GUNICORN_WORKERS=1
 ```
 
 #### 5. 初始化（2分钟）
