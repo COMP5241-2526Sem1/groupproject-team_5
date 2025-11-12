@@ -37,7 +37,7 @@
                         {{ form.email.label(class="form-label") }}
                         <div class="input-group">
                             {{ form.email(class="form-control form-control-lg", id="email", placeholder="Enter your email") }}
-                            <button type="button" class="btn btn-outline-primary" id="send-captcha-btn">发送验证码</button>
+                            <button type="button" class="btn btn-outline-primary" id="send-captcha-btn">Send Code</button>
                         </div>
                         {% if form.email.errors %}
                             <div class="text-danger">
@@ -50,7 +50,7 @@
                     
                     <div class="mb-3">
                         {{ form.captcha.label(class="form-label") }}
-                        {{ form.captcha(class="form-control form-control-lg", placeholder="请输入6位验证码") }}
+                        {{ form.captcha(class="form-control form-control-lg", placeholder="Enter 6-digit verification code") }}
                         {% if form.captcha.errors %}
                             <div class="text-danger">
                                 {% for error in form.captcha.errors %}
@@ -167,19 +167,40 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.disabled = true;
         btn.textContent = 'Sending...';
         
+        console.log('Sending captcha request to:', '{{ url_for("auth.send_email_captcha") }}');
+        console.log('Email:', email);
+        
         // 发送请求
         fetch('{{ url_for("auth.send_email_captcha") }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify({email: email})
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('Response status:', response.status);
+            console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                return response.json();
+            } else {
+                return response.text().then(text => {
+                    throw new Error(`Expected JSON but got: ${text.substring(0, 100)}`);
+                });
+            }
+        })
         .then(data => {
+            console.log('Response data:', data);
             if (data.code === 200) {
                 alert(data.message);
-                // 开始倒计时
+                // Start countdown
                 let countdown = 60;
                 const timer = setInterval(() => {
                     btn.textContent = `Resend in ${countdown}s`;
@@ -191,19 +212,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }, 1000);
             } else {
-                alert(data.message);
+                alert(data.message || 'Unknown error');
                 btn.disabled = false;
                 btn.textContent = 'Send Code';
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Failed to send, please try again');
+            alert(`Failed to send: ${error.message}`);
             btn.disabled = false;
             btn.textContent = 'Send Code';
         });
     });
-});
 });
 </script>
 {% endblock %}

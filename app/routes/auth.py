@@ -101,53 +101,54 @@ def register():
 
 @bp.route('/send_email_captcha', methods=['POST'])
 def send_email_captcha():
-    """发送邮箱验证码"""
+    """Send email verification code"""
     email = request.json.get('email')
     
     if not email:
-        return jsonify({'code': 400, 'message': '邮箱不能为空'})
+        return jsonify({'code': 400, 'message': 'Email address cannot be empty'})
     
-    # 检查邮箱是否已注册
+    # Check if email is already registered
     existing_user = User.query.filter_by(email=email).first()
     if existing_user:
-        return jsonify({'code': 400, 'message': '该邮箱已注册'})
+        return jsonify({'code': 400, 'message': 'This email address is already registered'})
     
-    # 生成6位随机验证码
+    # Generate 6-digit random verification code
     captcha = ''.join(random.choices(string.digits, k=6))
     
-    # 删除该邮箱之前的验证码
+    # Generate 6-digit random verification code
+    captcha = ''.join(random.choices(string.digits, k=6))
+    
+    # Delete previous verification codes for this email
     EmailCaptcha.query.filter_by(email=email).delete()
     
-    # 保存新验证码
+    # Save new verification code
     email_captcha = EmailCaptcha(email=email, captcha=captcha)
     db.session.add(email_captcha)
     db.session.commit()
     
-    # 发送邮件
+    # Send email
     try:
         message = Message(
-            subject='教室互动平台 - 邮箱验证码',
+            subject='Classroom Platform - Email Verification Code',
             recipients=[email],
             body=f'''
-亲爱的用户：
+Dear User,
 
-感谢您注册教室互动平台！
+Thank you for registering with Classroom Platform!
 
-您的邮箱验证码是：{captcha}
+Your email verification code is: {captcha}
 
-验证码有效期为5分钟，请及时使用。
+This code is valid for 5 minutes. Please use it promptly.
 
-如果这不是您的操作，请忽略此邮件。
+If this wasn't you, please ignore this email.
 
-教室互动平台团队
+Classroom Platform Team
             '''
         )
         mail.send(message)
-        return jsonify({'code': 200, 'message': '验证码发送成功！请查收邮件'})
+        return jsonify({'code': 200, 'message': 'Verification code sent successfully! Please check your email'})
     except Exception as e:
-        return jsonify({'code': 500, 'message': f'验证码发送失败：{str(e)}'})
-
-@bp.route('/profile')
+        return jsonify({'code': 500, 'message': f'Failed to send verification code: {str(e)}'})@bp.route('/profile')
 @login_required
 def profile():
     """用户个人信息页面"""
