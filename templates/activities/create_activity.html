@@ -442,12 +442,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 const minutesPart = parseInt(durationMinutesInput.value, 10) || 0;
                 const secondsPart = parseInt(durationSecondsInput.value, 10) || 0;
                 const totalSeconds = hours * 3600 + minutesPart * 60 + secondsPart;
+                
+                console.log('[Duration Debug] Hours:', hours);
+                console.log('[Duration Debug] Minutes:', minutesPart);
+                console.log('[Duration Debug] Seconds:', secondsPart);
+                console.log('[Duration Debug] Total seconds:', totalSeconds);
+                
                 if (totalSeconds <= 0) {
                     event.preventDefault();
                     alert('Please set a duration greater than zero.');
                     return;
                 }
                 const totalMinutes = Math.max(1, Math.ceil(totalSeconds / 60));
+                
+                console.log('[Duration Debug] Total minutes (calculated):', totalMinutes);
+                console.log('[Duration Debug] Setting durationHidden.value to:', totalMinutes);
+                
                 durationHidden.value = totalMinutes;
             }
 
