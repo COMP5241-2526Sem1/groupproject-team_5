@@ -100,17 +100,27 @@ def create_app():
     for attempt in range(max_retries):
         try:
             with app.app_context():
+                # Print connection info for debugging
+                print(f"🔄 Attempting database connection (attempt {attempt + 1}/{max_retries})")
+                print(f"   Host: {HOSTNAME}")
+                print(f"   Port: {PORT}")
+                print(f"   Database: {DATABASE}")
+                print(f"   User: {USERNAME}")
+                
                 # Test connection
-                db.engine.connect()
+                connection = db.engine.connect()
+                connection.close()
                 print(f"✅ Database connection successful on attempt {attempt + 1}")
                 break
         except Exception as e:
             print(f"⚠️ Database connection attempt {attempt + 1} failed: {str(e)}")
+            print(f"   Error type: {type(e).__name__}")
             if attempt < max_retries - 1:
-                print(f"Retrying in {retry_delay} seconds...")
+                print(f"   Retrying in {retry_delay} seconds...")
                 time.sleep(retry_delay)
             else:
                 print(f"❌ Failed to connect to database after {max_retries} attempts")
+                print(f"   Please check Railway database status and network settings")
                 # Don't raise - let app start and retry on first request
     
     # User loader
