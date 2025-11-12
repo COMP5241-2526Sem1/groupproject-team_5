@@ -413,13 +413,20 @@ def submit_response(activity_id):
 @bp.route('/activities/<int:activity_id>/results')
 @login_required
 def activity_results(activity_id):
-    activity = Activity.query.get_or_404(activity_id)
+    from sqlalchemy.orm import joinedload
+    
+    activity = Activity.query.options(
+        joinedload(Activity.course)
+    ).get_or_404(activity_id)
     
     if current_user.role not in ['admin', 'instructor'] or (current_user.role == 'instructor' and activity.course.instructor_id != current_user.id):
         flash('Insufficient permissions', 'error')
         return redirect(url_for('main.dashboard'))
     
-    responses = Response.query.filter_by(activity_id=activity_id).all()
+    # Eager load student relationship to avoid N+1 queries
+    responses = Response.query.options(
+        joinedload(Response.student)
+    ).filter_by(activity_id=activity_id).all()
     
     if activity.type == 'poll':
         options = activity.options.split('\n') if activity.options else []
@@ -446,7 +453,12 @@ def activity_results(activity_id):
             'correct_count': correct_count,
             'total_responses': len(responses),
             'average_score': average_score,
-            'responses': [{'answer': r.answer, 'is_correct': r.is_correct, 'score': r.score, 'student': r.student.name} for r in responses]
+            'responses': [{
+                'answer': r.answer, 
+                'is_correct': r.is_correct, 
+                'score': r.score, 
+                'student': r.student.name if r.student else 'Unknown'
+            } for r in responses]
         }
     elif activity.type == 'memory_game':
         correct_count = sum(1 for r in responses if r.is_correct)
@@ -456,10 +468,10 @@ def activity_results(activity_id):
             'correct_count': correct_count,
             'accuracy': (correct_count / len(responses) * 100) if responses else 0,
             'responses': [{
-                'student': r.student,
+                'student': r.student.name if r.student else 'Unknown',
                 'answer': r.answer,
                 'is_correct': r.is_correct,
-                'submitted_at': r.submitted_at
+                'submitted_at': r.submitted_at.strftime('%Y-%m-%d %H:%M:%S') if r.submitted_at else ''
             } for r in responses]
         }
     elif activity.type == 'word_cloud':
