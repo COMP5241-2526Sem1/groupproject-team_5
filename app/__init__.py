@@ -72,26 +72,35 @@ def create_app():
         }
     }
     
-    # Email Configuration - Gmail (使用SSL端口465，更稳定)
-    # 备用：如果Gmail DNS有问题，可以切换到163邮箱
+    # Email Configuration - QQ邮箱 (SMTP协议)
+    # 确保在QQ邮箱设置中启用SMTP/IMAP协议，而不是POP3
     
-    # Gmail 配置 (主要)
-    app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-    app.config['MAIL_PORT'] = 465  # 使用SSL端口
+    # QQ邮箱配置 (使用SMTP协议发送邮件)
+    app.config['MAIL_SERVER'] = 'smtp.qq.com'
+    app.config['MAIL_PORT'] = 465  # SSL端口
     app.config['MAIL_USE_SSL'] = True  # 启用SSL
-    app.config['MAIL_USE_TLS'] = False  # 关闭TLS
-    app.config['MAIL_USERNAME'] = 'zhangPandada@gmail.com'
-    app.config['MAIL_PASSWORD'] = 'tccaqoeqxbqjjnpl'
-    app.config['MAIL_DEFAULT_SENDER'] = 'zhangPandada@gmail.com'
+    app.config['MAIL_USE_TLS'] = False  # QQ邮箱465端口不需要TLS
+    app.config['MAIL_USERNAME'] = '2966602258@qq.com'  # 请替换为你的QQ邮箱
+    app.config['MAIL_PASSWORD'] = 'ldjbtknevwftdcid'  # 请替换为QQ邮箱SMTP授权码
+    app.config['MAIL_DEFAULT_SENDER'] = '2966602258@qq.com'
     
-    # 备用配置 (如果Gmail不工作，可以手动切换到下面的163配置)
+    # 备用方案：163邮箱
     # app.config['MAIL_SERVER'] = 'smtp.163.com'
     # app.config['MAIL_PORT'] = 465
     # app.config['MAIL_USE_SSL'] = True
     # app.config['MAIL_USE_TLS'] = False
-    # app.config['MAIL_USERNAME'] = 'your163@163.com'  # 替换为163邮箱
-    # app.config['MAIL_PASSWORD'] = 'your163password'  # 替换为163邮箱授权码
+    # app.config['MAIL_USERNAME'] = 'your163@163.com'
+    # app.config['MAIL_PASSWORD'] = 'your163authcode'
     # app.config['MAIL_DEFAULT_SENDER'] = 'your163@163.com'
+    
+    # 方案3：Gmail用IP (如果DNS有问题)
+    # app.config['MAIL_SERVER'] = '64.233.184.108'  # Gmail SMTP IP
+    # app.config['MAIL_PORT'] = 465
+    # app.config['MAIL_USE_SSL'] = True
+    # app.config['MAIL_USE_TLS'] = False
+    # app.config['MAIL_USERNAME'] = 'zhangPandada@gmail.com'
+    # app.config['MAIL_PASSWORD'] = 'tccaqoeqxbqjjnpl'
+    # app.config['MAIL_DEFAULT_SENDER'] = 'zhangPandada@gmail.com'
     
     # 邮件调试设置
     app.config['MAIL_SUPPRESS_SEND'] = False
