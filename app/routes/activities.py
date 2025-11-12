@@ -413,105 +413,124 @@ def submit_response(activity_id):
 @bp.route('/activities/<int:activity_id>/results')
 @login_required
 def activity_results(activity_id):
-    from sqlalchemy.orm import joinedload
+    try:
+        from sqlalchemy.orm import joinedload
+        
+        # Load activity with course relationship
+        activity = Activity.query.options(
+            joinedload(Activity.course)
+        ).get_or_404(activity_id)
+        
+        # Check permissions
+        if current_user.role not in ['admin', 'instructor']:
+            flash('Insufficient permissions', 'error')
+            return redirect(url_for('main.dashboard'))
+            
+        if current_user.role == 'instructor' and activity.course.instructor_id != current_user.id:
+            flash('Insufficient permissions', 'error')
+            return redirect(url_for('main.dashboard'))
+        
+        # Eager load student relationship to avoid N+1 queries
+        responses = Response.query.options(
+            joinedload(Response.student)
+        ).filter_by(activity_id=activity_id).all()
+        
+        if activity.type == 'poll':
+            options = activity.options.split('\n') if activity.options else []
+            option_counts = {}
+            for option in options:
+                option_counts[option.strip()] = 0
+            
+            for response in responses:
+                if response.answer:
+                    answer = response.answer.strip()
+                    if answer in option_counts:
+                        option_counts[answer] += 1
+            
+            results = {
+                'type': 'poll',
+                'options': option_counts,
+                'total_responses': len(responses)
+            }
+        elif activity.type == 'quiz':
+            correct_count = sum(1 for r in responses if r.is_correct)
+            average_score = sum(r.score or 0 for r in responses) / len(responses) if responses else 0
+            
+            results = {
+                'type': 'quiz',
+                'correct_count': correct_count,
+                'total_responses': len(responses),
+                'average_score': average_score,
+                'responses': [{
+                    'answer': r.answer or '', 
+                    'is_correct': r.is_correct or False, 
+                    'score': r.score or 0, 
+                    'student': r.student.name if r.student else 'Unknown'
+                } for r in responses]
+            }
+        elif activity.type == 'memory_game':
+            correct_count = sum(1 for r in responses if r.is_correct)
+            results = {
+                'type': 'memory_game',
+                'total_responses': len(responses),
+                'correct_count': correct_count,
+                'accuracy': (correct_count / len(responses) * 100) if responses else 0,
+                'responses': [{
+                    'student': r.student.name if r.student else 'Unknown',
+                    'answer': r.answer or '',
+                    'is_correct': r.is_correct or False,
+                    'submitted_at': r.submitted_at.strftime('%Y-%m-%d %H:%M:%S') if r.submitted_at else ''
+                } for r in responses]
+            }
+        elif activity.type == 'word_cloud':
+            # Process word cloud data
+            all_words = []
+            for response in responses:
+                if response.answer:
+                    words = [word.strip().lower() for word in response.answer.split(',') if word.strip()]
+                    all_words.extend(words)
+            
+            word_freq = Counter(all_words)
+            common_words = word_freq.most_common(50)
+            
+            results = {
+                'type': 'word_cloud',
+                'word_frequency': common_words,
+                'total_responses': len(responses)
+            }
+        else:
+            # short_answer type
+            answers = [response.answer for response in responses if response.answer]
+            
+            word_freq = Counter()
+            
+            for answer in answers:
+                # Extract words, filter by length and stopwords
+                words = re.findall(r'\b[a-zA-Z]+\b', answer.lower())
+                # Filter: remove stopwords and words shorter than 3 characters
+                filtered_words = [w for w in words if w not in STOPWORDS and len(w) >= 3]
+                word_freq.update(filtered_words)
+            
+            common_words = word_freq.most_common(200)
+            
+            results = {
+                'type': 'short_answer',
+                'answers': answers,
+                'word_frequency': common_words,
+                'total_responses': len(responses),
+                'unique_words': len(word_freq)
+            }
+        
+        return render_template('activities/activity_results.html', activity=activity, results=results, responses=responses)
     
-    activity = Activity.query.options(
-        joinedload(Activity.course)
-    ).get_or_404(activity_id)
-    
-    if current_user.role not in ['admin', 'instructor'] or (current_user.role == 'instructor' and activity.course.instructor_id != current_user.id):
-        flash('Insufficient permissions', 'error')
-        return redirect(url_for('main.dashboard'))
-    
-    # Eager load student relationship to avoid N+1 queries
-    responses = Response.query.options(
-        joinedload(Response.student)
-    ).filter_by(activity_id=activity_id).all()
-    
-    if activity.type == 'poll':
-        options = activity.options.split('\n') if activity.options else []
-        option_counts = {}
-        for option in options:
-            option_counts[option.strip()] = 0
+    except Exception as e:
+        # Log the error
+        import traceback
+        print(f"❌ Error in activity_results: {str(e)}")
+        print(traceback.format_exc())
         
-        for response in responses:
-            answer = response.answer.strip()
-            if answer in option_counts:
-                option_counts[answer] += 1
-        
-        results = {
-            'type': 'poll',
-            'options': option_counts,
-            'total_responses': len(responses)
-        }
-    elif activity.type == 'quiz':
-        correct_count = sum(1 for r in responses if r.is_correct)
-        average_score = sum(r.score for r in responses) / len(responses) if responses else 0
-        
-        results = {
-            'type': 'quiz',
-            'correct_count': correct_count,
-            'total_responses': len(responses),
-            'average_score': average_score,
-            'responses': [{
-                'answer': r.answer, 
-                'is_correct': r.is_correct, 
-                'score': r.score, 
-                'student': r.student.name if r.student else 'Unknown'
-            } for r in responses]
-        }
-    elif activity.type == 'memory_game':
-        correct_count = sum(1 for r in responses if r.is_correct)
-        results = {
-            'type': 'memory_game',
-            'total_responses': len(responses),
-            'correct_count': correct_count,
-            'accuracy': (correct_count / len(responses) * 100) if responses else 0,
-            'responses': [{
-                'student': r.student.name if r.student else 'Unknown',
-                'answer': r.answer,
-                'is_correct': r.is_correct,
-                'submitted_at': r.submitted_at.strftime('%Y-%m-%d %H:%M:%S') if r.submitted_at else ''
-            } for r in responses]
-        }
-    elif activity.type == 'word_cloud':
-        # Process word cloud data
-        all_words = []
-        for response in responses:
-            words = [word.strip().lower() for word in response.answer.split(',')]
-            all_words.extend(words)
-        
-        word_freq = Counter(all_words)
-        common_words = word_freq.most_common(50)
-        
-        results = {
-            'type': 'word_cloud',
-            'word_frequency': common_words,
-            'total_responses': len(responses)
-        }
-    else:
-        answers = [response.answer for response in responses]
-        
-        word_freq = Counter()
-        
-        for answer in answers:
-            # Extract words, filter by length and stopwords
-            words = re.findall(r'\b[a-zA-Z]+\b', answer.lower())
-            # Filter: remove stopwords and words shorter than 3 characters
-            filtered_words = [w for w in words if w not in STOPWORDS and len(w) >= 3]
-            word_freq.update(filtered_words)
-        
-        common_words = word_freq.most_common(200)
-        
-        results = {
-            'type': 'short_answer',
-            'answers': answers,
-            'word_frequency': common_words,
-            'total_responses': len(responses),
-            'unique_words': len(word_freq)
-        }
-    
-    return render_template('activities/activity_results.html', activity=activity, results=results, responses=responses)
+        flash(f'Error loading activity results: {str(e)}', 'error')
+        return redirect(url_for('activities.list_activities'))
 
 @bp.route('/activities/generate_questions', methods=['POST'])
 @login_required
