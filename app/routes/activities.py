@@ -135,12 +135,10 @@ def create_activity(course_id):
     form = ActivityForm()
     if form.validate_on_submit():
         # Debug: 检查接收到的duration值
-        print(f"[CREATE DEBUG] Form data - duration_minutes: {form.duration_minutes.data}")
-        print(f"[CREATE DEBUG] Request form - duration-hidden: {request.form.get('duration-hidden')}")
         print(f"[CREATE DEBUG] Request form - duration_minutes: {request.form.get('duration_minutes')}")
         print(f"[CREATE DEBUG] All form data: {dict(request.form)}")
         
-        # Fix: 直接从request.form读取duration_minutes，因为WTForms的HiddenField可能使用默认值
+        # 直接从request.form读取duration_minutes
         duration_minutes = int(request.form.get('duration_minutes', 5))
         print(f"[CREATE DEBUG] Using duration_minutes: {duration_minutes}")
         
