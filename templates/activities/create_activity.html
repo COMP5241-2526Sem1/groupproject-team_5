@@ -432,9 +432,20 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    console.log('[Duration Debug] Form element found:', formEl !== null);
+    console.log('[Duration Debug] Duration fields exist:', {
+        hidden: durationHidden !== null,
+        hours: durationHoursInput !== null,
+        minutes: durationMinutesInput !== null,
+        seconds: durationSecondsInput !== null
+    });
+
     if (formEl) {
+        console.log('[Duration Debug] Adding submit event listener to form');
         formEl.addEventListener('submit', function(event) {
+            console.log('[Duration Debug] FORM SUBMITTED! Event triggered');
             if (durationHidden && durationHoursInput && durationMinutesInput && durationSecondsInput) {
+                console.log('[Duration Debug] All duration fields present, calculating...');
                 clampInputValue(durationHoursInput, 0, null);
                 clampInputValue(durationMinutesInput, 0, 59);
                 clampInputValue(durationSecondsInput, 0, 59);
