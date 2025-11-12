@@ -64,7 +64,12 @@ def create_app():
         'pool_recycle': 280,  # 避免 MySQL 连接超时
         'pool_pre_ping': True,  # 连接前测试可用性
         'pool_size': 10,  # 连接池大小
-        'max_overflow': 20  # 最大溢出连接数
+        'max_overflow': 20,  # 最大溢出连接数
+        'connect_args': {
+            'connect_timeout': 30,  # 连接超时30秒（增加超时时间）
+            'read_timeout': 30,     # 读取超时30秒
+            'write_timeout': 30     # 写入超时30秒
+        }
     }
     
     # Email Configuration
@@ -86,6 +91,27 @@ def create_app():
     login_manager.login_message = '请登录以访问此页面'
     socketio.init_app(app, cors_allowed_origins="*")
     mail.init_app(app)
+    
+    # Test database connection with retry logic
+    import time
+    max_retries = 3
+    retry_delay = 2
+    
+    for attempt in range(max_retries):
+        try:
+            with app.app_context():
+                # Test connection
+                db.engine.connect()
+                print(f"✅ Database connection successful on attempt {attempt + 1}")
+                break
+        except Exception as e:
+            print(f"⚠️ Database connection attempt {attempt + 1} failed: {str(e)}")
+            if attempt < max_retries - 1:
+                print(f"Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+            else:
+                print(f"❌ Failed to connect to database after {max_retries} attempts")
+                # Don't raise - let app start and retry on first request
     
     # User loader
     from .models import User
