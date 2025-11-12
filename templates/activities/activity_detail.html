@@ -78,7 +78,18 @@
                 <!-- 统一的活动计时器，通过JavaScript控制显示内容 -->
                 <div class="alert alert-info" id="activity-timer">
                     <h6><i class="bi bi-clock"></i> <span id="timer-title">Statement of Activity</span></h6>
-                    <div>time of duration: {{ activity.duration_minutes }} minutes  </div>
+                    <div>time of duration: 
+                        {% if activity.duration_seconds %}
+                            {% set hours = activity.duration_seconds // 3600 %}
+                            {% set minutes = (activity.duration_seconds % 3600) // 60 %}
+                            {% set seconds = activity.duration_seconds % 60 %}
+                            {% if hours > 0 %}{{ hours }} hour{{ 's' if hours != 1 else '' }} {% endif %}
+                            {% if minutes > 0 %}{{ minutes }} minute{{ 's' if minutes != 1 else '' }} {% endif %}
+                            {% if seconds > 0 %}{{ seconds }} second{{ 's' if seconds != 1 else '' }}{% endif %}
+                        {% else %}
+                            {{ activity.duration_minutes }} minutes
+                        {% endif %}
+                    </div>
                     <div id="countdown-display" class="fw-bold text-primary">
                         <span id="remaining-time">
                             {% if activity.is_active and activity.started_at %}
@@ -665,7 +676,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script>
 // 优化的倒计时功能 - 本地计时 + 定期服务器检查
 function initializeCountdown() {
-    {% if started_at_iso and activity.duration_minutes %}
+    {% if started_at_iso and (activity.duration_seconds or activity.duration_minutes) %}
     // 使用后端传递的ISO时间字符串，直接作为北京时间解析
     const startTimeStr = '{{ started_at_iso }}';
     // 手动解析时间字符串，强制作为北京时间（不考虑时区）
@@ -682,11 +693,13 @@ function initializeCountdown() {
         parseInt(parts[5]), // minute
         parseInt(parts[6])  // second
     );
-    const durationMs = {{ activity.duration_minutes }} * 60 * 1000;
+    // 使用 duration_seconds 如果存在，否则使用 duration_minutes * 60
+    const durationSeconds = {{ activity.duration_seconds if activity.duration_seconds else (activity.duration_minutes * 60) }};
+    const durationMs = durationSeconds * 1000;
     const endTime = new Date(startTime.getTime() + durationMs);
     
     console.log('Activity start time (Beijing):', startTime);
-    console.log('Activity duration:', {{ activity.duration_minutes }}, 'minutes');
+    console.log('Activity duration:', durationSeconds, 'seconds');
     console.log('Activity end time:', endTime);
     console.log('Current time:', new Date());
     
