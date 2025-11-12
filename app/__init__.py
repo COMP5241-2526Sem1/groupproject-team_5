@@ -92,37 +92,6 @@ def create_app():
     socketio.init_app(app, cors_allowed_origins="*")
     mail.init_app(app)
     
-    # Test database connection with retry logic
-    import time
-    max_retries = 3
-    retry_delay = 2
-    
-    for attempt in range(max_retries):
-        try:
-            with app.app_context():
-                # Print connection info for debugging
-                print(f"🔄 Attempting database connection (attempt {attempt + 1}/{max_retries})")
-                print(f"   Host: {HOSTNAME}")
-                print(f"   Port: {PORT}")
-                print(f"   Database: {DATABASE}")
-                print(f"   User: {USERNAME}")
-                
-                # Test connection
-                connection = db.engine.connect()
-                connection.close()
-                print(f"✅ Database connection successful on attempt {attempt + 1}")
-                break
-        except Exception as e:
-            print(f"⚠️ Database connection attempt {attempt + 1} failed: {str(e)}")
-            print(f"   Error type: {type(e).__name__}")
-            if attempt < max_retries - 1:
-                print(f"   Retrying in {retry_delay} seconds...")
-                time.sleep(retry_delay)
-            else:
-                print(f"❌ Failed to connect to database after {max_retries} attempts")
-                print(f"   Please check Railway database status and network settings")
-                # Don't raise - let app start and retry on first request
-    
     # User loader
     from .models import User
     @login_manager.user_loader
@@ -157,18 +126,27 @@ def create_app():
     
     # Create database tables and initial data
     with app.app_context():
-        db.create_all()
-        
-        # Create default admin user
-        admin = User.query.filter_by(email='admin@example.com').first()
-        if not admin:
-            admin = User(
-                email='admin@example.com',
-                password_hash=generate_password_hash('admin123'),
-                role='admin',
-                name='Administrator'
-            )
-            db.session.add(admin)
-            db.session.commit()
+        try:
+            db.create_all()
+            print("✅ Database tables created/verified")
+            
+            # Create default admin user
+            admin = User.query.filter_by(email='admin@example.com').first()
+            if not admin:
+                admin = User(
+                    email='admin@example.com',
+                    password_hash=generate_password_hash('admin123'),
+                    role='admin',
+                    name='Administrator'
+                )
+                db.session.add(admin)
+                db.session.commit()
+                print("✅ Default admin user created")
+            else:
+                print("✅ Admin user already exists")
+        except Exception as e:
+            print(f"⚠️ Database initialization error: {str(e)}")
+            print("   Application will start but database operations may fail")
+            print("   Please check database connection settings")
     
     return app
