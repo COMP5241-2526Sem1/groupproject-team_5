@@ -72,14 +72,26 @@ def create_app():
         }
     }
     
-    # Email Configuration - Gmail (直接配置，无需环境变量)
+    # Email Configuration - Gmail (使用SSL端口465，更稳定)
+    # 备用：如果Gmail DNS有问题，可以切换到163邮箱
+    
+    # Gmail 配置 (主要)
     app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-    app.config['MAIL_PORT'] = 587
-    app.config['MAIL_USE_SSL'] = False
-    app.config['MAIL_USE_TLS'] = True
-    app.config['MAIL_USERNAME'] = 'zhangPandada@gmail.com'  # 请替换为你的Gmail地址
-    app.config['MAIL_PASSWORD'] = 'tccaqoeqxbqjjnpl'     # 请替换为Gmail应用专用密码
-    app.config['MAIL_DEFAULT_SENDER'] = 'zhangPandada@gmail.com'  # 请替换为你的Gmail地址
+    app.config['MAIL_PORT'] = 465  # 使用SSL端口
+    app.config['MAIL_USE_SSL'] = True  # 启用SSL
+    app.config['MAIL_USE_TLS'] = False  # 关闭TLS
+    app.config['MAIL_USERNAME'] = 'zhangPandada@gmail.com'
+    app.config['MAIL_PASSWORD'] = 'tccaqoeqxbqjjnpl'
+    app.config['MAIL_DEFAULT_SENDER'] = 'zhangPandada@gmail.com'
+    
+    # 备用配置 (如果Gmail不工作，可以手动切换到下面的163配置)
+    # app.config['MAIL_SERVER'] = 'smtp.163.com'
+    # app.config['MAIL_PORT'] = 465
+    # app.config['MAIL_USE_SSL'] = True
+    # app.config['MAIL_USE_TLS'] = False
+    # app.config['MAIL_USERNAME'] = 'your163@163.com'  # 替换为163邮箱
+    # app.config['MAIL_PASSWORD'] = 'your163password'  # 替换为163邮箱授权码
+    # app.config['MAIL_DEFAULT_SENDER'] = 'your163@163.com'
     
     # 邮件调试设置
     app.config['MAIL_SUPPRESS_SEND'] = False

@@ -149,17 +149,41 @@ If this wasn't you, please ignore this email.
 Classroom Platform Team'''
         )
         
-        # 添加超时控制的邮件发送
+        # 增强的邮件发送机制，包含重试和更好的错误处理
         import socket
+        import time
+        
         original_timeout = socket.getdefaulttimeout()
-        try:
-            socket.setdefaulttimeout(30)  # 30秒超时
-            print(f"[EMAIL DEBUG] Sending email with 30s timeout...")
-            mail.send(message)
-            print(f"[EMAIL DEBUG] Email sent successfully to: {email}")
-            return jsonify({'code': 200, 'message': 'Verification code sent successfully! Please check your email'})
-        finally:
-            socket.setdefaulttimeout(original_timeout)
+        max_retries = 3
+        retry_delay = 2  # 秒
+        
+        for attempt in range(max_retries):
+            try:
+                socket.setdefaulttimeout(30)  # 30秒超时
+                print(f"[EMAIL DEBUG] Attempt {attempt + 1}/{max_retries} - Sending email with 30s timeout...")
+                
+                # 设置邮件连接超时
+                from flask import current_app
+                mail_instance = current_app.extensions.get('mail')
+                if mail_instance:
+                    # 强制重新连接以避免DNS缓存问题
+                    mail_instance._ctx = None
+                
+                mail.send(message)
+                print(f"[EMAIL DEBUG] Email sent successfully to: {email}")
+                return jsonify({'code': 200, 'message': 'Verification code sent successfully! Please check your email'})
+                
+            except Exception as retry_error:
+                print(f"[EMAIL ERROR] Attempt {attempt + 1} failed: {str(retry_error)}")
+                
+                if attempt < max_retries - 1:  # 还有重试机会
+                    print(f"[EMAIL DEBUG] Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2  # 指数退避
+                else:  # 最后一次尝试失败
+                    raise retry_error
+            finally:
+                socket.setdefaulttimeout(original_timeout)
             
     except Exception as e:
         error_msg = str(e)
