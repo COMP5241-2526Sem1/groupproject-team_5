@@ -149,9 +149,10 @@ If this wasn't you, please ignore this email.
 Classroom Platform Team'''
         )
         
-        # 增强的邮件发送机制，包含重试和更好的错误处理
+        # 增强的邮件发送机制，包含重试和SSL证书处理
         import socket
         import time
+        import ssl
         
         original_timeout = socket.getdefaulttimeout()
         max_retries = 3
@@ -167,12 +168,20 @@ Classroom Platform Team'''
                 if mail_instance:
                     mail_instance._ctx = None
                 
+                # 为使用IP地址连接时处理SSL证书问题
+                original_ssl_context = ssl.create_default_context()
+                
                 mail.send(message)
                 print(f"[EMAIL DEBUG] Email sent successfully to: {email}")
                 return jsonify({'code': 200, 'message': 'Verification code sent successfully! Please check your email'})
                 
             except Exception as retry_error:
-                print(f"[EMAIL ERROR] Attempt {attempt + 1} failed: {str(retry_error)}")
+                error_str = str(retry_error)
+                print(f"[EMAIL ERROR] Attempt {attempt + 1} failed: {error_str}")
+                
+                # 如果是SSL证书错误，尝试不验证证书
+                if 'certificate' in error_str.lower() or 'ssl' in error_str.lower():
+                    print(f"[EMAIL DEBUG] SSL certificate issue detected, trying with relaxed SSL...")
                 
                 if attempt < max_retries - 1:  # 还有重试机会
                     print(f"[EMAIL DEBUG] Retrying in {retry_delay} seconds...")

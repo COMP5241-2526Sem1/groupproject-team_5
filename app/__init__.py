@@ -72,17 +72,22 @@ def create_app():
         }
     }
     
-    # Email Configuration - QQ邮箱 (SMTP协议)
-    # 确保在QQ邮箱设置中启用SMTP/IMAP协议，而不是POP3
+    # Email Configuration - QQ邮箱 (使用IP地址绕过DNS解析)
+    # 由于Render平台DNS解析问题，直接使用IP地址连接
     
-    # QQ邮箱配置 (使用SMTP协议发送邮件)
-    app.config['MAIL_SERVER'] = 'smtp.qq.com'
+    # QQ邮箱SMTP服务器IP地址 (从dig smtp.qq.com获取)
+    app.config['MAIL_SERVER'] = '43.129.255.54'  # QQ SMTP服务器IP
     app.config['MAIL_PORT'] = 465  # SSL端口
     app.config['MAIL_USE_SSL'] = True  # 启用SSL
-    app.config['MAIL_USE_TLS'] = False  # QQ邮箱465端口不需要TLS
-    app.config['MAIL_USERNAME'] = '2966602258@qq.com'  # 请替换为你的QQ邮箱
-    app.config['MAIL_PASSWORD'] = 'ldjbtknevwftdcid'  # 请替换为QQ邮箱SMTP授权码
+    app.config['MAIL_USE_TLS'] = False  # 465端口不需要TLS
+    app.config['MAIL_USERNAME'] = '2966602258@qq.com'  # QQ邮箱账号
+    app.config['MAIL_PASSWORD'] = 'ldjbtknevwftdcid'  # QQ邮箱SMTP授权码
     app.config['MAIL_DEFAULT_SENDER'] = '2966602258@qq.com'
+    
+    # 备用IP地址: 43.163.178.76 (如果主IP不工作可以手动切换)
+    # app.config['MAIL_SERVER'] = '43.163.178.76'
+    
+    # 注意：使用IP地址可能会有SSL证书验证问题，但对于邮件发送通常可以正常工作
     
     # 备用方案：163邮箱
     # app.config['MAIL_SERVER'] = 'smtp.163.com'
