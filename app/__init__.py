@@ -72,16 +72,47 @@ def create_app():
         }
     }
     
-    # Email Configuration
-    # 支持从环境变量配置邮件服务器（用于生产环境）
-    # 如果环境变量未设置，则使用默认配置（开发环境）
-    app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.qq.com')
-    app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 465))
-    app.config['MAIL_USE_SSL'] = os.getenv('MAIL_USE_SSL', 'True').lower() == 'true'
-    app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'False').lower() == 'true'
-    app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', '2966602258@qq.com')
-    app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD', 'nihtjcxaseuedcdd')
-    app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER', '2966602258@qq.com')
+    # Email Configuration - QQ邮箱 (使用IP地址绕过DNS解析)
+    # 由于Render平台DNS解析问题，直接使用IP地址连接
+    
+    # QQ邮箱SMTP服务器IP地址 (从dig smtp.qq.com获取)
+    app.config['MAIL_SERVER'] = '43.129.255.54'  # QQ SMTP服务器IP
+    app.config['MAIL_PORT'] = 465  # SSL端口
+    app.config['MAIL_USE_SSL'] = True  # 启用SSL
+    app.config['MAIL_USE_TLS'] = False  # 465端口不需要TLS
+    app.config['MAIL_USERNAME'] = '2966602258@qq.com'  # QQ邮箱账号
+    app.config['MAIL_PASSWORD'] = 'ldjbtknevwftdcid'  # QQ邮箱SMTP授权码
+    app.config['MAIL_DEFAULT_SENDER'] = '2966602258@qq.com'
+    
+    # 备用IP地址: 43.163.178.76 (如果主IP不工作可以手动切换)
+    # app.config['MAIL_SERVER'] = '43.163.178.76'
+    
+    # 注意：使用IP地址可能会有SSL证书验证问题，但对于邮件发送通常可以正常工作
+    
+    # 备用方案：163邮箱
+    # app.config['MAIL_SERVER'] = 'smtp.163.com'
+    # app.config['MAIL_PORT'] = 465
+    # app.config['MAIL_USE_SSL'] = True
+    # app.config['MAIL_USE_TLS'] = False
+    # app.config['MAIL_USERNAME'] = 'your163@163.com'
+    # app.config['MAIL_PASSWORD'] = 'your163authcode'
+    # app.config['MAIL_DEFAULT_SENDER'] = 'your163@163.com'
+    
+    # 方案3：Gmail用IP (如果DNS有问题)
+    # app.config['MAIL_SERVER'] = '64.233.184.108'  # Gmail SMTP IP
+    # app.config['MAIL_PORT'] = 465
+    # app.config['MAIL_USE_SSL'] = True
+    # app.config['MAIL_USE_TLS'] = False
+    # app.config['MAIL_USERNAME'] = 'zhangPandada@gmail.com'
+    # app.config['MAIL_PASSWORD'] = 'tccaqoeqxbqjjnpl'
+    # app.config['MAIL_DEFAULT_SENDER'] = 'zhangPandada@gmail.com'
+    
+    # 邮件调试设置
+    app.config['MAIL_SUPPRESS_SEND'] = False
+    app.config['MAIL_DEBUG'] = True
+    
+    print(f"[EMAIL CONFIG] Gmail server: {app.config['MAIL_SERVER']}:{app.config['MAIL_PORT']}")
+    print(f"[EMAIL CONFIG] Username: {app.config['MAIL_USERNAME']}")
 
 
     # Initialize extensions

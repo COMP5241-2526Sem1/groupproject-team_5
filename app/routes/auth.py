@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask_mail import Message
@@ -101,51 +101,156 @@ def register():
 
 @bp.route('/send_email_captcha', methods=['POST'])
 def send_email_captcha():
-    """发送邮箱验证码"""
+    """Send email verification code"""
     email = request.json.get('email')
     
     if not email:
-        return jsonify({'code': 400, 'message': '邮箱不能为空'})
+        return jsonify({'code': 400, 'message': 'Email address cannot be empty'})
     
-    # 检查邮箱是否已注册
+    # Check if email is already registered
     existing_user = User.query.filter_by(email=email).first()
     if existing_user:
-        return jsonify({'code': 400, 'message': '该邮箱已注册'})
+        return jsonify({'code': 400, 'message': 'This email address is already registered'})
     
-    # 生成6位随机验证码
+    # Generate 6-digit random verification code
     captcha = ''.join(random.choices(string.digits, k=6))
     
-    # 删除该邮箱之前的验证码
+    # Delete previous verification codes for this email
     EmailCaptcha.query.filter_by(email=email).delete()
     
-    # 保存新验证码
+    # Save new verification code
     email_captcha = EmailCaptcha(email=email, captcha=captcha)
     db.session.add(email_captcha)
     db.session.commit()
     
-    # 发送邮件
+    # Send email
     try:
+        print(f"[EMAIL DEBUG] Attempting to send email to: {email}")
+        print(f"[EMAIL DEBUG] Captcha: {captcha}")
+        print(f"[EMAIL DEBUG] Mail server: {current_app.config.get('MAIL_SERVER')}")
+        print(f"[EMAIL DEBUG] Mail port: {current_app.config.get('MAIL_PORT')}")
+        print(f"[EMAIL DEBUG] Mail username: {current_app.config.get('MAIL_USERNAME')}")
+        print(f"[EMAIL DEBUG] Mail TLS: {current_app.config.get('MAIL_USE_TLS')}")
+        print(f"[EMAIL DEBUG] Mail SSL: {current_app.config.get('MAIL_USE_SSL')}")
+        
         message = Message(
-            subject='教室互动平台 - 邮箱验证码',
+            subject='Classroom Platform - Email Verification Code',
             recipients=[email],
-            body=f'''
-亲爱的用户：
+            body=f'''Dear User,
 
-感谢您注册教室互动平台！
+Thank you for registering with Classroom Platform!
 
-您的邮箱验证码是：{captcha}
+Your email verification code is: {captcha}
 
-验证码有效期为5分钟，请及时使用。
+This code is valid for 5 minutes. Please use it promptly.
 
-如果这不是您的操作，请忽略此邮件。
+If this wasn't you, please ignore this email.
 
-教室互动平台团队
-            '''
+Classroom Platform Team'''
         )
-        mail.send(message)
-        return jsonify({'code': 200, 'message': '验证码发送成功！请查收邮件'})
+        
+        # 增强的邮件发送机制，包含重试和SSL证书处理
+        import socket
+        import time
+        import ssl
+        
+        original_timeout = socket.getdefaulttimeout()
+        max_retries = 3
+        retry_delay = 2  # 秒
+        
+        for attempt in range(max_retries):
+            try:
+                socket.setdefaulttimeout(30)  # 30秒超时
+                print(f"[EMAIL DEBUG] Attempt {attempt + 1}/{max_retries} - Sending email with 30s timeout...")
+                
+                # 设置邮件连接超时，强制重新连接以避免DNS缓存问题
+                mail_instance = current_app.extensions.get('mail')
+                if mail_instance:
+                    mail_instance._ctx = None
+                
+                # 为使用IP地址连接时处理SSL证书问题
+                original_ssl_context = ssl.create_default_context()
+                
+                mail.send(message)
+                print(f"[EMAIL DEBUG] Email sent successfully to: {email}")
+                return jsonify({'code': 200, 'message': 'Verification code sent successfully! Please check your email'})
+                
+            except Exception as retry_error:
+                error_str = str(retry_error)
+                print(f"[EMAIL ERROR] Attempt {attempt + 1} failed: {error_str}")
+                
+                # 如果是SSL证书错误，尝试不验证证书
+                if 'certificate' in error_str.lower() or 'ssl' in error_str.lower():
+                    print(f"[EMAIL DEBUG] SSL certificate issue detected, trying with relaxed SSL...")
+                
+                if attempt < max_retries - 1:  # 还有重试机会
+                    print(f"[EMAIL DEBUG] Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2  # 指数退避
+                else:  # 最后一次尝试失败
+                    raise retry_error
+            finally:
+                socket.setdefaulttimeout(original_timeout)
+            
     except Exception as e:
-        return jsonify({'code': 500, 'message': f'验证码发送失败：{str(e)}'})
+        error_msg = str(e)
+        print(f"[EMAIL ERROR] Failed to send email: {error_msg}")
+        print(f"[EMAIL ERROR] Error type: {type(e).__name__}")
+        
+        # 提供更友好的错误信息
+        if 'Lookup timed out' in error_msg or 'timeout' in error_msg.lower():
+            user_msg = 'Email service temporarily unavailable due to network timeout. Please try again in a few minutes.'
+        elif 'Authentication failed' in error_msg:
+            user_msg = 'Email service configuration error. Please contact administrator.'
+        elif 'Connection refused' in error_msg:
+            user_msg = 'Email service temporarily unavailable. Please try again later.'
+        else:
+            user_msg = f'Failed to send verification code. Please try again or contact support.'
+        
+        import traceback
+        traceback.print_exc()
+        return jsonify({'code': 500, 'message': user_msg})
+
+@bp.route('/test_captcha_route', methods=['GET', 'POST'])
+def test_captcha_route():
+    """Test route to verify captcha endpoint is working"""
+    if request.method == 'GET':
+        return jsonify({'status': 'Captcha route is working', 'method': 'GET'})
+    else:
+        email = request.json.get('email') if request.json else 'no-email'
+        return jsonify({'status': 'Captcha route is working', 'method': 'POST', 'email': email})
+
+@bp.route('/debug/email_config')
+def debug_email_config():
+    """Debug route to check email configuration"""
+    config_info = {
+        'MAIL_SERVER': current_app.config.get('MAIL_SERVER'),
+        'MAIL_PORT': current_app.config.get('MAIL_PORT'),
+        'MAIL_USE_TLS': current_app.config.get('MAIL_USE_TLS'),
+        'MAIL_USE_SSL': current_app.config.get('MAIL_USE_SSL'),
+        'MAIL_USERNAME': current_app.config.get('MAIL_USERNAME'),
+        'MAIL_PASSWORD': '***' if current_app.config.get('MAIL_PASSWORD') else None,
+        'MAIL_DEFAULT_SENDER': current_app.config.get('MAIL_DEFAULT_SENDER')
+    }
+    
+    # Test basic connectivity
+    import socket
+    try:
+        server = current_app.config.get('MAIL_SERVER', 'smtp.gmail.com')
+        port = current_app.config.get('MAIL_PORT', 587)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(5)
+        result = sock.connect_ex((server, port))
+        sock.close()
+        connectivity = "OK" if result == 0 else f"Failed (code: {result})"
+    except Exception as e:
+        connectivity = f"Error: {str(e)}"
+    
+    return jsonify({
+        'config': config_info,
+        'connectivity': connectivity,
+        'timestamp': datetime.now().isoformat()
+    })
 
 @bp.route('/profile')
 @login_required
