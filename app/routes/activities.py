@@ -138,8 +138,6 @@ def create_activity(course_id):
         duration_seconds = int(request.form.get('duration_seconds', 300))  # 默认5分钟=300秒
         duration_minutes = max(1, round(duration_seconds / 60))  # 计算分钟数用于向后兼容
         
-        print(f"[CREATE DEBUG] Duration seconds: {duration_seconds} ({duration_minutes} minutes)")
-        
         options = None
         correct_answer = None
         quiz_type = None

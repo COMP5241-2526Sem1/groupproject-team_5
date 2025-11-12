@@ -219,17 +219,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const durationHoursInput = document.getElementById('duration-hours');
     const durationMinutesInput = document.getElementById('duration-minutes');
     const durationSecondsInput = document.getElementById('duration-seconds');
-    
-    // Debug: 检查隐藏字段的属性
-    if (durationHidden) {
-        console.log('[Duration Debug] Hidden field element:', durationHidden);
-        console.log('[Duration Debug] Hidden field name:', durationHidden.name);
-        console.log('[Duration Debug] Hidden field id:', durationHidden.id);
-        console.log('[Duration Debug] Hidden field initial value:', durationHidden.value);
-    } else {
-        console.error('[Duration Debug] duration-hidden element not found!');
-    }
-    
     const generateTextBtn = document.getElementById('generate-questions-text');
     const generateFileBtn = document.getElementById('generate-questions-file');
     const fileUploadBtn = document.getElementById('file-upload-btn');
@@ -436,22 +425,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    console.log('[Duration Debug] Form element found:', formEl !== null);
-    console.log('[Duration Debug] Duration fields exist:', {
-        hidden: durationHidden !== null,
-        hours: durationHoursInput !== null,
-        minutes: durationMinutesInput !== null,
-        seconds: durationSecondsInput !== null
-    });
-
     if (formEl) {
-        console.log('[Duration Debug] Adding submit event listener to form');
         formEl.addEventListener('submit', function(event) {
-            console.log('[Duration Debug] FORM SUBMITTED! Event triggered');
             
-            // IMPORTANT: Set duration value FIRST before any validation
+            // Set duration value before validation
             if (durationHidden && durationHoursInput && durationMinutesInput && durationSecondsInput) {
-                console.log('[Duration Debug] All duration fields present, calculating...');
                 clampInputValue(durationHoursInput, 0, null);
                 clampInputValue(durationMinutesInput, 0, 59);
                 clampInputValue(durationSecondsInput, 0, 59);
@@ -460,33 +438,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const secondsPart = parseInt(durationSecondsInput.value, 10) || 0;
                 const totalSeconds = hours * 3600 + minutesPart * 60 + secondsPart;
                 
-                console.log('[Duration Debug] Hours:', hours);
-                console.log('[Duration Debug] Minutes:', minutesPart);
-                console.log('[Duration Debug] Seconds:', secondsPart);
-                console.log('[Duration Debug] Total seconds:', totalSeconds);
-                
-                // 直接使用总秒数，不需要转换成分钟
-                console.log('[Duration Debug] Setting durationHidden.value to:', totalSeconds);
-                
-                // Try multiple ways to set the value
+                // Set the hidden field value (total seconds)
                 durationHidden.value = totalSeconds;
                 durationHidden.setAttribute('value', totalSeconds);
                 
-                // Force the value again right before submit
-                setTimeout(() => {
-                    durationHidden.value = totalSeconds;
-                }, 0);
-                
-                // Verify the value was set
-                console.log('[Duration Debug] After setting - durationHidden.value:', durationHidden.value);
-                console.log('[Duration Debug] After setting - durationHidden.getAttribute("value"):', durationHidden.getAttribute('value'));
-                console.log('[Duration Debug] After setting - durationHidden.name:', durationHidden.name);
-                
-                // Create a FormData object to see what will actually be submitted
-                const formData = new FormData(formEl);
-                console.log('[Duration Debug] FormData duration_seconds:', formData.get('duration_seconds'));
-                
-                // Now validate
+                // Validate duration
                 if (totalSeconds <= 0) {
                     event.preventDefault();
                     alert('Please set a duration greater than zero.');
@@ -574,21 +530,14 @@ document.addEventListener('DOMContentLoaded', function() {
         item.addEventListener('click', function() {
             const target = this.getAttribute('data-target');
             const value = parseInt(this.getAttribute('data-value'), 10) || 0;
-            console.log('[Duration Debug] Dropdown clicked - Target:', target, 'Value:', value);
             
             if (target === 'hours' && durationHoursInput) {
                 durationHoursInput.value = value;
-                console.log('[Duration Debug] Hours input updated to:', durationHoursInput.value);
             } else if (target === 'minutes' && durationMinutesInput) {
                 durationMinutesInput.value = value;
-                console.log('[Duration Debug] Minutes input updated to:', durationMinutesInput.value);
             } else if (target === 'seconds' && durationSecondsInput) {
                 durationSecondsInput.value = value;
-                console.log('[Duration Debug] Seconds input updated to:', durationSecondsInput.value);
             }
-            
-            // Also log current state of all inputs
-            console.log('[Duration Debug] Current state - H:', durationHoursInput?.value, 'M:', durationMinutesInput?.value, 'S:', durationSecondsInput?.value);
         });
     });
 
