@@ -162,11 +162,9 @@ Classroom Platform Team'''
                 socket.setdefaulttimeout(30)  # 30秒超时
                 print(f"[EMAIL DEBUG] Attempt {attempt + 1}/{max_retries} - Sending email with 30s timeout...")
                 
-                # 设置邮件连接超时
-                from flask import current_app
+                # 设置邮件连接超时，强制重新连接以避免DNS缓存问题
                 mail_instance = current_app.extensions.get('mail')
                 if mail_instance:
-                    # 强制重新连接以避免DNS缓存问题
                     mail_instance._ctx = None
                 
                 mail.send(message)
