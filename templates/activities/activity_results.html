@@ -185,7 +185,8 @@
                 </div>
             </div>
         </div>
-        {% elif results.word_frequency %}
+        {% else %}
+        <!-- Short Answer / Default Type -->
         <div class="card mb-4">
             <div class="card-header bg-info text-white">
                 <h5 class="mb-0"><i class="bi bi-cloud"></i> Word Frequency Analysis</h5>
@@ -381,7 +382,6 @@
                 {% endif %}
             </div>
         </div>
-        {% endif %}
     </div>
     
     <div class="col-md-4">
