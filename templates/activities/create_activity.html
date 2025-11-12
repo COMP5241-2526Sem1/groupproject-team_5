@@ -541,13 +541,21 @@ document.addEventListener('DOMContentLoaded', function() {
         item.addEventListener('click', function() {
             const target = this.getAttribute('data-target');
             const value = parseInt(this.getAttribute('data-value'), 10) || 0;
+            console.log('[Duration Debug] Dropdown clicked - Target:', target, 'Value:', value);
+            
             if (target === 'hours' && durationHoursInput) {
                 durationHoursInput.value = value;
+                console.log('[Duration Debug] Hours input updated to:', durationHoursInput.value);
             } else if (target === 'minutes' && durationMinutesInput) {
                 durationMinutesInput.value = value;
+                console.log('[Duration Debug] Minutes input updated to:', durationMinutesInput.value);
             } else if (target === 'seconds' && durationSecondsInput) {
                 durationSecondsInput.value = value;
+                console.log('[Duration Debug] Seconds input updated to:', durationSecondsInput.value);
             }
+            
+            // Also log current state of all inputs
+            console.log('[Duration Debug] Current state - H:', durationHoursInput?.value, 'M:', durationMinutesInput?.value, 'S:', durationSecondsInput?.value);
         });
     });
 
