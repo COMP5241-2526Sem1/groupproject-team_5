@@ -126,15 +126,8 @@
                                 </div>
                             </div>
                         </div>
-                        {{ form.duration_minutes(id="duration-hidden") }}
+                        <input type="hidden" id="duration-hidden" name="duration_seconds" value="300">
                         <div class="form-text mt-2">Specify how long the activity remains open. Set hours, minutes, and seconds, or choose from the dropdown menus.</div>
-                        {% if form.duration_minutes.errors %}
-                            <div class="text-danger">
-                                {% for error in form.duration_minutes.errors %}
-                                    <small>{{ error }}</small>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
                     </div>
                     
                     <div class="d-flex gap-2">
@@ -434,6 +427,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (formEl) {
         formEl.addEventListener('submit', function(event) {
+            
+            // Set duration value before validation
             if (durationHidden && durationHoursInput && durationMinutesInput && durationSecondsInput) {
                 clampInputValue(durationHoursInput, 0, null);
                 clampInputValue(durationMinutesInput, 0, 59);
@@ -442,13 +437,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 const minutesPart = parseInt(durationMinutesInput.value, 10) || 0;
                 const secondsPart = parseInt(durationSecondsInput.value, 10) || 0;
                 const totalSeconds = hours * 3600 + minutesPart * 60 + secondsPart;
+                
+                // Set the hidden field value (total seconds)
+                durationHidden.value = totalSeconds;
+                durationHidden.setAttribute('value', totalSeconds);
+                
+                // Validate duration
                 if (totalSeconds <= 0) {
                     event.preventDefault();
                     alert('Please set a duration greater than zero.');
                     return;
                 }
-                const totalMinutes = Math.max(1, Math.ceil(totalSeconds / 60));
-                durationHidden.value = totalMinutes;
             }
 
             const type = typeSelect.value;
@@ -531,6 +530,7 @@ document.addEventListener('DOMContentLoaded', function() {
         item.addEventListener('click', function() {
             const target = this.getAttribute('data-target');
             const value = parseInt(this.getAttribute('data-value'), 10) || 0;
+            
             if (target === 'hours' && durationHoursInput) {
                 durationHoursInput.value = value;
             } else if (target === 'minutes' && durationMinutesInput) {
