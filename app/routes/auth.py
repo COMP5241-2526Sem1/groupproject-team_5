@@ -126,15 +126,17 @@ def send_email_captcha():
     # Send email
     try:
         print(f"[EMAIL DEBUG] Attempting to send email to: {email}")
-        print(f"[EMAIL DEBUG] Mail config - server: {current_app.config.get('MAIL_SERVER')}")
-        print(f"[EMAIL DEBUG] Mail config - port: {current_app.config.get('MAIL_PORT')}")
-        print(f"[EMAIL DEBUG] Mail config - username: {current_app.config.get('MAIL_USERNAME')}")
+        print(f"[EMAIL DEBUG] Captcha: {captcha}")
+        print(f"[EMAIL DEBUG] Mail server: {current_app.config.get('MAIL_SERVER')}")
+        print(f"[EMAIL DEBUG] Mail port: {current_app.config.get('MAIL_PORT')}")
+        print(f"[EMAIL DEBUG] Mail username: {current_app.config.get('MAIL_USERNAME')}")
+        print(f"[EMAIL DEBUG] Mail TLS: {current_app.config.get('MAIL_USE_TLS')}")
+        print(f"[EMAIL DEBUG] Mail SSL: {current_app.config.get('MAIL_USE_SSL')}")
         
         message = Message(
             subject='Classroom Platform - Email Verification Code',
             recipients=[email],
-            body=f'''
-Dear User,
+            body=f'''Dear User,
 
 Thank you for registering with Classroom Platform!
 
@@ -144,19 +146,39 @@ This code is valid for 5 minutes. Please use it promptly.
 
 If this wasn't you, please ignore this email.
 
-Classroom Platform Team
-            '''
+Classroom Platform Team'''
         )
-        print(f"[EMAIL DEBUG] Message created successfully")
-        mail.send(message)
-        print(f"[EMAIL DEBUG] Email sent successfully to {email}")
-        return jsonify({'code': 200, 'message': 'Verification code sent successfully! Please check your email'})
+        
+        # 添加超时控制的邮件发送
+        import socket
+        original_timeout = socket.getdefaulttimeout()
+        try:
+            socket.setdefaulttimeout(30)  # 30秒超时
+            print(f"[EMAIL DEBUG] Sending email with 30s timeout...")
+            mail.send(message)
+            print(f"[EMAIL DEBUG] Email sent successfully to: {email}")
+            return jsonify({'code': 200, 'message': 'Verification code sent successfully! Please check your email'})
+        finally:
+            socket.setdefaulttimeout(original_timeout)
+            
     except Exception as e:
-        print(f"[EMAIL DEBUG] Email send failed: {str(e)}")
-        print(f"[EMAIL DEBUG] Error type: {type(e).__name__}")
+        error_msg = str(e)
+        print(f"[EMAIL ERROR] Failed to send email: {error_msg}")
+        print(f"[EMAIL ERROR] Error type: {type(e).__name__}")
+        
+        # 提供更友好的错误信息
+        if 'Lookup timed out' in error_msg or 'timeout' in error_msg.lower():
+            user_msg = 'Email service temporarily unavailable due to network timeout. Please try again in a few minutes.'
+        elif 'Authentication failed' in error_msg:
+            user_msg = 'Email service configuration error. Please contact administrator.'
+        elif 'Connection refused' in error_msg:
+            user_msg = 'Email service temporarily unavailable. Please try again later.'
+        else:
+            user_msg = f'Failed to send verification code. Please try again or contact support.'
+        
         import traceback
-        print(f"[EMAIL DEBUG] Traceback: {traceback.format_exc()}")
-        return jsonify({'code': 500, 'message': f'Failed to send verification code: {str(e)}'})
+        traceback.print_exc()
+        return jsonify({'code': 500, 'message': user_msg})
 
 @bp.route('/test_captcha_route', methods=['GET', 'POST'])
 def test_captcha_route():

@@ -72,16 +72,21 @@ def create_app():
         }
     }
     
-    # Email Configuration
-    # 支持从环境变量配置邮件服务器（用于生产环境）
-    # 如果环境变量未设置，则使用默认配置（开发环境）
-    app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.qq.com')
-    app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 465))
-    app.config['MAIL_USE_SSL'] = os.getenv('MAIL_USE_SSL', 'True').lower() == 'true'
-    app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'False').lower() == 'true'
-    app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', '2966602258@qq.com')
-    app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD', 'nihtjcxaseuedcdd')
-    app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER', '2966602258@qq.com')
+    # Email Configuration - Gmail (直接配置，无需环境变量)
+    app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+    app.config['MAIL_PORT'] = 587
+    app.config['MAIL_USE_SSL'] = False
+    app.config['MAIL_USE_TLS'] = True
+    app.config['MAIL_USERNAME'] = 'zhangPandada@gmail.com'  # 请替换为你的Gmail地址
+    app.config['MAIL_PASSWORD'] = 'tccaqoeqxbqjjnpl'     # 请替换为Gmail应用专用密码
+    app.config['MAIL_DEFAULT_SENDER'] = 'zhangPandada@gmail.com'  # 请替换为你的Gmail地址
+    
+    # 邮件调试设置
+    app.config['MAIL_SUPPRESS_SEND'] = False
+    app.config['MAIL_DEBUG'] = True
+    
+    print(f"[EMAIL CONFIG] Gmail server: {app.config['MAIL_SERVER']}:{app.config['MAIL_PORT']}")
+    print(f"[EMAIL CONFIG] Username: {app.config['MAIL_USERNAME']}")
 
 
     # Initialize extensions
