@@ -43,7 +43,7 @@ def dashboard():
     
     else:
         enrolled_courses = [enrollment.course for enrollment in current_user.enrollments]
-        # Dashboard只显示最新的4门课程
+        # Dashboard shows only the latest 4 courses
         dashboard_courses = enrolled_courses[:4]
         has_more_courses = len(enrolled_courses) > 4
         
@@ -54,14 +54,14 @@ def dashboard():
         active_activities = [a for a in activities if a.is_active]
         my_responses = Response.query.filter_by(student_id=current_user.id).all()
         
-        # 获取别人对我的问题的回复（优化版本）
+        # Get replies from others to my questions (optimized version)
         from app.models import Question, Answer
         my_questions = Question.query.filter_by(author_id=current_user.id).all()
         others_replies = []
         total_replies_count = 0
         
         for question in my_questions:
-            # 获取别人（非自己）对我问题的回复
+            # Get replies from others (not myself) to my questions
             replies = Answer.query.filter(
                 Answer.question_id == question.id,
                 Answer.author_id != current_user.id
@@ -69,18 +69,18 @@ def dashboard():
             
             total_replies_count += len(replies)
             
-            # 只取每个问题的最新回复用于dashboard显示
+            # Only take the latest reply for each question for dashboard display
             if replies:
                 others_replies.append({
-                    'answer': replies[0],  # 只取最新的一个回复
+                    'answer': replies[0],  # Only take the latest reply
                     'question': question,
                     'course': question.course,
                     'total_replies_for_question': len(replies)
                 })
         
-        # 按时间排序，最新的在前，只显示最新的4条
+        # Sort by time, newest first, show only the latest 4
         others_replies.sort(key=lambda x: x['answer'].created_at, reverse=True)
-        dashboard_replies = others_replies[:4]  # Dashboard只显示4条
+        dashboard_replies = others_replies[:4]  # Dashboard shows only 4 items
         
         stats = {
             'enrolled_courses': len(enrolled_courses),
@@ -101,24 +101,24 @@ def dashboard():
 @bp.route('/my-courses')
 @login_required
 def my_courses():
-    """显示学生的所有课程"""
+    """Display all courses for a student"""
     if current_user.role != 'student':
-        flash('只有学生可以查看此页面', 'warning')
+        flash('Only students can view this page', 'warning')
         return redirect(url_for('main.dashboard'))
     
-    # 获取学生的所有课程（分页）
+    # Get all courses for the student (with pagination)
     page = request.args.get('page', 1, type=int)
-    per_page = 8  # 每页显示8门课程
+    per_page = 8  # 8 courses per page
     
     enrolled_courses = [enrollment.course for enrollment in current_user.enrollments]
     
-    # 手动实现分页
+    # Manual pagination implementation
     total = len(enrolled_courses)
     start = (page - 1) * per_page
     end = start + per_page
     courses_on_page = enrolled_courses[start:end]
     
-    # 计算分页信息
+    # Calculate pagination info
     has_prev = page > 1
     has_next = end < total
     prev_num = page - 1 if has_prev else None
@@ -137,19 +137,19 @@ def my_courses():
 @bp.route('/my-replies')
 @login_required
 def my_replies():
-    """显示所有对我问题的回复"""
+    """Display all replies to my questions"""
     if current_user.role != 'student':
-        flash('只有学生可以查看此页面', 'warning')
+        flash('Only students can view this page', 'warning')
         return redirect(url_for('main.dashboard'))
     
     from app.models import Question, Answer
     
-    # 获取我的所有问题
+    # Get all my questions
     my_questions = Question.query.filter_by(author_id=current_user.id).all()
     
-    # 获取所有对我问题的回复（分页）
+    # Get all replies to my questions (with pagination)
     page = request.args.get('page', 1, type=int)
-    per_page = 5  # 每页显示5条回复
+    per_page = 5  # 5 replies per page
     
     all_replies = []
     for question in my_questions:
@@ -165,16 +165,16 @@ def my_replies():
                 'course': question.course
             })
     
-    # 按时间排序，最新的在前
+    # Sort by time, newest first
     all_replies.sort(key=lambda x: x['answer'].created_at, reverse=True)
     
-    # 手动实现分页
+    # Manual pagination implementation
     total = len(all_replies)
     start = (page - 1) * per_page
     end = start + per_page
     replies_on_page = all_replies[start:end]
     
-    # 计算分页信息
+    # Calculate pagination info
     has_prev = page > 1
     has_next = end < total
     prev_num = page - 1 if has_prev else None

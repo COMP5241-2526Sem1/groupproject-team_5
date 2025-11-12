@@ -152,20 +152,20 @@ document.addEventListener('DOMContentLoaded', function() {
         const btn = this;
         
         if (!email) {
-            alert('请先输入邮箱地址');
+            alert('Please enter your email address first');
             return;
         }
         
         // 邮箱格式验证
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
-            alert('请输入有效的邮箱地址');
+            alert('Please enter a valid email address');
             return;
         }
         
         // 禁用按钮
         btn.disabled = true;
-        btn.textContent = '发送中...';
+        btn.textContent = 'Sending...';
         
         // 发送请求
         fetch('{{ url_for("auth.send_email_captcha") }}', {
@@ -182,27 +182,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 // 开始倒计时
                 let countdown = 60;
                 const timer = setInterval(() => {
-                    btn.textContent = `${countdown}秒后重发`;
+                    btn.textContent = `Resend in ${countdown}s`;
                     countdown--;
                     if (countdown < 0) {
                         clearInterval(timer);
                         btn.disabled = false;
-                        btn.textContent = '发送验证码';
+                        btn.textContent = 'Send Code';
                     }
                 }, 1000);
             } else {
                 alert(data.message);
                 btn.disabled = false;
-                btn.textContent = '发送验证码';
+                btn.textContent = 'Send Code';
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('发送失败，请重试');
+            alert('Failed to send, please try again');
             btn.disabled = false;
-            btn.textContent = '发送验证码';
+            btn.textContent = 'Send Code';
         });
     });
+});
 });
 </script>
 {% endblock %}

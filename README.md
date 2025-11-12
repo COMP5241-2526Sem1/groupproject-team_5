@@ -1,6 +1,30 @@
 # 🎓 QA教育平台 - 智能问答学习系统
 
-[![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://python.org)
+[![Python Version](ht## 🏗️ 技术架构
+
+### 🔧 后端技术
+- **核心框架**: Flask 2.3.3 + SQLAlchemy ORM
+- **认证系统**: Flask-Login + 邮箱验证
+- **实时通信**: Flask-SocketIO + WebSocket
+- **数据库**: MySQL 5.7+ / PyMySQL驱动
+- **邮件服务**: SMTP + 163邮箱集成
+- **二维码生成**: qrcode + Pillow 图像处理
+- **AI集成**: OpenAI API / 自定义AI服务
+
+### 🎨 前端技术
+- **UI框架**: Bootstrap 5 + 自定义CSS
+- **模板引擎**: Jinja2 + 智能过滤器
+- **图标库**: Bootstrap Icons + Font Awesome
+- **交互增强**: jQuery + 原生JavaScript
+- **实时更新**: Socket.IO Client
+- **二维码扫描**: 移动设备原生相机支持
+
+### 🗄️ 数据库架构
+- **用户系统**: User, EmailCaptcha, QRToken
+- **课程系统**: Course, Enrollment, Announcement
+- **活动系统**: Activity, Response, ActivityAnalytics
+- **问答系统**: Question, Answer, Reply, AnswerVote
+- **时区处理**: 全局UTC+8北京时间lds.io/badge/python-3.8+-blue.svg)](https://python.org)
 [![Flask Version](https://img.shields.io/badge/flask-2.3.3-green.svg)](https://flask.palletsprojects.com)
 [![License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
@@ -13,21 +37,35 @@
 - **🔐 安全认证系统**: 邮箱验证码注册，多角色权限管理
 - **📚 智能课程管理**: 完整的课程生命周期管理
 - **💬 高效问答系统**: 支持投票、最佳答案、实时通知
-- **🎯 互动活动中心**: 实时投票、问答活动、积分激励
+- **🎯 互动活动中心**: 实时投票、问答活动、Quiz测验、积分激励
+- **📱 二维码快速加入**: 扫码即可自动注册并加入活动（⭐ 新功能）
+- **⏱️ 灵活时长控制**: 支持小时/分钟/秒精确设置活动时长（⭐ 新功能）
+- **🔄 活动重启功能**: 支持已结束活动的一键重启
 - **📱 响应式设计**: 适配所有设备的现代化界面
 - **🔍 智能分页**: 优化的大数据量浏览体验
 
 ### 🎨 用户体验
 - **📊 个性化Dashboard**: 数据可视化的学习状态面板
-- **🕒 本地化时间**: 自动UTC+8北京时间转换
+- **🕒 北京时间同步**: 全局UTC+8时区，所有时间显示准确（✅ 已修复）
 - **👍 直观投票系统**: 拇指向上/向下的友好交互
 - **🔄 防溢出设计**: 智能限制显示数量，保持界面整洁
 - **📄 智能分页导航**: 支持页码显示和省略号优化
+- **✅ 即时反馈系统**: 提交答案后实时显示成功消息和内容预览（✅ 已修复）
+- **🔄 自动UI更新**: 倒计时结束自动更新按钮状态，无需刷新（✅ 已修复）
+- **🌐 全中文界面**: 所有提示信息完全中文化（✅ 已修复）
 
 ### 🤖 AI增强功能
-- **智能问题生成**: 基于课程内容的AI问题推荐
+- **智能问题生成**: 基于文本或文档（PDF/Word/PPT）的AI问题推荐
+- **多种输入方式**: 支持文本粘贴和文档上传两种AI生成方式
 - **内容质量分析**: AI辅助的回答质量评估
 - **个性化推荐**: 基于学习行为的智能内容推荐
+
+### 🎯 活动类型支持
+- **📊 投票活动 (Poll)**: 多选项实时投票统计
+- **✍️ 简答题 (Short Answer)**: 开放式问答
+- **📝 测验 (Quiz)**: 支持多选题、判断题、填空题三种类型
+- **☁️ 词云 (Word Cloud)**: 关键词可视化展示
+- **🎮 记忆游戏 (Memory Game)**: 互动式学习游戏
 
 ## 🏗️ 技术架构
 
@@ -52,6 +90,17 @@ Python 3.8+          # 核心运行环境
 MySQL 5.7+           # 数据库服务 
 2GB+ RAM             # 推荐内存
 Docker (可选)        # 容器化部署
+
+# 主要Python包
+Flask 2.3.3          # Web框架
+SQLAlchemy           # ORM数据库
+Flask-SocketIO       # 实时通信
+qrcode               # 二维码生成
+Pillow               # 图像处理
+PyMySQL              # MySQL驱动
+python-docx          # Word文档处理
+PyPDF2               # PDF文档处理
+python-pptx          # PPT文档处理
 ```
 
 ### ⚡ 5分钟快速部署
@@ -136,6 +185,68 @@ open http://localhost:5000
 
 ## 📊 数据库设计
 
+### 🆕 最近更新 (2025年11月)
+
+#### ✨ 新增功能
+1. **📱 二维码快速加入** (QRCODE_USAGE_GUIDE.md)
+   - 扫码自动注册并加入活动
+   - 临时密码邮件通知
+   - 灵活的启用/禁用控制
+   - 二维码令牌管理系统
+
+2. **⏱️ 灵活时长设置** (DURATION_FIELD_FIX.md)
+   - 支持小时/分钟/秒精确设置
+   - 下拉菜单快速选择
+   - 自动计算总分钟数
+   - 移除旧的固定分钟选择框
+
+3. **🎮 Quiz测验系统**
+   - 多选题（Multiple Choice）
+   - 判断题（True/False）
+   - 填空题（Fill in the Blank）
+   - 自动判分功能
+
+4. **📄 AI文档问题生成**
+   - 支持PDF/Word/PPT上传
+   - 智能提取文档内容
+   - 生成相关问题建议
+
+#### 🐛 重要修复
+1. **🕒 北京时间同步** (BUGFIX_USER_FEEDBACK.md)
+   - 全局UTC+8时区设置
+   - 所有时间戳统一使用北京时间
+   - 前端自动时间转换
+
+2. **✅ 提交成功反馈** (BUGFIX_USER_FEEDBACK.md)
+   - 显示提交成功消息
+   - 预览提交的内容
+   - 表单自动禁用
+   - 3秒后自动刷新
+
+3. **🔄 自动UI更新** (BUGFIX_AUTO_END_UI_UPDATE.md)
+   - 倒计时结束自动更新按钮
+   - 移除强制页面刷新
+   - Socket.IO实时同步
+   - 友好的提示消息
+
+4. **🔄 活动重启功能** (BUGFIX_RESTART_ACTIVITY.md)
+   - 修复重启后无法提交问题
+   - 正确处理活动状态
+   - 清理旧的时间戳
+   - 允许重复提交
+
+5. **🔐 二维码注册安全** (BUGFIX_QR_REGISTRATION.md)
+   - 邮件发送失败回滚用户创建
+   - 异步邮件发送避免页面卡顿
+   - 防止假邮箱绕过验证
+   - 完整的错误处理
+
+6. **🌐 界面中文化** (BUGFIX_USER_FEEDBACK.md)
+   - 所有用户可见信息中文化
+   - 邮件模板完全中文
+   - 错误提示中文化
+   - 成功消息中文化
+
 ### 🗄️ 核心数据表
 ```sql
 📋 User (用户表)
@@ -144,7 +255,8 @@ open http://localhost:5000
 ├── 👤 username (用户名)  
 ├── 🔐 password_hash (密码散列)
 ├── 🏷️ role (角色: student/teacher/admin)
-└── ⏰ timestamps (时间戳)
+├── 🔑 student_id (学生ID - 自动生成)
+└── ⏰ timestamps (北京时间戳)
 
 📚 Course (课程表)
 ├── 🔑 id (主键)
@@ -152,6 +264,30 @@ open http://localhost:5000
 ├── 📄 description (课程描述)
 ├── 👨‍🏫 teacher_id (教师ID)
 └── 📊 statistics (统计信息)
+
+🎯 Activity (活动表)
+├── 🔑 id (主键)
+├── 📝 title (活动标题)
+├── 🎭 type (类型: poll/quiz/short_answer/word_cloud/memory_game)
+├── 🎮 quiz_type (Quiz类型: multiple_choice/true_false/fill_blank)
+├── 📄 question (问题内容)
+├── 📋 options (选项列表，JSON格式)
+├── ✅ correct_answer (正确答案，仅Quiz使用)
+├── ⏱️ duration_minutes (活动时长，分钟)
+├── 📱 qr_token (二维码令牌，用于快速加入)
+├── 🔓 qr_enabled (是否启用二维码快速加入)
+├── 🚀 is_active (活动状态)
+├── 🕐 started_at (开始时间)
+├── 🕐 ended_at (结束时间)
+└── ⏰ created_at (创建时间，北京时间)
+
+💬 Response (活动回复表)
+├── 🔑 id (主键)
+├── 🎯 activity_id (活动ID)
+├── 👤 user_id (用户ID)
+├── 📝 answer (回答内容)
+├── ✅ is_correct (是否正确，仅Quiz使用)
+└── ⏰ submitted_at (提交时间，北京时间)
 
 ❓ Question (问题表)
 ├── 🔑 id (主键)
@@ -168,6 +304,14 @@ open http://localhost:5000
 ├── ❓ question_id (问题ID)
 ├── 👍 vote_score (投票分数)
 └── ⭐ is_best (是否最佳答案)
+
+🔐 QRToken (二维码令牌表 - ⭐ 新增)
+├── 🔑 id (主键)
+├── 🔑 token (唯一令牌字符串)
+├── 🎯 activity_id (关联活动ID)
+├── ✅ is_active (令牌是否有效)
+├── ⏰ created_at (创建时间)
+└── ⏰ expires_at (过期时间)
 ```
 
 ### 🔗 关系设计
@@ -185,37 +329,49 @@ User ||--o{ AnswerVote : "votes"
 final_integrated_platform/
 ├── 📱 app/                     # 核心应用目录
 │   ├── 🏭 __init__.py         # Flask应用工厂
-│   ├── 🗄️ models.py           # 数据模型 (User/Course/Question/Answer)
+│   ├── 🗄️ models.py           # 数据模型 (User/Course/Activity/Question/Answer)
 │   ├── 📝 forms.py            # WTForms表单定义
 │   ├── 🤖 ai_utils.py         # AI功能集成
+│   ├── 📧 email_utils.py      # 邮件发送工具
+│   ├── 📱 qr_utils.py         # 二维码生成工具（⭐ 新增）
+│   ├── 🕒 utils.py            # 时间处理工具（⭐ 新增）
 │   ├── 🔌 socket_events.py    # SocketIO事件处理
 │   └── 🛣️ routes/             # 路由模块化管理
 │       ├── 🏠 main.py         # 主页和Dashboard
 │       ├── 🔐 auth.py         # 用户认证 (注册/登录)
 │       ├── 📚 courses.py      # 课程管理
-│       ├── 🎯 activities.py   # 互动活动
+│       ├── 🎯 activities.py   # 互动活动（含二维码快速加入）
 │       └── ❓ qa.py           # 问答系统
 ├── 🎨 templates/              # Jinja2模板文件
 │   ├── 📄 base.html          # 基础模板
 │   ├── 🏠 index.html         # 首页
 │   ├── 📊 *_dashboard.html   # 各角色Dashboard
 │   ├── 🔐 auth/              # 认证相关页面
+│   │   ├── login.html
+│   │   ├── register.html
+│   │   └── qr_register.html  # 二维码快速注册（⭐ 新增）
 │   ├── 📚 courses/           # 课程相关页面
 │   ├── 🎯 activities/        # 活动相关页面
+│   │   ├── create_activity.html  # 创建活动（支持时分秒设置）
+│   │   └── activity_detail.html  # 活动详情（含二维码显示）
 │   └── ❓ qa/                # 问答相关页面
 ├── 🌐 static/                 # 静态资源文件
 │   ├── 🎨 css/               # 样式文件
 │   ├── ⚡ js/                # JavaScript文件
 │   ├── 🖼️ images/            # 图片资源
+│   ├── 📱 qrcodes/           # 二维码图片存储（⭐ 新增）
 │   └── 📚 bootstrap/         # Bootstrap框架
 ├── 📄 templates/              # 根级模板 (兼容性)
 ├── 🔧 run.py                  # 应用启动入口
 ├── 📦 requirements.txt        # Python依赖包
-├── 📝 README.md              # 项目说明文档
+├── 📝 README.md              # 项目说明文档（本文件）
 ├── 📖 USER_MANUAL.md         # 用户使用手册
 ├── 🚀 QUICK_START.md         # 快速开始指南
 ├── 🏗️ PROJECT_STRUCTURE.md   # 项目结构说明
-└── 🛠️ DEPLOYMENT.md          # 部署配置指南
+├── 🛠️ DEPLOYMENT.md          # 部署配置指南
+├── 📋 DURATION_FIELD_FIX.md  # 时长字段修复说明（⭐ 新增）
+├── 🐛 BUGFIX_*.md            # 各种Bug修复文档（⭐ 新增）
+└── 📱 QRCODE_*.md            # 二维码功能文档（⭐ 新增）
 ```
 
 ## 🎯 功能模块说明
@@ -244,8 +400,18 @@ final_integrated_platform/
 # 🎯 活动参与
 - 📊 实时投票参与
 - ❓ 问答活动参与
-- 🏆 积分排行榜
+- 📝 Quiz测验（多选题/判断题/填空题）
+- ☁️ 词云生成参与
+- � 记忆游戏互动
+- �🏆 积分排行榜
 - 📈 参与统计
+- ✅ 提交成功即时反馈（显示提交内容和成功消息）
+
+# 📱 二维码快速加入 (⭐ 新功能)
+- 📸 扫描二维码快速注册
+- 🚀 自动加入课程和活动
+- 📧 临时密码邮件通知
+- 🔐 首次登录引导修改密码
 ```
 
 ### 👨‍🏫 教师功能模块
@@ -263,15 +429,30 @@ final_integrated_platform/
 - 📊 问答数据分析
 
 # 🎯 活动管理
-- 📊 创建投票活动
-- ❓ 发起问答活动
-- 📈 查看参与统计
+- 📊 创建多种类型活动（投票/问答/Quiz/词云/游戏）
+- ⏱️ 灵活设置活动时长（小时/分钟/秒）
+- 🎮 Quiz活动支持三种题型：
+  * 多选题（Multiple Choice）
+  * 判断题（True/False）
+  * 填空题（Fill in the Blank）
+- 📱 生成活动二维码（可启用/禁用快速加入）
+- 🔄 一键重启已结束的活动
+- ▶️ 启动/停止活动控制
+- 📈 查看参与统计和结果分析
 - 🎖️ 积分奖励设置
+- 🔄 活动状态实时同步（倒计时结束自动更新UI）
 
 # 🤖 AI辅助功能
-- 💡 智能问题生成
-- 📝 内容质量分析
+- 💡 智能问题生成（支持文本输入）
+- � 文档问题生成（支持PDF/Word/PPT上传）
+- �📝 内容质量分析
 - 🎯 个性化推荐
+
+# 📱 二维码管理
+- 🔄 生成/重新生成活动二维码
+- 🔐 启用/禁用快速加入功能
+- 📋 复制加入链接分享
+- 👥 查看通过二维码加入的学生
 ```
 
 ### 👨‍💼 管理员功能模块
@@ -786,7 +967,91 @@ git push origin feature/amazing-feature
 
 ---
 
-## 📄 许可证
+## � 更新日志
+
+### Version 2.0 (2025年11月11日) - zmd分支
+
+#### 🎉 新增功能
+- ✨ **二维码快速加入系统**
+  - 学生扫码即可自动注册并加入活动
+  - 自动生成临时密码并邮件通知
+  - 教师可灵活控制启用/禁用
+  - 支持二维码重新生成
+
+- ⏱️ **灵活的活动时长设置**
+  - 支持小时/分钟/秒三级时间设置
+  - 下拉菜单快速选择常用时长
+  - 自动计算并转换为分钟数
+  - 优化的用户界面
+
+- 🎮 **完整的Quiz测验系统**
+  - 多选题（Multiple Choice）- 自动生成选项
+  - 判断题（True/False）- 快速判断
+  - 填空题（Fill in the Blank）- 文本匹配
+  - 自动判分和统计分析
+
+- 📄 **AI文档智能分析**
+  - 支持PDF、Word、PPT文档上传
+  - 智能提取文档内容
+  - 生成相关问题建议
+  - 一键导入到活动
+
+#### 🐛 Bug修复
+- 🕒 **时区问题全面修复**
+  - 统一使用北京时间（UTC+8）
+  - 修复所有时间显示错误
+  - 添加时间工具函数库
+  - 数据库时间字段统一处理
+
+- ✅ **学生提交反馈优化**
+  - 显示提交成功消息和提交内容
+  - 表单自动禁用防止重复提交
+  - 3秒后自动刷新显示最新状态
+  - 清晰的视觉反馈
+
+- 🔄 **活动UI自动更新**
+  - 倒计时结束自动更新按钮状态
+  - 移除强制页面刷新，使用Socket.IO实时更新
+  - 教师端自动显示restart按钮
+  - 学生端自动禁用提交表单
+
+- 🔁 **活动重启功能完善**
+  - 修复重启后无法提交答案的问题
+  - 正确处理活动状态和时间戳
+  - 支持多次重启
+  - 清理旧的响应数据（可选）
+
+- 🔐 **二维码注册安全加固**
+  - 邮件发送失败时回滚用户创建
+  - 异步邮件发送避免页面卡顿
+  - 防止假邮箱绕过验证系统
+  - 完整的事务处理和错误处理
+
+- 🌐 **界面完全中文化**
+  - 所有Flash消息中文化
+  - 邮件模板完全中文
+  - 错误提示中文化
+  - 按钮和标签中文化
+
+#### 📚 文档更新
+- 📄 DURATION_FIELD_FIX.md - 活动时长字段修复说明
+- 📄 BUGFIX_USER_FEEDBACK.md - 用户反馈问题修复总结
+- 📄 BUGFIX_AUTO_END_UI_UPDATE.md - 倒计时UI自动更新修复
+- 📄 BUGFIX_RESTART_ACTIVITY.md - 重启活动功能修复
+- 📄 BUGFIX_QR_REGISTRATION.md - 二维码注册安全修复
+- 📄 QRCODE_USAGE_GUIDE.md - 二维码功能使用指南
+- 📄 QRCODE_FEATURE_DESIGN.md - 二维码功能设计文档
+
+#### 🔧 技术改进
+- 添加 `app/utils.py` 时间工具函数库
+- 添加 `app/qr_utils.py` 二维码生成工具
+- 优化Socket.IO事件处理逻辑
+- 改进表单验证和错误处理
+- 增强邮件发送的可靠性
+
+---
+
+## �📄 许可证
 
 本项目基于 **MIT License** 开源协议发布，详见 [LICENSE](LICENSE) 文件。
 

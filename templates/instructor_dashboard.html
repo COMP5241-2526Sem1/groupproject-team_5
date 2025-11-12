@@ -87,34 +87,30 @@
 
 <div class="row g-4 mb-4">
     <div class="col-md-4">
-        <a href="{{ url_for('courses.list_courses') }}" class="text-decoration-none d-block">
-            <div class="card stat-card bg-primary text-white h-100">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="stat-number">{{ stats.my_courses }}</div>
-                            <p class="stat-label mb-0">My Courses</p>
-                        </div>
-                        <i class="bi bi-book stat-icon"></i>
+        <div class="card stat-card bg-primary text-white h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-number">{{ stats.my_courses }}</div>
+                        <p class="stat-label mb-0">My Courses</p>
                     </div>
+                    <i class="bi bi-book stat-icon"></i>
                 </div>
             </div>
-        </a>
+        </div>
     </div>
     <div class="col-md-4">
-        <a href="{{ url_for('activities.list_activities') }}" class="text-decoration-none d-block">
-            <div class="card stat-card bg-success text-white h-100">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="stat-number">{{ stats.my_activities }}</div>
-                            <p class="stat-label mb-0">My Activities</p>
-                        </div>
-                        <i class="bi bi-chat-dots stat-icon"></i>
+        <div class="card stat-card bg-success text-white h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-number">{{ stats.my_activities }}</div>
+                        <p class="stat-label mb-0">My Activities</p>
                     </div>
+                    <i class="bi bi-chat-dots stat-icon"></i>
                 </div>
             </div>
-        </a>
+        </div>
     </div>
     <div class="col-md-4">
         <div class="card stat-card bg-warning text-white h-100">

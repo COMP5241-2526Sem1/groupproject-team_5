@@ -43,6 +43,11 @@
                                 {% endfor %}
                             </div>
                         {% endif %}
+                        <div class="text-end mt-2">
+                            <a href="{{ url_for('auth.forgot_password') }}" class="text-primary small">
+                                <i class="fas fa-key"></i> Forgot Password?
+                            </a>
+                        </div>
                     </div>
                     
                     <div class="d-grid">
@@ -52,23 +57,6 @@
                 
                 <div class="text-center mt-4">
                     <p class="mb-0">Don't have an account? <a href="{{ url_for('auth.register') }}" class="text-primary">Register Now</a></p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card mt-3 border-0 bg-light">
-            <div class="card-body">
-                <h6 class="card-title text-muted">Test Accounts</h6>
-                <div class="row text-muted small">
-                    <div class="col-sm-4">
-                        <p class="mb-1"><strong>Admin</strong><br>admin@example.com<br>admin123</p>
-                    </div>
-                    <div class="col-sm-4">
-                        <p class="mb-1"><strong>Instructor</strong><br>Register as instructor</p>
-                    </div>
-                    <div class="col-sm-4">
-                        <p class="mb-1"><strong>Student</strong><br>Register as student</p>
-                    </div>
                 </div>
             </div>
         </div>

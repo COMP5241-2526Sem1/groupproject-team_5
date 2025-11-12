@@ -8,11 +8,11 @@
         <h2><i class="bi bi-graph-up"></i> {{ activity.title }} - Results Analysis</h2>
         <p class="text-muted mb-0">{{ activity.course.name }} | {{ activity.type }}</p>
     </div>
-    <div class="d-flex flex-wrap align-items-center gap-2 justify-content-end">
-        <a href="{{ url_for('activities.activity_analytics', activity_id=activity.id) }}" class="btn btn-info">
+    <div>
+        <a href="{{ url_for('activities.activity_analytics', activity_id=activity.id) }}" class="btn btn-info me-2">
             <i class="bi bi-graph-up"></i> Analytics
         </a>
-        <a href="{{ url_for('activities.export_activity_results', activity_id=activity.id) }}" class="btn btn-success">
+        <a href="{{ url_for('activities.export_activity_results', activity_id=activity.id) }}" class="btn btn-success me-2">
             <i class="bi bi-download"></i> Export CSV
         </a>
         <a href="{{ url_for('activities.activity_detail', activity_id=activity.id) }}" class="btn btn-outline-secondary">
@@ -103,24 +103,54 @@
                 </div>
             </div>
         </div>
+        {% elif results.type == 'word_cloud' %}
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-cloud"></i> Word Cloud</h5>
+            </div>
+            <div class="card-body">
+                <div class="word-cloud">
+                    {% for word, freq in results.word_frequency %}
+                    <span class="badge bg-secondary me-1 mb-1" style="font-size: {{ (freq / results.word_frequency[0][1] * 20 + 12) }}px;">
+                        {{ word }} ({{ freq }})
+                    </span>
+                    {% endfor %}
+                </div>
+                <div class="mt-3">
+                    <small class="text-muted">Total responses: {{ results.total_responses }}</small>
+                </div>
+            </div>
+        </div>
         {% elif results.type == 'memory_game' %}
         <div class="card">
             <div class="card-header">
                 <h5><i class="bi bi-controller"></i> Memory Game Results</h5>
             </div>
             <div class="card-body">
-                <div class="row text-center mb-4">
+                <div class="row mb-3">
                     <div class="col-md-4">
-                        <h4 class="text-primary">{{ results.total_responses }}</h4>
-                        <small class="text-muted">Total Responses</small>
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h3 class="mb-0">{{ results.total_responses }}</h3>
+                                <small class="text-muted">Total Responses</small>
+                            </div>
+                        </div>
                     </div>
                     <div class="col-md-4">
-                        <h4 class="text-success">{{ results.correct_count }}</h4>
-                        <small class="text-muted">Correct Answers</small>
+                        <div class="card bg-success text-white">
+                            <div class="card-body text-center">
+                                <h3 class="mb-0">{{ results.correct_count }}</h3>
+                                <small>Correct</small>
+                            </div>
+                        </div>
                     </div>
                     <div class="col-md-4">
-                        <h4 class="text-warning">{{ "%.1f"|format(results.accuracy) }}%</h4>
-                        <small class="text-muted">Accuracy</small>
+                        <div class="card bg-primary text-white">
+                            <div class="card-body text-center">
+                                <h3 class="mb-0">{{ "%.1f"|format(results.accuracy) }}%</h3>
+                                <small>Accuracy</small>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="table-responsive">
@@ -140,9 +170,11 @@
                                 <td>{{ response.answer }}</td>
                                 <td>
                                     {% if response.is_correct %}
-                                        <span class="badge bg-success">Correct</span>
+                                    <span class="badge bg-success"><i class="bi bi-check-circle"></i> Correct</span>
+                                    {% elif response.is_correct == False %}
+                                    <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Incorrect</span>
                                     {% else %}
-                                        <span class="badge bg-danger">Incorrect</span>
+                                    <span class="badge bg-secondary">Not Graded</span>
                                     {% endif %}
                                 </td>
                                 <td>{{ response.submitted_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
@@ -153,18 +185,11 @@
                 </div>
             </div>
         </div>
-        {% elif results.type in ['short_answer', 'word_cloud'] %}
-        {% if results.word_frequency %}
+        {% else %}
+        <!-- Short Answer / Default Type -->
         <div class="card mb-4">
             <div class="card-header bg-info text-white">
-                <h5 class="mb-0">
-                    <i class="bi bi-cloud"></i> 
-                    {% if results.type == 'word_cloud' %}
-                    Word Cloud Analysis
-        {% else %}
-                    Word Frequency Analysis
-                    {% endif %}
-                </h5>
+                <h5 class="mb-0"><i class="bi bi-cloud"></i> Word Frequency Analysis</h5>
             </div>
             <div class="card-body">
                 <div class="row mb-3">
@@ -206,12 +231,6 @@
                         canvas.height = containerHeight;
                         canvas.style.width = containerWidth + 'px';
                         canvas.style.height = containerHeight + 'px';
-                        canvas.style.pointerEvents = 'none';
-                        canvas.style.position = 'absolute';
-                        canvas.style.left = padding + 'px';
-                        canvas.style.top = padding + 'px';
-                        canvas.style.zIndex = '0';
-                        canvas.setAttribute('aria-hidden', 'true');
                         
                         {% set word_list = results.word_frequency %}
                         {% set max_freq = word_list[0][1] if word_list else 1 %}
@@ -324,6 +343,12 @@
                     
                     initWordCloud();
                     
+                    // 处理窗口大小变化
+                    let resizeTimer;
+                    window.addEventListener('resize', function() {
+                        clearTimeout(resizeTimer);
+                        resizeTimer = setTimeout(generateWordCloud, 250);
+                    });
                 })();
                 </script>
                 <div class="mt-3">
@@ -336,17 +361,9 @@
         </div>
         {% endif %}
         
-        {% if results.type != 'memory_game' %}
         <div class="card">
             <div class="card-header">
-                <h5>
-                    <i class="bi bi-chat-text"></i> 
-                    {% if results.type == 'word_cloud' %}
-                    Word Cloud Submissions ({{ results.total_responses }})
-                    {% else %}
-                    Student Responses ({{ results.total_responses }})
-                    {% endif %}
-                </h5>
+                <h5><i class="bi bi-chat-text"></i> Student Responses ({{ results.total_responses }})</h5>
             </div>
             <div class="card-body">
                 {% if results.answers %}
@@ -355,7 +372,7 @@
                         <div class="card-body">
                             <div class="d-flex align-items-start">
                                 <i class="bi bi-chat-quote text-primary me-2" style="font-size: 1.2rem;"></i>
-                            <p class="mb-0">{{ answer }}</p>
+                                <p class="mb-0">{{ answer }}</p>
                             </div>
                         </div>
                     </div>
@@ -365,8 +382,6 @@
                 {% endif %}
             </div>
         </div>
-        {% endif %}
-        {% endif %}
     </div>
     
     <div class="col-md-4">

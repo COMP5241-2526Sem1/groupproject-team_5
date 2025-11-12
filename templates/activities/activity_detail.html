@@ -60,7 +60,7 @@
             <i class="bi bi-arrow-clockwise"></i> reset Activity
         </button>
         <a href="{{ url_for('activities.activity_results', activity_id=activity.id) }}" class="btn btn-outline-info">
-            <i class="bi bi-graph-up"></i> 查看结果
+            <i class="bi bi-graph-up"></i> View Results
         </a>
     </div>
     {% endif %}
@@ -91,7 +91,7 @@
                         </span>
                     </div>
                     {% if activity.ended_at %}
-                    <div id="end-time-display">End time: {{ activity.ended_at|local_time }}</div>
+                    <div id="end-time-display">End time: {{ activity.ended_at.strftime('%Y-%m-%d %H:%M:%S') }}</div>
                     {% else %}
                     <div id="end-time-display" style="display: none;"></div>
                     {% endif %}
@@ -160,17 +160,8 @@
                     <div class="card">
                         <div class="card-body">
                             <h6>Your Answer:</h6>
-                            <p class="mb-2">{{ my_response.answer }}</p>
-                            {% if activity.type in ['quiz', 'memory_game'] and my_response.is_correct is not none %}
-                            <div class="mb-2">
-                                {% if my_response.is_correct %}
-                                <span class="badge bg-success"><i class="bi bi-check-circle"></i> Correct</span>
-                                {% else %}
-                                <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Incorrect</span>
-                                {% endif %}
-                            </div>
-                            {% endif %}
-                            <small class="text-muted">Submission Time: {{ my_response.submitted_at|local_time }}</small>
+                            <p>{{ my_response.answer }}</p>
+                            <small class="text-muted">Submission Time: {{ my_response.submitted_at.strftime('%Y-%m-%d %H:%M:%S') }}</small>
                         </div>
                     </div>
                     {% else %}
@@ -221,7 +212,6 @@
                                         <input type="text" id="answer" class="form-control" placeholder="Enter the sequence in order..." required>
                                     </div>
                                 </div>
-                                <input type="hidden" id="memory-correct-sequence">
                             </div>
                             {% else %}
                             <textarea id="answer" class="form-control" rows="4" placeholder="Enter your answer..." required></textarea>
@@ -265,15 +255,55 @@
                     </div>
                 </div>
                 <hr>
-                <p><strong>Creation Time:</strong> {{ activity.created_at|local_time }}</p>
+                <p><strong>Creation Time:</strong> {{ activity.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
                 {% if activity.started_at %}
-                <p><strong>Start Time:</strong> {{ activity.started_at|local_time }}</p>
+                <p><strong>Start Time:</strong> {{ activity.started_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
                 {% endif %}
                 {% if activity.ended_at %}
-                <p><strong>End Time:</strong> {{ activity.ended_at|local_time }}</p>
+                <p><strong>End Time:</strong> {{ activity.ended_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
                 {% endif %}
             </div>
         </div>
+        
+        {% if current_user.role in ['admin', 'instructor'] and (current_user.role == 'admin' or activity.course.instructor_id == current_user.id) %}
+        <!-- QR Code Card -->
+        <div class="card mt-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-qr-code"></i> Quick Join QR Code</h5>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="quick-join-toggle" 
+                           {% if activity.allow_quick_join %}checked{% endif %}
+                           onchange="toggleQuickJoin({{ activity.id }})">
+                    <label class="form-check-label" for="quick-join-toggle">
+                        <small>Enable</small>
+                    </label>
+                </div>
+            </div>
+            <div class="card-body text-center">
+                {% if activity.allow_quick_join and activity.join_token %}
+                <div id="qr-code-container">
+                    <img id="qr-code-image" src="{{ qr_code }}" alt="Activity QR Code" class="img-fluid mb-3" style="max-width: 200px;">
+                    <p class="small text-muted mb-2">Scan QR code to quickly join this activity</p>
+                    <div class="input-group mb-2">
+                        <input type="text" class="form-control form-control-sm" id="join-link" 
+                               value="{{ url_for('activities.quick_join', token=activity.join_token, _external=True) }}" readonly>
+                        <button class="btn btn-sm btn-outline-secondary" type="button" onclick="copyJoinLink()">
+                            <i class="bi bi-clipboard"></i> Copy
+                        </button>
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary mt-2" onclick="regenerateQRCode({{ activity.id }})">
+                        <i class="bi bi-arrow-clockwise"></i> Regenerate
+                    </button>
+                </div>
+                {% else %}
+                <div class="text-muted">
+                    <i class="bi bi-qr-code" style="font-size: 3rem;"></i>
+                    <p class="mt-2">Enable quick join to display QR code</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 
@@ -322,46 +352,58 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeCountdown();
 });
 
-const responseForm = document.getElementById('response-form');
-if (responseForm) {
-    responseForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const answerInput = document.getElementById('answer');
-        const answer = answerInput ? answerInput.value.trim() : '';
-        if (!answer) {
-            alert('Please enter an answer');
-            return;
-        }
-
-        const correctSequenceInput = document.getElementById('memory-correct-sequence');
-        const payload = { answer: answer };
-        if (correctSequenceInput && correctSequenceInput.value) {
-            payload.correct_sequence = correctSequenceInput.value;
-        }
-        
-        fetch('{{ url_for("activities.submit_response", activity_id=activity.id) }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Answer submitted successfully!');
-                location.reload();
-            } else {
-                alert('Submission failed: ' + data.message);
+document.getElementById('response-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const answer = document.getElementById('answer').value.trim();
+    if (!answer) {
+        alert('Please enter an answer');
+        return;
+    }
+    
+    // Show submitting status
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+    
+    fetch('{{ url_for("activities.submit_response", activity_id=activity.id) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({answer: answer})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Display success message
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
+            alertDiv.innerHTML = `
+                <strong><i class="bi bi-check-circle"></i> Submission Successful!</strong>
+                <p class="mb-0">Your answer has been submitted successfully</p>
+            `;
+            const container = document.querySelector('.container');
+            if (container && container.firstChild) {
+                container.insertBefore(alertDiv, container.firstChild);
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Submission failed, please try again');
-        });
+            
+            // Reload page after 1 second to show submitted answer
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+            alert('Submission failed: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+        alert('Submission failed, please try again');
     });
-}
+});
 
 // Fallback polling (every 10 seconds instead of 3)
 setInterval(function() {
@@ -401,6 +443,7 @@ if (typeof io !== 'undefined') {
     
     // Listen for activity updates
     socket.on('activity_update', function(data) {
+        console.log('[Socket] Activity update received:', data);
         if (data.activity_id === {{ activity.id }}) {
             const statusElement = document.getElementById('activity-status');
             const remainingTimeElement = document.getElementById('remaining-time');
@@ -409,11 +452,79 @@ if (typeof io !== 'undefined') {
             if (data.data.is_active) {
                 statusElement.innerHTML = '<span class="text-success">Active</span>';
             } else {
+                // Activity ended
                 statusElement.innerHTML = '<span class="text-muted">Ended</span>';
-                // 当活动结束时，立即更新倒计时显示
+                isActivityActive = false;  // Update global state
+                
+                // Update countdown display
                 if (remainingTimeElement && timerElement) {
                     remainingTimeElement.textContent = 'Activity has ended';
                     timerElement.className = 'alert alert-warning';
+                }
+                
+                // Update button state (teacher/admin view)
+                const startBtn = document.getElementById('start-activity');
+                const stopBtn = document.getElementById('stop-activity');
+                
+                console.log('[Socket] Start button:', startBtn);
+                console.log('[Socket] Stop button:', stopBtn);
+                
+                if (stopBtn) {
+                    stopBtn.style.display = 'none';
+                    console.log('[Socket] Hid stop button');
+                }
+                
+                if (startBtn) {
+                    // Start button exists, update it
+                    startBtn.style.display = 'inline-block';
+                    startBtn.className = 'btn btn-success';
+                    startBtn.innerHTML = '<i class="bi bi-play-circle"></i> restart Activity';
+                    console.log('[Socket] Updated start button to green restart');
+                } else if (stopBtn) {
+                    // Start button doesn't exist, create it by replacing stop button
+                    console.log('[Socket] Start button missing, creating new one');
+                    const newStartBtn = document.createElement('button');
+                    newStartBtn.id = 'start-activity';
+                    newStartBtn.className = 'btn btn-success';
+                    newStartBtn.innerHTML = '<i class="bi bi-play-circle"></i> restart Activity';
+                    newStartBtn.onclick = function() {
+                        startActivity();
+                    };
+                    
+                    // Replace stop button with start button
+                    if (stopBtn.parentNode) {
+                        stopBtn.parentNode.replaceChild(newStartBtn, stopBtn);
+                        console.log('[Socket] Replaced stop button with green restart button');
+                    }
+                }
+                
+                // 禁用提交表单(学生视图)
+                const responseForm = document.getElementById('response-form');
+                const submitBtn = responseForm ? responseForm.querySelector('button[type="submit"]') : null;
+                const answerInput = document.getElementById('answer');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="bi bi-ban"></i> Activity Ended';
+                    submitBtn.className = 'btn btn-secondary';
+                }
+                if (answerInput) {
+                    answerInput.disabled = true;
+                    answerInput.placeholder = 'Activity has ended, cannot submit';
+                }
+                
+                // Display notification message
+                if (data.update_type === 'auto_ended') {
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-info alert-dismissible fade show mt-3';
+                    alertDiv.innerHTML = `
+                        <strong>⏰ Activity Auto-Ended</strong>
+                        <p class="mb-0">Countdown finished, activity has been automatically stopped.</p>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    const container = document.querySelector('.container');
+                    if (container && container.firstChild) {
+                        container.insertBefore(alertDiv, container.firstChild);
+                    }
                 }
             }
         }
@@ -552,104 +663,126 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- 公共倒计时功能 - 学生和教师都可以使用 -->
 <script>
-// 倒计时功能
+// 优化的倒计时功能 - 本地计时 + 定期服务器检查
 function initializeCountdown() {
-    {% if activity.started_at and activity.duration_minutes %}
-    // 处理UTC时间，确保时区正确
-    const startTime = new Date('{{ activity.started_at.isoformat() }}Z'); // 添加Z表示UTC时间
+    {% if started_at_iso and activity.duration_minutes %}
+    // 使用后端传递的ISO时间字符串，直接作为北京时间解析
+    const startTimeStr = '{{ started_at_iso }}';
+    // 手动解析时间字符串，强制作为北京时间（不考虑时区）
+    const parts = startTimeStr.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+    if (!parts) {
+        console.error('Invalid time format');
+        return;
+    }
+    const startTime = new Date(
+        parseInt(parts[1]), // year
+        parseInt(parts[2]) - 1, // month (0-indexed)
+        parseInt(parts[3]), // day
+        parseInt(parts[4]), // hour
+        parseInt(parts[5]), // minute
+        parseInt(parts[6])  // second
+    );
     const durationMs = {{ activity.duration_minutes }} * 60 * 1000;
     const endTime = new Date(startTime.getTime() + durationMs);
     
-    console.log('Activity start time:', startTime);
+    console.log('Activity start time (Beijing):', startTime);
     console.log('Activity duration:', {{ activity.duration_minutes }}, 'minutes');
     console.log('Activity end time:', endTime);
     console.log('Current time:', new Date());
     
-    function updateCountdown() {
-        // 首先检查服务器端的活动状态
-        return fetch('{{ url_for("activities.activity_status", activity_id=activity.id) }}')
+    let countdownInterval = null;
+    let isActivityActive = true;
+    
+    // 本地倒计时更新（每秒执行，不调用API）
+    function updateLocalCountdown() {
+        const remainingTimeElement = document.getElementById('remaining-time');
+        const timerElement = document.getElementById('activity-timer');
+        
+        if (!remainingTimeElement || !timerElement) return false;
+        
+        // If activity is marked as ended
+        if (!isActivityActive) {
+            remainingTimeElement.textContent = 'Activity has ended';
+            timerElement.className = 'alert alert-warning';
+            return false;
+        }
+        
+        // Calculate remaining time (using local time)
+        const now = new Date();
+        const remainingMs = endTime.getTime() - now.getTime();
+        
+        if (remainingMs <= 0) {
+            remainingTimeElement.textContent = 'Activity has ended';
+            timerElement.className = 'alert alert-warning';
+            isActivityActive = false;
+            
+            // Countdown ended, don't reload page, wait for Socket.IO real-time update
+            console.log('[Countdown] Local countdown ended, waiting for server update via Socket.IO');
+            return false;
+        }
+        
+        const minutes = Math.floor(remainingMs / (1000 * 60));
+        const seconds = Math.floor((remainingMs % (1000 * 60)) / 1000);
+        
+        remainingTimeElement.textContent = `Remaining Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        // Adjust style based on remaining time
+        if (remainingMs < 60000) {
+            timerElement.className = 'alert alert-danger';
+        } else if (remainingMs < 180000) {
+            timerElement.className = 'alert alert-warning';
+        } else {
+            timerElement.className = 'alert alert-info';
+        }
+        
+        return true;
+    }
+    
+    // 检查服务器端活动状态（每30秒执行一次）
+    function checkServerStatus() {
+        fetch('{{ url_for("activities.activity_status", activity_id=activity.id) }}')
             .then(response => response.json())
             .then(data => {
-                const remainingTimeElement = document.getElementById('remaining-time');
-                const timerElement = document.getElementById('activity-timer');
-                
-                if (!remainingTimeElement || !timerElement) return;
-                
-                // 如果活动已经不活跃，显示结束状态
                 if (!data.is_active) {
-                    remainingTimeElement.textContent = 'Activity has ende';
-                    timerElement.className = 'alert alert-warning';
-                    return false; // 返回false表示停止倒计时
+                    isActivityActive = false;
+                    if (countdownInterval) {
+                        clearInterval(countdownInterval);
+                    }
+                    
+                    const remainingTimeElement = document.getElementById('remaining-time');
+                    const timerElement = document.getElementById('activity-timer');
+                    if (remainingTimeElement && timerElement) {
+                        remainingTimeElement.textContent = 'Activity has ended';
+                        timerElement.className = 'alert alert-warning';
+                    }
+                    
+                    // Don't reload page, wait for Socket.IO real-time update
+                    console.log('[Status Check] Activity ended on server, waiting for Socket.IO update');
                 }
-                
-                // 如果活动仍然活跃，继续计算剩余时间
-                const now = new Date();
-                const remainingMs = endTime.getTime() - now.getTime();
-                
-                if (remainingMs <= 0) {
-                    remainingTimeElement.textContent = 'Activity has ended';
-                    timerElement.className = 'alert alert-warning';
-                    return false; // 返回false表示停止倒计时
-                }
-                
-                const minutes = Math.floor(remainingMs / (1000 * 60));
-                const seconds = Math.floor((remainingMs % (1000 * 60)) / 1000);
-                
-                remainingTimeElement.textContent = `Remaining Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
-                
-                // 时间少于1分钟时显示红色警告
-                if (remainingMs < 60000) {
-                    timerElement.className = 'alert alert-danger';
-                } else if (remainingMs < 180000) { // 少于3分钟时显示警告
-                    timerElement.className = 'alert alert-warning';
-                } else {
-                    timerElement.className = 'alert alert-info';
-                }
-                
-                return true; // 返回true表示继续倒计时
             })
             .catch(error => {
-                console.error('Failed to check activity status:', error);
-                // 如果网络错误，回退到本地时间计算
-                const now = new Date();
-                const remainingMs = endTime.getTime() - now.getTime();
-                
-                const remainingTimeElement = document.getElementById('remaining-time');
-                const timerElement = document.getElementById('activity-timer');
-                
-                if (!remainingTimeElement || !timerElement) return false;
-                
-                if (remainingMs <= 0) {
-                    remainingTimeElement.textContent = 'Activity has ended';
-                    timerElement.className = 'alert alert-warning';
-                    return false;
-                }
-                
-                const minutes = Math.floor(remainingMs / (1000 * 60));
-                const seconds = Math.floor((remainingMs % (1000 * 60)) / 1000);
-
-                remainingTimeElement.textContent = `Remaining Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
-                return true;
+                console.error('检查活动状态失败:', error);
             });
     }
     
-    // 立即执行一次
-    updateCountdown();
-    
-    // 设置定时器，每秒更新倒计时
-    const countdownInterval = setInterval(async () => {
-        try {
-            const shouldContinue = await updateCountdown();
-            if (!shouldContinue) {
+    // 立即执行一次本地倒计时
+    if (updateLocalCountdown()) {
+        // 每秒更新本地倒计时
+        countdownInterval = setInterval(() => {
+            const shouldContinue = updateLocalCountdown();
+            if (!shouldContinue && countdownInterval) {
                 clearInterval(countdownInterval);
             }
-        } catch (error) {
-            console.error('Countdown update error:', error);
-            // 如果更新失败，继续尝试
-        }
-    }, 1000);
+        }, 1000);
+        
+        // 每30秒检查一次服务器状态
+        setInterval(checkServerStatus, 30000);
+        
+        // 初始时也检查一次服务器状态
+        checkServerStatus();
+    }
     {% else %}
-    // 如果活动没有开始时间或持续时间，显示未开始状态
+    // If activity has no start time or duration, show not started status
     const remainingTimeElement = document.getElementById('remaining-time');
     const timerElement = document.getElementById('activity-timer');
     if (remainingTimeElement && timerElement) {
@@ -658,30 +791,6 @@ function initializeCountdown() {
     }
     {% endif %}
 }
-
-// Fallback polling (every 30 seconds, less frequent)
-// setInterval(function() {
-//     fetch('{{ url_for("activities.activity_status", activity_id=activity.id) }}')
-//     .then(response => response.json())
-//     .then(data => {
-//         if (data.error) {
-//             console.error(data.error);
-//             return;
-//         }
-//         
-//         const statusElement = document.getElementById('activity-status');
-//         if (data.is_active) {
-//             statusElement.innerHTML = '<span class="text-success">Active</span>';
-//         } else {
-//             statusElement.innerHTML = '<span class="text-muted">Ended</span>';
-//         }
-//         
-//         if (data.response_count !== undefined) {
-//             document.getElementById('response-count').textContent = data.response_count;
-//         }
-//     })
-//     .catch(error => console.error('Error:', error));
-// }, 30000);
 </script>
 
 {% if activity.type == 'memory_game' %}
@@ -689,15 +798,10 @@ function initializeCountdown() {
 // Memory game functionality
 document.addEventListener('DOMContentLoaded', function() {
     const startBtn = document.getElementById('start-memory-game');
-    const correctSequenceInput = document.getElementById('memory-correct-sequence');
     if (startBtn) {
         startBtn.addEventListener('click', function() {
             const items = ['Apple', 'Banana', 'Cherry', 'Date', 'Elderberry'];
             const sequence = [];
-            
-            if (correctSequenceInput) {
-                correctSequenceInput.value = '';
-            }
             
             // Generate random sequence of 3-5 items
             const length = Math.floor(Math.random() * 3) + 3;
@@ -711,17 +815,12 @@ document.addEventListener('DOMContentLoaded', function() {
             // Display sequence
             const display = document.getElementById('sequence-display');
             display.innerHTML = '<h6>Remember this sequence:</h6><div class="d-flex gap-2 mb-3">';
-            sequence.forEach(item => {
+            sequence.forEach((item, index) => {
                 display.innerHTML += `<span class="badge bg-primary" style="font-size: 1.2em;">${item}</span>`;
             });
             display.innerHTML += '</div>';
             
             document.getElementById('memory-game-display').style.display = 'block';
-            document.getElementById('input-section').style.display = 'none';
-            const answerInput = document.getElementById('answer');
-            if (answerInput) {
-                answerInput.value = '';
-            }
             
             // Show sequence for 3 seconds, then hide
             setTimeout(() => {
@@ -729,13 +828,83 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('input-section').style.display = 'block';
                 
                 // Store the correct sequence for validation
-                if (correctSequenceInput) {
-                    correctSequenceInput.value = sequence.join(',');
-                }
+                document.getElementById('answer').setAttribute('data-correct-sequence', sequence.join(','));
             }, 3000);
         });
     }
 });
 </script>
 {% endif %}
+
+<!-- QR Code功能JavaScript -->
+{% if current_user.role in ['admin', 'instructor'] and (current_user.role == 'admin' or activity.course.instructor_id == current_user.id) %}
+<script>
+function toggleQuickJoin(activityId) {
+    fetch(`/activity/${activityId}/toggle-quick-join`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Operation failed: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Operation failed, please try again');
+    });
+}
+
+function regenerateQRCode(activityId) {
+    if (!confirm('Are you sure you want to regenerate the QR code? The old link will expire.')) {
+        return;
+    }
+    
+    fetch(`/activity/${activityId}/regenerate-qr`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Generation failed: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Operation failed, please try again');
+    });
+}
+
+function copyJoinLink() {
+    const linkInput = document.getElementById('join-link');
+    linkInput.select();
+    linkInput.setSelectionRange(0, 99999); // For mobile devices
+    
+    try {
+        document.execCommand('copy');
+        alert('Link copied to clipboard!');
+    } catch (err) {
+        // Fallback for browsers that don't support execCommand
+        navigator.clipboard.writeText(linkInput.value).then(() => {
+            alert('Link copied to clipboard!');
+        }).catch(err => {
+            alert('Copy failed, please copy manually');
+        });
+    }
+}
+</script>
+{% endif %}
+
 {% endblock %}

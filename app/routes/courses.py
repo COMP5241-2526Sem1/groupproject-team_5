@@ -162,7 +162,7 @@ def browse_courses():
 def enroll_course(course_id):
     """学生选修课程"""
     if current_user.role != 'student':
-        flash('只有学生可以选修课程', 'error')
+        flash('Only students can enroll in courses', 'error')
         return redirect(url_for('courses.list_courses'))
     
     course = Course.query.get_or_404(course_id)
@@ -174,7 +174,7 @@ def enroll_course(course_id):
     ).first()
     
     if existing_enrollment:
-        flash('您已经选修了这门课程', 'warning')
+        flash('You have already enrolled in this course', 'warning')
     else:
         enrollment = Enrollment(student_id=current_user.id, course_id=course_id)
         db.session.add(enrollment)

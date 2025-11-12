@@ -11,17 +11,17 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from app import create_app, socketio
 
+# Set default environment variables if not provided
+if not os.environ.get('SECRET_KEY'):
+    os.environ['SECRET_KEY'] = 'dev-secret-key-change-in-production'
+
+if not os.environ.get('DATABASE_URL'):
+    os.environ['DATABASE_URL'] = 'sqlite:///classroom.db'
+
+# Create application instance (for gunicorn)
+app = create_app()
+
 def main():
-    # Set default environment variables if not provided
-    if not os.environ.get('SECRET_KEY'):
-        os.environ['SECRET_KEY'] = 'dev-secret-key-change-in-production'
-    
-    if not os.environ.get('DATABASE_URL'):
-        os.environ['DATABASE_URL'] = 'sqlite:///classroom.db'
-    
-    # Create application
-    app = create_app()
-    
     # Check if test data needs to be created
     if len(sys.argv) > 1 and sys.argv[1] == '--init-db':
         print("Creating test data...")

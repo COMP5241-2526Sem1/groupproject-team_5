@@ -2,9 +2,9 @@
 Q&A Education Platform - Database Models
 """
 
-from app import db, login_manager
+from app import db, login_manager, get_beijing_time
 from flask_login import UserMixin
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class User(UserMixin, db.Model):
     """用户模型"""
@@ -14,7 +14,7 @@ class User(UserMixin, db.Model):
     name = db.Column(db.String(100), nullable=False)
     role = db.Column(db.String(20), nullable=False)  # student, instructor, admin
     student_id = db.Column(db.String(50), unique=True, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: get_beijing_time())
     
     # Relationships
     courses = db.relationship('Course', backref='instructor', lazy=True)
@@ -50,7 +50,7 @@ class EmailCaptcha(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     email = db.Column(db.String(100), nullable=False)
     captcha = db.Column(db.String(100), nullable=False)
-    create_time = db.Column(db.DateTime, default=datetime.utcnow)
+    create_time = db.Column(db.DateTime, default=lambda: get_beijing_time())
 
 class Course(db.Model):
     """课程模型"""
@@ -59,7 +59,7 @@ class Course(db.Model):
     semester = db.Column(db.String(50), nullable=False)
     description = db.Column(db.Text)
     instructor_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: get_beijing_time())
     
     # Relationships
     enrollments = db.relationship('Enrollment', backref='course', lazy=True)
@@ -71,7 +71,7 @@ class Enrollment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
-    enrolled_at = db.Column(db.DateTime, default=datetime.utcnow)
+    enrolled_at = db.Column(db.DateTime, default=lambda: get_beijing_time())
     
     __table_args__ = (db.UniqueConstraint('student_id', 'course_id'),)
 
@@ -88,12 +88,61 @@ class Activity(db.Model):
     instructor_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     is_active = db.Column(db.Boolean, default=False)
     duration_minutes = db.Column(db.Integer, default=5)  # 活动持续时间（分钟）
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: get_beijing_time())
     started_at = db.Column(db.DateTime, nullable=True)
     ended_at = db.Column(db.DateTime, nullable=True)
     
+    # QR Code quick join fields
+    allow_quick_join = db.Column(db.Boolean, default=True)  # 是否允许二维码快速加入
+    join_token = db.Column(db.String(64), unique=True, nullable=True)  # 加入令牌
+    token_expires_at = db.Column(db.DateTime, nullable=True)  # 令牌过期时间
+    
     # Relationships
     responses = db.relationship('Response', backref='activity', lazy=True, cascade='all, delete-orphan')
+    
+    def generate_join_token(self):
+        """生成唯一的加入令牌（使用北京时间）"""
+        import secrets
+        from datetime import timedelta, timezone
+        
+        self.join_token = secrets.token_urlsafe(32)
+        
+        # 获取当前北京时间（UTC+8）
+        beijing_tz = timezone(timedelta(hours=8))
+        now_beijing = datetime.now(beijing_tz)
+        
+        # 令牌在活动结束后 24 小时过期
+        if self.ended_at:
+            # ended_at 是 naive datetime（无时区），假设为 UTC
+            ended_utc = self.ended_at.replace(tzinfo=timezone.utc)
+            ended_beijing = ended_utc.astimezone(beijing_tz)
+            expires_beijing = ended_beijing + timedelta(hours=24)
+        else:
+            # 如果活动未结束，设置为当前北京时间 + 7 天
+            expires_beijing = now_beijing + timedelta(days=7)
+        
+        # 转换为 UTC 时间存储（naive datetime，不带时区信息）
+        self.token_expires_at = expires_beijing.astimezone(timezone.utc).replace(tzinfo=None)
+        return self.join_token
+    
+    def is_token_valid(self):
+        """检查令牌是否有效"""
+        if not self.join_token or not self.allow_quick_join:
+            return False
+        if self.token_expires_at:
+            # 使用北京时间进行比较
+            if get_beijing_time() > self.token_expires_at:
+                return False
+        return True
+    
+    def get_token_expires_beijing_time(self):
+        """获取令牌过期时间的北京时间（用于显示）"""
+        if not self.token_expires_at:
+            return None
+        from datetime import timezone, timedelta
+        beijing_tz = timezone(timedelta(hours=8))
+        utc_time = self.token_expires_at.replace(tzinfo=timezone.utc)
+        return utc_time.astimezone(beijing_tz)
 
 class Response(db.Model):
     """活动响应模型"""
@@ -104,7 +153,7 @@ class Response(db.Model):
     is_correct = db.Column(db.Boolean, default=False)  # Whether the answer is correct
     score = db.Column(db.Integer, default=0)  # Score for this response
     points_earned = db.Column(db.Integer, default=0)
-    submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
+    submitted_at = db.Column(db.DateTime, default=lambda: get_beijing_time())
     
     __table_args__ = (db.UniqueConstraint('student_id', 'activity_id'),)
 
@@ -119,8 +168,8 @@ class Question(db.Model):
     best_answer_id = db.Column(db.Integer, db.ForeignKey('answer.id'), nullable=True)
     is_resolved = db.Column(db.Boolean, default=False)
     view_count = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: get_beijing_time())
+    updated_at = db.Column(db.DateTime, default=lambda: get_beijing_time(), onupdate=lambda: get_beijing_time())
     
     # Relationships
     answers = db.relationship('Answer', backref='question', lazy=True, 
@@ -134,8 +183,8 @@ class Answer(db.Model):
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     upvotes = db.Column(db.Integer, default=0)
     is_instructor_answer = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: get_beijing_time())
+    updated_at = db.Column(db.DateTime, default=lambda: get_beijing_time(), onupdate=lambda: get_beijing_time())
     
     # Relationships
     votes = db.relationship('AnswerVote', backref='answer', lazy=True, cascade='all, delete-orphan')
@@ -146,7 +195,7 @@ class AnswerVote(db.Model):
     answer_id = db.Column(db.Integer, db.ForeignKey('answer.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     vote_type = db.Column(db.String(10), nullable=False)  # 'upvote' or 'downvote'
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: get_beijing_time())
     
     # Relationships
     user = db.relationship('User', backref='answer_votes')

@@ -45,6 +45,13 @@
             box-shadow: 0 2px 15px rgba(0,0,0,.1);
             background: linear-gradient(135deg, #0d6efd, #0099ff) !important;
             border-bottom: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+            z-index: 1050;
+        }
+        
+        /* Dropdown菜单层级修复 */
+        .dropdown-menu {
+            z-index: 1051 !important;
         }
 
         /* 登录注册按钮特殊样式 */
@@ -351,10 +358,9 @@
             position: relative;
             z-index: 1;
         }
-
-        /* 页面容器样式 */
-        .container {
-            position: relative;
+        
+        /* 确保main内容不会覆盖导航栏 */
+        main.container {
             z-index: 1;
         }
     </style>
@@ -406,6 +412,10 @@
                                 <span class="badge bg-light text-dark ms-1">{{ current_user.role }}</span>
                             </a>
                             <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}">
+                                    <i class="bi bi-person"></i> Profile
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">
                                     <i class="bi bi-box-arrow-right"></i> Logout
                                 </a></li>
