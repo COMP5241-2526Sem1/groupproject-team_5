@@ -140,6 +140,10 @@ def create_activity(course_id):
         print(f"[CREATE DEBUG] Request form - duration_minutes: {request.form.get('duration_minutes')}")
         print(f"[CREATE DEBUG] All form data: {dict(request.form)}")
         
+        # Fix: 直接从request.form读取duration_minutes，因为WTForms的HiddenField可能使用默认值
+        duration_minutes = int(request.form.get('duration_minutes', 5))
+        print(f"[CREATE DEBUG] Using duration_minutes: {duration_minutes}")
+        
         options = None
         correct_answer = None
         quiz_type = None
@@ -164,7 +168,7 @@ def create_activity(course_id):
             correct_answer=correct_answer,
             course_id=course_id,
             instructor_id=current_user.id,
-            duration_minutes=form.duration_minutes.data,
+            duration_minutes=duration_minutes,  # 使用从request.form直接读取的值
             allow_quick_join=allow_quick_join
         )
         
