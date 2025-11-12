@@ -41,7 +41,7 @@ class ActivityForm(FlaskForm):
     type = SelectField('Activity Type', choices=[('poll', 'Poll'), ('short_answer', 'Short Answer'), ('quiz', 'Quiz'), ('word_cloud', 'Word Cloud'), ('memory_game', 'Memory Game')], validators=[DataRequired()])
     question = TextAreaField('Question', validators=[DataRequired()])
     options = TextAreaField('Options (Required for polls, one per line)')
-    duration_minutes = HiddenField('Activity Duration', default=5)
+    # duration_minutes field removed - now handled manually in template to avoid WTForms default value issue
     submit = SubmitField('Create Activity')
 
 class AIQuestionForm(FlaskForm):
