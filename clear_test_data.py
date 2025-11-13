@@ -10,7 +10,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 from app import create_app, db
-from app.models import User, Course, Enrollment, Activity, Response, Question, Answer, AnswerVote
+from app.models import User, Course, Enrollment, Activity, Response, Question, Answer, AnswerVote, EmailCaptcha
 
 def clear_database():
     """Remove all data from the database"""
@@ -78,7 +78,12 @@ def clear_database():
             db.session.commit()
             tables_deleted.append(f"  • Courses: {course_count}")
             
-            # Delete users
+            # Delete email captchas
+            captcha_count = EmailCaptcha.query.delete()
+            db.session.commit()
+            tables_deleted.append(f"  • Email Captchas: {captcha_count}")
+            
+            # Delete users (except admin will be auto-created on next app start)
             user_count = User.query.delete()
             db.session.commit()
             tables_deleted.append(f"  • Users: {user_count}")
@@ -93,7 +98,8 @@ def clear_database():
             print("=" * 60)
             print()
             print("ℹ️  The database is now empty.")
-            print("   You can register new users or run generate_test_data.py again.")
+            print("   - Admin user (admin@example.com) will be auto-created on next app start")
+            print("   - You can register new users or run test data scripts")
             print()
             
         except Exception as e:

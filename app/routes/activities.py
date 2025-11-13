@@ -446,16 +446,39 @@ def activity_results(activity_id):
         ).filter_by(activity_id=activity_id).all()
         
         if activity.type == 'poll':
-            options = activity.options.split('\n') if activity.options else []
+            # Handle both JSON format (from test data) and newline-separated format (from form)
+            options = []
+            if activity.options:
+                try:
+                    # Try to parse as JSON first
+                    parsed_options = json.loads(activity.options)
+                    if isinstance(parsed_options, list):
+                        options = [str(opt).strip() for opt in parsed_options if opt]
+                    else:
+                        # If not a list, treat as newline-separated text
+                        options = [opt.strip() for opt in activity.options.split('\n') if opt.strip()]
+                except (json.JSONDecodeError, ValueError, TypeError):
+                    # If not JSON, treat as newline-separated text
+                    options = [opt.strip() for opt in activity.options.split('\n') if opt.strip()]
+            
             option_counts = {}
             for option in options:
-                option_counts[option.strip()] = 0
+                if option:  # Only add non-empty options
+                    option_counts[option] = 0
             
+            # Count responses for each option
             for response in responses:
                 if response.answer:
                     answer = response.answer.strip()
+                    # Try exact match first
                     if answer in option_counts:
                         option_counts[answer] += 1
+                    else:
+                        # Try case-insensitive match
+                        for option in option_counts.keys():
+                            if answer.lower() == option.lower():
+                                option_counts[option] += 1
+                                break
             
             results = {
                 'type': 'poll',
@@ -493,20 +516,30 @@ def activity_results(activity_id):
                 } for r in responses]
             }
         elif activity.type == 'word_cloud':
-            # Process word cloud data
-            all_words = []
-            for response in responses:
-                if response.answer:
-                    words = [word.strip().lower() for word in response.answer.split(',') if word.strip()]
-                    all_words.extend(words)
+            # Process word cloud data - use same logic as short_answer
+            answers = [response.answer for response in responses if response.answer]
             
-            word_freq = Counter(all_words)
-            common_words = word_freq.most_common(50)
+            word_freq = Counter()
+            
+            for answer in answers:
+                # Extract words from comma-separated list
+                # First split by comma, then extract words from each part
+                parts = [part.strip().lower() for part in answer.split(',') if part.strip()]
+                for part in parts:
+                    # Extract words using regex (handles multi-word entries)
+                    words = re.findall(r'\b[a-zA-Z]+\b', part)
+                    # Filter: remove stopwords and words shorter than 3 characters
+                    filtered_words = [w for w in words if w not in STOPWORDS and len(w) >= 3]
+                    word_freq.update(filtered_words)
+            
+            common_words = word_freq.most_common(200)
             
             results = {
                 'type': 'word_cloud',
+                'answers': answers,
                 'word_frequency': common_words,
-                'total_responses': len(responses)
+                'total_responses': len(responses),
+                'unique_words': len(word_freq)
             }
         else:
             # short_answer type

@@ -725,6 +725,42 @@ function handleGeneratedQuestions(data) {
 
 #file-upload-status.text-success {
     font-weight: 500;
-    }
+}
+
+/* Add scrollbar to duration dropdown menus */
+#duration-hours-menu,
+#duration-minutes-menu,
+#duration-seconds-menu {
+    max-height: 250px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Custom scrollbar styling for better appearance */
+#duration-hours-menu::-webkit-scrollbar,
+#duration-minutes-menu::-webkit-scrollbar,
+#duration-seconds-menu::-webkit-scrollbar {
+    width: 8px;
+}
+
+#duration-hours-menu::-webkit-scrollbar-track,
+#duration-minutes-menu::-webkit-scrollbar-track,
+#duration-seconds-menu::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+#duration-hours-menu::-webkit-scrollbar-thumb,
+#duration-minutes-menu::-webkit-scrollbar-thumb,
+#duration-seconds-menu::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+#duration-hours-menu::-webkit-scrollbar-thumb:hover,
+#duration-minutes-menu::-webkit-scrollbar-thumb:hover,
+#duration-seconds-menu::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
 </style>
 {% endblock %}
