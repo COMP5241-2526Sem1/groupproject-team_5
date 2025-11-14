@@ -32,8 +32,7 @@ python-dotenv==1.0.0  # 环境变量管理
 
 # AI features (optional, for question generation)
 openai>=1.0.0  # OpenAI API support (imported in code)
-volcengine-python-sdk>=1.0.78  # ByteDance Ark API support (optional)
-
+volcengine-python-sdk[ark]>=4.0.34  # ByteDance Ark API support with ARK extensions
 # QR Code generation
 qrcode[pil]==7.4.2
 Pillow>=10.1.0

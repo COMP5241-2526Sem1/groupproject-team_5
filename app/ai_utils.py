@@ -210,7 +210,7 @@ Please return a JSON object with:
 Format as valid JSON only."""
         
         payload = {
-            "model": "doubao-1.5-pro-32k",
+            "model": "doubao-1-5-pro-32k-250115",
             "messages": [
                 {
                     "role": "system",
@@ -381,7 +381,7 @@ Student answers:
 Format as valid JSON only."""
         
         payload = {
-            "model": "doubao-1.5-pro-32k",
+            "model": "doubao-1-5-pro-32k-250115",
             "messages": [
                 {
                     "role": "system",
