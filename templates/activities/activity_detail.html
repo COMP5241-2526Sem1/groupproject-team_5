@@ -109,7 +109,7 @@ html, body {
             <i class="bi bi-stop-circle"></i> end Activity
         </button>
         {% else %}
-        <button id="start-activity" class="btn btn-success">
+        <button id="start-activity" class="btn btn-success" onclick="startActivity(); return false;">
             <i class="bi bi-play-circle"></i> 
             {% if activity.started_at %}restart Activity{% else %}start Activity{% endif %}
         </button>
@@ -381,21 +381,25 @@ html, body {
     </div>
 </div>
 
+<!-- 公共JavaScript代码 - 所有用户都可以使用 -->
+<script>
+// Helper to create or return a single shared Socket.IO connection
+function getActivitySocket() {
+    if (typeof window === 'undefined') return null;
+    if (window.activitySocket) return window.activitySocket;
+    if (typeof io === 'undefined') return null;
+    try {
+        window.activitySocket = io();
+        return window.activitySocket;
+    } catch (e) {
+        console.warn('Socket.IO init failed', e);
+        return null;
+    }
+}
+</script>
+
     {% if current_user.role == 'student' %}
     <script>
-    // Helper to create or return a single shared Socket.IO connection
-    function getActivitySocket() {
-        if (typeof window === 'undefined') return null;
-        if (window.activitySocket) return window.activitySocket;
-        if (typeof io === 'undefined') return null;
-        try {
-            window.activitySocket = io();
-            return window.activitySocket;
-        } catch (e) {
-            console.warn('Socket.IO init failed', e);
-            return null;
-        }
-    }
 
     document.addEventListener('DOMContentLoaded', function() {
         const socket = getActivitySocket();
@@ -621,29 +625,36 @@ if (socket) {
 
 // 简化版本的开始活动功能
 function startActivity() {
-    console.log('Start activity function called');
+    console.log('🚀 Start activity function called');
     
-    fetch('{{ url_for("activities.start_activity", activity_id=activity.id) }}', {
+    const activityId = {{ activity.id }};
+    console.log('Activity ID:', activityId);
+    
+    fetch(`/activities/${activityId}/start`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
         }
     })
     .then(response => {
-        console.log('Response received:', response);
+        console.log('✅ Response received:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
         return response.json();
     })
     .then(data => {
-        console.log('Data received:', data);
+        console.log('📄 Data received:', data);
         if (data.success) {
             alert('Activity started successfully!');
-            location.reload();
+            window.location.reload();
         } else {
             alert('Failed to start activity: ' + (data.message || 'Unknown error'));
         }
     })
     .catch(error => {
-        console.error('Fetch error:', error);
+        console.error('❌ Fetch error:', error);
         alert('Network error: ' + error.message);
     });
 }
@@ -709,29 +720,63 @@ function resetActivity() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔧 DOM loaded, initializing activity buttons...');
+    
+    // 获取按钮元素
     const startButton = document.getElementById('start-activity');
     const stopButton = document.getElementById('stop-activity');
     const resetButton = document.getElementById('reset-activity');
     
+    // 绑定开始按钮
     if (startButton) {
-        console.log('Start button found, adding click listener');
-        startButton.addEventListener('click', startActivity);
+        console.log('✅ Start button found, binding event');
+        startButton.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🎯 Start button clicked!');
+            startActivity();
+            return false;
+        };
+        
+        // 也添加addEventListener作为备用
+        startButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🎯 Start button addEventListener triggered!');
+        });
     } else {
-        console.log('Start button not found');
+        console.log('❌ Start button not found in DOM');
+        // 调试：查看页面中的所有按钮
+        const allButtons = document.querySelectorAll('button');
+        console.log('🔍 Found buttons:', Array.from(allButtons).map(btn => btn.id || btn.className));
     }
     
+    // 绑定停止按钮
     if (stopButton) {
-        console.log('Stop button found, adding click listener');
-        stopButton.addEventListener('click', stopActivity);
+        console.log('✅ Stop button found, binding event');
+        stopButton.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🛑 Stop button clicked!');
+            stopActivity();
+            return false;
+        };
     } else {
-        console.log('Stop button not found');
+        console.log('ℹ️ Stop button not found (normal if activity not active)');
     }
     
+    // 绑定重置按钮
     if (resetButton) {
-        console.log('Reset button found, adding click listener');
-        resetButton.addEventListener('click', resetActivity);
+        console.log('✅ Reset button found, binding event');
+        resetButton.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🔄 Reset button clicked!');
+            resetActivity();
+            return false;
+        };
     } else {
-        console.log('Reset button not found');
+        console.log('❌ Reset button not found');
     }
     
     // 初始化倒计时

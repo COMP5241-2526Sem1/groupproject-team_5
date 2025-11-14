@@ -131,21 +131,20 @@ def create_app():
     
     # 添加时区转换函数
     @app.template_filter('local_time')
-    def local_time_filter(utc_time):
-        """将UTC时间转换为北京时间"""
-        if utc_time is None:
+    def local_time_filter(time_obj):
+        """显示时间（已经是北京时间，无需转换）"""
+        if time_obj is None:
             return ''
-        # 北京时间 = UTC时间 + 8小时
-        beijing_time = utc_time + timedelta(hours=8)
-        return beijing_time.strftime('%Y-%m-%d %H:%M')
+        # 直接格式化显示，因为数据库存储的已经是北京时间
+        return time_obj.strftime('%Y-%m-%d %H:%M')
     
     @app.template_filter('local_date')
-    def local_date_filter(utc_time):
-        """将UTC时间转换为北京日期"""
-        if utc_time is None:
+    def local_date_filter(time_obj):
+        """显示日期（已经是北京时间，无需转换）"""
+        if time_obj is None:
             return ''
-        beijing_time = utc_time + timedelta(hours=8)
-        return beijing_time.strftime('%Y-%m-%d')
+        # 直接格式化显示，因为数据库存储的已经是北京时间
+        return time_obj.strftime('%Y-%m-%d')
     
     # Register blueprints
     from .routes import main, auth, courses, activities, qa
