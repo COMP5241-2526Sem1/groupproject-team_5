@@ -9,7 +9,7 @@ Flask-WTF==1.2.1
 # Database
 PyMySQL==1.1.0
 pymysql==1.1.0
-cryptography==41.0.7  # PlanetScale SSL 支持
+cryptography>=44.0.1  # Updated for volcengine-python-sdk[ark] compatibility
 
 # Forms and validation
 WTForms==3.1.1
