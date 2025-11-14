@@ -18,7 +18,8 @@
     border-radius: 12px;
     padding: 14px;
     box-sizing: border-box;
-    min-height: 140px;
+    height: 220px; /* 固定高度，保证所有模块一致 */
+    overflow: hidden; /* 内容超出时截断 */
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -39,6 +40,21 @@
 .activity-inner.activity-color-6:hover { filter: brightness(0.98); }
 .activity-card .card-body { padding: 0; }
 .activity-card .card-body .card-title a { color: inherit; }
+/* 文本截断，避免内容撑高卡片 */
+.activity-inner .card-title a {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.activity-inner .card-text.mb-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
