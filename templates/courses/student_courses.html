@@ -20,16 +20,18 @@
 
 /* 内部小模块，带自身渐变色 */
 .course-inner {
-        margin: 14px; /* 让内部模块在白色外框内留白 */
-        border-radius: 12px;
-        padding: 18px;
-        box-sizing: border-box;
-        min-height: 160px;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        color: #153d5a; /* 深灰色文本，适配浅色渐变 */
-        transition: all 0.25s ease;
+    margin: 14px; /* 让内部模块在白色外框内留白 */
+    border-radius: 12px;
+    padding: 18px;
+    box-sizing: border-box;
+    height: 260px; /* 固定高度，保证所有卡片一致 */
+    overflow: hidden;
+    position: relative; /* 允许内部绝对定位或预留底部空间 */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    color: #153d5a; /* 深灰色文本，适配浅色渐变 */
+    transition: all 0.25s ease;
 }
 
 /* 多彩渐变背景 - 应用于小模块 */
@@ -47,7 +49,26 @@
 .course-inner.course-color-5:hover { filter: brightness(0.98); }
 .course-inner.course-color-6:hover { filter: brightness(0.98); }
 
-.course-card .card-footer { padding: 14px; }
+.course-card .card-footer { padding: 14px; height: 72px; }
+
+/* 预留内部底部空间，防止内容覆盖 Footer，并保持按钮垂直对齐 */
+.course-inner .card-body { padding-bottom: 72px; }
+
+/* 文本截断以节省空间 */
+.course-desc {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    color: #5a6570;
+}
+
+@media (max-width: 576px) {
+    .course-inner { height: auto; }
+    .course-card .card-footer { height: auto; }
+    .course-inner .card-body { padding-bottom: 14px; }
+}
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -72,7 +93,7 @@
                             </small>
                         </p>
                         {% if course.description %}
-                            <p class="card-text mt-3" style="color: #5a6570;">{{ course.description[:100] }}{% if course.description|length > 100 %}...{% endif %}</p>
+                            <p class="card-text mt-3 course-desc">{{ course.description[:100] }}{% if course.description|length > 100 %}...{% endif %}</p>
                         {% endif %}
                     </div>
                 </div>

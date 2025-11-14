@@ -20,6 +20,7 @@
     box-sizing: border-box;
     height: 220px; /* 固定高度，保证所有模块一致 */
     overflow: hidden; /* 内容超出时截断 */
+    position: relative; /* 允许内部绝对定位，固定底部元信息 */
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -50,10 +51,19 @@
 }
 .activity-inner .card-text.mb-3 {
     display: -webkit-box;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
+    -webkit-line-clamp: 2; /* 减少为 2 行以节省空间 */
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+}
+
+/* 预留空间并固定底部元信息，同一高度显示 */
+.activity-inner .card-body { padding-bottom: 64px; }
+.activity-meta-row {
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    bottom: 14px;
 }
 </style>
 
@@ -80,7 +90,7 @@
                     <p class="card-text text-muted mb-1">{{ activity.course.name }}</p>
                     <p class="card-text mb-3">{{ activity.question[:100] }}{% if activity.question|length > 100 %}...{% endif %}</p>
 
-                    <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex justify-content-between align-items-center activity-meta-row">
                         <small class="text-muted">
                             <i class="bi bi-tag"></i> {{ activity.type }} | 
                             <i class="bi bi-clock"></i> {{ activity.created_at.strftime('%m-%d %H:%M') }}
@@ -228,8 +238,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
-            }
-        });
-    });
-});
-</script>

@@ -24,12 +24,44 @@
     border-radius: 12px;
     padding: 18px;
     box-sizing: border-box;
-    min-height: 180px;
+    height: 260px; /* 固定高度，保证所有卡片内部模块一致 */
+    overflow: hidden;
+    position: relative; /* 允许内部绝对定位（用于固定图标行） */
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     color: #153d5a; /* 深灰色文本，适配浅色渐变 */
     transition: all 0.25s ease;
+}
+
+/* 标题与描述的多行截断，防止高度膨胀 */
+.course-title {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+}
+.course-desc {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2; /* 减少为 2 行，省略更多描述 */
+    line-clamp: 2;
+    overflow: hidden;
+    color: #5a6570;
+}
+
+/* 保证图标/统计区域在模块内部同一高度 */
+.course-inner .card-body { padding-bottom: 72px; }
+.course-meta-row {
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    bottom: 18px;
+}
+
+@media (max-width: 576px) {
+    .course-inner { height: auto; }
 }
 
 /* 多彩渐变背景 - 应用于内部小模块 */
@@ -64,7 +96,7 @@
         <div class="card h-100 course-card">
             <div class="course-inner course-color-{{ (loop.index - 1) % 6 + 1 }}">
                 <div class="card-body p-0">
-                    <h5 class="card-title mb-3">
+                    <h5 class="card-title mb-3 course-title">
                         <a href="{{ url_for('courses.course_detail', course_id=course.id) }}" class="text-decoration-none" style="color: inherit;">
                             {{ course.name }}
                         </a>
@@ -73,9 +105,9 @@
                         <span class="course-tag course-tag-info">{{ course.semester }}</span>
                     </p>
                     {% if course.description %}
-                    <p class="card-text mt-3" style="color: #5a6570;">{{ course.description[:100] }}{% if course.description|length > 100 %}...{% endif %}</p>
+                    <p class="card-text mt-3 course-desc">{{ course.description[:100] }}{% if course.description|length > 100 %}...{% endif %}</p>
                     {% endif %}
-                    <div class="row text-center mt-4">
+                    <div class="row text-center course-meta-row">
                         <div class="col-5">
                             <i class="bi bi-person-circle" style="font-size: 1.2rem; color: rgba(21,61,90,0.9); margin-bottom: 8px; display: block;"></i>
                             <div>

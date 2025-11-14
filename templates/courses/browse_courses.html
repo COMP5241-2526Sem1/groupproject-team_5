@@ -24,7 +24,9 @@
     border-radius: 12px;
     padding: 18px;
     box-sizing: border-box;
-    min-height: 180px;
+    height: 260px; /* 固定高度，保持所有模块一致 */
+    overflow: hidden;
+    position: relative; /* 允许内部绝对定位，用于固定底部元信息 */
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -55,6 +57,42 @@
 .course-inner.course-color-6:hover { filter: brightness(0.98); }
 </style>
 
+<style>
+/* 文本截断规则，避免内容撑高模块 */
+.course-title-link {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-clamp: 2;
+}
+.course-desc {
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* 减少为 2 行，省略更多描述 */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-clamp: 2;
+}
+@media (max-width: 576px) {
+  .course-inner { height: auto; }
+}
+</style>
+
+<style>
+/* 预留空间并固定底部元信息位置 */
+.course-inner .card-body { padding-bottom: 72px; }
+.course-meta-row {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 18px;
+}
+@media (max-width:576px){
+  .course-inner .card-body { padding-bottom: 14px; }
+  .course-meta-row { position: static; margin-top: 12px; }
+}
+</style>
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="bi bi-search"></i> Browse Courses</h2>
     <a href="{{ url_for('courses.list_courses') }}" class="btn btn-outline-primary">
@@ -69,17 +107,14 @@
           <div class="card h-100 course-card">
             <div class="course-inner course-color-{{ (loop.index - 1) % 6 + 1 }}">
               <div class="card-body p-0">
-                <h5 class="card-title mb-3" style="color: inherit;">{{ course.name }}</h5>
-                <p class="card-text">
-                  <small class="text-muted">
-                    <i class="bi bi-calendar"></i> {{ course.semester }} <br>
-                    <i class="bi bi-person"></i> {{ course.instructor.name }}
-                  </small>
-                </p>
+                <h5 class="card-title mb-3" style="color: inherit;">
+                  <a class="course-title-link text-decoration-none" href="{{ url_for('courses.course_detail', course_id=course.id) }}">{{ course.name }}</a>
+                </h5>
+                {# 移除顶部重复元信息，底部统一显示以保证对齐 #}
                 {% if course.description %}
-                  <p class="card-text mt-3" style="color: #5a6570;">{{ course.description[:100] }}{% if course.description|length > 100 %}...{% endif %}</p>
+                  <p class="card-text mt-3 course-desc" style="color: #5a6570;">{{ course.description[:200] }}{% if course.description|length > 200 %}...{% endif %}</p>
                 {% endif %}
-                <div class="row text-center mt-4">
+                <div class="row text-center mt-4 course-meta-row">
                   <div class="col-6">
                     <i class="bi bi-person-circle" style="font-size: 1.1rem; color: rgba(21,61,90,0.9); margin-bottom: 6px; display: block;"></i>
                     <div>
