@@ -5,66 +5,49 @@
 {% block content %}
 <style>
 .course-card {
-  transition: all 0.3s ease;
-  border: none;
-  border-radius: 15px;
-  overflow: hidden;
+        transition: all 0.3s ease;
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+        background: #ffffff; /* 外层白色框 */
+        box-shadow: 0 6px 18px rgba(12,45,80,0.04);
 }
 
 .course-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.08);
 }
 
-/* 多彩渐变背景 - 基于课程循环索引 */
-.course-card.course-color-1 {
-  background: linear-gradient(135deg, #f0f9f0 0%, #e8f5e8 50%, #e0f0e0 100%);
+/* 内部小模块，带自身渐变色 */
+.course-inner {
+        margin: 14px; /* 让内部模块在白色外框内留白 */
+        border-radius: 12px;
+        padding: 18px;
+        box-sizing: border-box;
+        min-height: 160px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        color: #153d5a; /* 深灰色文本，适配浅色渐变 */
+        transition: all 0.25s ease;
 }
 
-.course-card.course-color-2 {
-  background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 50%, #ffd9d9 100%);
-}
+/* 多彩渐变背景 - 应用于小模块 */
+.course-inner.course-color-1 { background: linear-gradient(135deg, #f0f9f0 0%, #e8f5e8 50%, #e0f0e0 100%); }
+.course-inner.course-color-2 { background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 50%, #ffd9d9 100%); }
+.course-inner.course-color-3 { background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 50%, #ddeeff 100%); }
+.course-inner.course-color-4 { background: linear-gradient(135deg, #fffef0 0%, #fffae6 50%, #fff6dc 100%); }
+.course-inner.course-color-5 { background: linear-gradient(135deg, #faf5ff 0%, #f5ebff 50%, #f0e1ff 100%); }
+.course-inner.course-color-6 { background: linear-gradient(135deg, #fff8f0 0%, #fff2e6 50%, #ffebdc 100%); }
 
-.course-card.course-color-3 {
-  background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 50%, #ddeeff 100%);
-}
+.course-inner.course-color-1:hover { filter: brightness(0.98); }
+.course-inner.course-color-2:hover { filter: brightness(0.98); }
+.course-inner.course-color-3:hover { filter: brightness(0.98); }
+.course-inner.course-color-4:hover { filter: brightness(0.98); }
+.course-inner.course-color-5:hover { filter: brightness(0.98); }
+.course-inner.course-color-6:hover { filter: brightness(0.98); }
 
-.course-card.course-color-4 {
-  background: linear-gradient(135deg, #fffef0 0%, #fffae6 50%, #fff6dc 100%);
-}
-
-.course-card.course-color-5 {
-  background: linear-gradient(135deg, #faf5ff 0%, #f5ebff 50%, #f0e1ff 100%);
-}
-
-.course-card.course-color-6 {
-  background: linear-gradient(135deg, #fff8f0 0%, #fff2e6 50%, #ffebdc 100%);
-}
-
-/* 悬停时的渐变变化 */
-.course-card.course-color-1:hover {
-  background: linear-gradient(135deg, #e8f5e8 0%, #e0f0e0 50%, #d8ebd8 100%);
-}
-
-.course-card.course-color-2:hover {
-  background: linear-gradient(135deg, #ffe8e8 0%, #ffd9d9 50%, #ffcaca 100%);
-}
-
-.course-card.course-color-3:hover {
-  background: linear-gradient(135deg, #e6f3ff 0%, #ddeeff 50%, #d4e9ff 100%);
-}
-
-.course-card.course-color-4:hover {
-  background: linear-gradient(135deg, #fffae6 0%, #fff6dc 50%, #fff2d2 100%);
-}
-
-.course-card.course-color-5:hover {
-  background: linear-gradient(135deg, #f5ebff 0%, #f0e1ff 50%, #ebd7ff 100%);
-}
-
-.course-card.course-color-6:hover {
-  background: linear-gradient(135deg, #fff2e6 0%, #ffebdc 50%, #ffe4d2 100%);
-}
+.course-card .card-footer { padding: 14px; }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -78,18 +61,20 @@
     <div class="row">
         {% for course in courses %}
         <div class="col-md-6 col-lg-4 mb-4">
-            <div class="card h-100 course-card course-color-{{ (loop.index - 1) % 6 + 1 }}">
-                <div class="card-body">
-                    <h5 class="card-title mb-3">{{ course.name }}</h5>
-                    <p class="card-text">
-                        <small class="text-muted">
-                            <i class="bi bi-calendar"></i> {{ course.semester }} <br>
-                            <i class="bi bi-person"></i> {{ course.instructor.name }}
-                        </small>
-                    </p>
-                    {% if course.description %}
-                        <p class="card-text text-muted mt-3">{{ course.description[:100] }}{% if course.description|length > 100 %}...{% endif %}</p>
-                    {% endif %}
+            <div class="card h-100 course-card">
+                <div class="course-inner course-color-{{ (loop.index - 1) % 6 + 1 }}">
+                    <div class="card-body p-0">
+                        <h5 class="card-title mb-3" style="color: inherit;">{{ course.name }}</h5>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                <i class="bi bi-calendar"></i> {{ course.semester }} <br>
+                                <i class="bi bi-person"></i> {{ course.instructor.name }}
+                            </small>
+                        </p>
+                        {% if course.description %}
+                            <p class="card-text mt-3" style="color: #5a6570;">{{ course.description[:100] }}{% if course.description|length > 100 %}...{% endif %}</p>
+                        {% endif %}
+                    </div>
                 </div>
                 <div class="card-footer bg-transparent">
                     <div class="d-grid gap-2">

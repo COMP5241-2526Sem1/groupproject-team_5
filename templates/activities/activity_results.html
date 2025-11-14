@@ -224,6 +224,7 @@ html, body {
                 <div class="word-cloud-container">
                     <canvas id="wordcloud-canvas-{{ activity.id }}"></canvas>
                 </div>
+                <script type="application/json" id="word_list_{{ activity.id }}">{{ results.word_frequency | tojson }}</script>
                 <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.2/src/wordcloud2.min.js"></script>
                 <script>
                 (function() {
@@ -240,19 +241,10 @@ html, body {
                         canvas.height = containerHeight;
                         canvas.style.width = containerWidth + 'px';
                         canvas.style.height = containerHeight + 'px';
-                        
-                        {% set word_list = results.word_frequency %}
-                        {% set max_freq = word_list[0][1] if word_list else 1 %}
-                        
-                        const wordList = [
-                            {% for word, freq in word_list %}
-                            ['{{ word }}', {{ freq }}]{% if not loop.last %},{% endif %}
-                            {% endfor %}
-                        ];
-                        
+
+                        const wordList = JSON.parse(document.getElementById('word_list_{{ activity.id }}').textContent || '[]');
+
                         if (wordList.length === 0) return;
-                        
-                        const maxFreq = {{ max_freq }};
                         
                         const colorPalette = [
                             '#0d6efd', '#6610f2', '#d63384', '#dc3545', '#fd7e14',
@@ -452,6 +444,7 @@ html, body {
                 <div class="word-cloud-container">
                     <canvas id="wordcloud-canvas-{{ activity.id }}"></canvas>
                 </div>
+                <script type="application/json" id="word_list_{{ activity.id }}">{{ results.word_frequency | tojson }}</script>
                 <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.2/src/wordcloud2.min.js"></script>
                 <script>
                 (function() {
@@ -470,21 +463,12 @@ html, body {
                         canvas.height = containerHeight;
                         canvas.style.width = containerWidth + 'px';
                         canvas.style.height = containerHeight + 'px';
-                        
-                        {% set word_list = results.word_frequency %}
-                        {% set max_freq = word_list[0][1] if word_list else 1 %}
-                        
-                        const wordList = [
-                            {% for word, freq in word_list %}
-                            ['{{ word }}', {{ freq }}]{% if not loop.last %},{% endif %}
-                            {% endfor %}
-                        ];
-                        
+
+                        const wordList = JSON.parse(document.getElementById('word_list_{{ activity.id }}').textContent || '[]');
+
                         if (wordList.length === 0) return;
                         
                         // Color function with random color assignment
-                        const maxFreq = {{ max_freq }};
-                        
                         // 丰富的颜色调色板
                         const colorPalette = [
                             '#0d6efd', // Blue
