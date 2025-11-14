@@ -54,19 +54,99 @@ def generate_questions(text: str) -> List[str]:
 
 def generate_questions_with_ark(text: str, api_key: str) -> List[str]:
     """Generate questions using ByteDance Ark API with volcengine SDK"""
+    import time
+    import requests
+    
     try:
         if not Ark:
             print("Volcengine SDK not available, using fallback")
             return generate_questions_fallback(text)
-            
-        client = Ark(
-            base_url="https://ark.cn-beijing.volces.com/api/v3",
-            api_key=api_key,
-        )
         
-        completion = client.chat.completions.create(
-            model="doubao-1-5-pro-32k-250115",
-            messages=[
+        # 尝试多种配置和重试机制
+        retry_count = 3
+        timeout_seconds = 30
+        
+        for attempt in range(retry_count):
+            try:
+                print(f"Ark API attempt {attempt + 1}/{retry_count}")
+                
+                # 创建客户端，增加超时设置
+                client = Ark(
+                    base_url="https://ark.cn-beijing.volces.com/api/v3",
+                    api_key=api_key,
+                    timeout=timeout_seconds
+                )
+                
+                completion = client.chat.completions.create(
+                    model="doubao-1-5-pro-32k-250115",
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "You are an education expert skilled at generating high-quality classroom interaction questions from teaching text. Please generate 3 questions suitable for classroom interaction based on the given teaching text. Questions should: 1) Test students' understanding of key concepts; 2) Encourage critical thinking; 3) Be suitable for short answer or poll format. Please return 3 questions directly, one per line, without numbering."
+                        },
+                        {
+                            "role": "user",
+                            "content": f"Please generate 3 classroom interaction questions for the following teaching text:\n\n{text}"
+                        }
+                    ],
+                    timeout=timeout_seconds
+                )
+                
+                questions_text = completion.choices[0].message.content.strip()
+                questions = [q.strip() for q in questions_text.split('\n') if q.strip()]
+                
+                if len(questions) < 3:
+                    questions.extend(generate_questions_fallback(text)[:3-len(questions)])
+                
+                print(f"Ark API success on attempt {attempt + 1}")
+                return questions[:3]
+                
+            except Exception as e:
+                error_msg = str(e)
+                print(f"Ark API attempt {attempt + 1} failed: {error_msg}")
+                
+                # 如果是连接错误且不是最后一次尝试，等待后重试
+                if "Connection error" in error_msg or "timeout" in error_msg.lower():
+                    if attempt < retry_count - 1:
+                        wait_time = (attempt + 1) * 2  # 渐进退避
+                        print(f"Waiting {wait_time} seconds before retry...")
+                        time.sleep(wait_time)
+                        continue
+                
+                # 如果是其他错误，直接退出重试循环
+                break
+        
+        # 所有重试都失败，尝试直接HTTP请求作为最后备用方案
+        print("All Ark API attempts failed, trying direct HTTP request...")
+        try:
+            return generate_questions_with_ark_http(text, api_key)
+        except Exception as http_error:
+            print(f"Direct HTTP request also failed: {http_error}")
+        
+        # 最终备用方案
+        print("Using fallback question generation")
+        return generate_questions_fallback(text)
+        
+    except Exception as e:
+        print(f"Ark API error: {e}")
+        return generate_questions_fallback(text)
+
+def generate_questions_with_ark_http(text: str, api_key: str) -> List[str]:
+    """Backup method using direct HTTP requests to Ark API"""
+    import requests
+    import json
+    
+    try:
+        url = "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
+        
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        payload = {
+            "model": "doubao-1-5-pro-32k-250115",
+            "messages": [
                 {
                     "role": "system",
                     "content": "You are an education expert skilled at generating high-quality classroom interaction questions from teaching text. Please generate 3 questions suitable for classroom interaction based on the given teaching text. Questions should: 1) Test students' understanding of key concepts; 2) Encourage critical thinking; 3) Be suitable for short answer or poll format. Please return 3 questions directly, one per line, without numbering."
@@ -76,18 +156,30 @@ def generate_questions_with_ark(text: str, api_key: str) -> List[str]:
                     "content": f"Please generate 3 classroom interaction questions for the following teaching text:\n\n{text}"
                 }
             ]
+        }
+        
+        response = requests.post(
+            url, 
+            headers=headers, 
+            json=payload, 
+            timeout=30,
+            verify=True  # 确保SSL验证
         )
         
-        questions_text = completion.choices[0].message.content.strip()
-        questions = [q.strip() for q in questions_text.split('\n') if q.strip()]
+        if response.status_code == 200:
+            result = response.json()
+            content = result.get('choices', [{}])[0].get('message', {}).get('content', '')
+            questions = [q.strip() for q in content.split('\n') if q.strip()]
+            
+            if len(questions) >= 3:
+                print("HTTP request to Ark API successful")
+                return questions[:3]
         
-        if len(questions) < 3:
-            questions.extend(generate_questions_fallback(text)[:3-len(questions)])
-        
-        return questions[:3]
+        print(f"HTTP request failed with status: {response.status_code}")
+        return generate_questions_fallback(text)
         
     except Exception as e:
-        print(f"Ark API error: {e}")
+        print(f"HTTP request error: {e}")
         return generate_questions_fallback(text)
 
 def generate_questions_with_openai(text: str, api_key: str) -> List[str]:
