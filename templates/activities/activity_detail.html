@@ -709,27 +709,41 @@ function resetActivity() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing buttons...');
+    
     const startButton = document.getElementById('start-activity');
     const stopButton = document.getElementById('stop-activity');
     const resetButton = document.getElementById('reset-activity');
     
     if (startButton) {
         console.log('Start button found, adding click listener');
-        startButton.addEventListener('click', startActivity);
+        startButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Start button clicked');
+            startActivity();
+        });
     } else {
         console.log('Start button not found');
     }
     
     if (stopButton) {
         console.log('Stop button found, adding click listener');
-        stopButton.addEventListener('click', stopActivity);
+        stopButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Stop button clicked');
+            stopActivity();
+        });
     } else {
         console.log('Stop button not found');
     }
     
     if (resetButton) {
         console.log('Reset button found, adding click listener');
-        resetButton.addEventListener('click', resetActivity);
+        resetButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Reset button clicked');
+            resetActivity();
+        });
     } else {
         console.log('Reset button not found');
     }

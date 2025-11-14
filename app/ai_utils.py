@@ -41,6 +41,78 @@ except ImportError:
     Ark = None
 
 def generate_questions(text: str) -> List[str]:
+    """
+    智能问题生成 - 多重备用方案
+    优先级：ARK API > OpenAI API > 本地智能生成 > 基础模板生成
+    """
+    # 检查可用的API密钥
+    ark_api_key = os.environ.get('ARK_API_KEY')
+    openai_api_key = os.environ.get('OPENAI_API_KEY')
+    
+    # 首先尝试ARK API（如果密钥有效）
+    if ark_api_key and ark_api_key != 'your-bytedance-ark-api-key-here' and len(ark_api_key) > 10:
+        try:
+            print("尝试使用 ARK API...")
+            return generate_questions_with_ark(text, ark_api_key)
+        except Exception as e:
+            print(f"ARK API 失败: {e}")
+    
+    # 然后尝试OpenAI API
+    if openai_api_key and openai_api_key != 'your-openai-api-key-here' and openai_api_key.startswith('sk-'):
+        try:
+            print("尝试使用 OpenAI API...")
+            return generate_questions_with_openai(text)
+        except Exception as e:
+            print(f"OpenAI API 失败: {e}")
+    
+    # 使用增强的本地智能生成
+    try:
+        print("使用增强的本地智能生成...")
+        return generate_questions_smart_fallback(text)
+    except Exception as e:
+        print(f"智能生成失败: {e}")
+    
+    # 最后的基础备用方案
+    print("使用基础模板生成...")
+    return generate_questions_fallback(text)
+from collections import Counter
+import json
+
+# 添加文件处理支持
+try:
+    from docx import Document
+except ImportError:
+    Document = None
+
+try:
+    import PyPDF2
+except ImportError:
+    PyPDF2 = None
+
+try:
+    import pdfplumber
+except ImportError:
+    pdfplumber = None
+
+try:
+    from pptx import Presentation
+except ImportError:
+    Presentation = None
+
+# 添加dotenv支持
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
+# 添加火山引擎SDK支持
+try:
+    from volcenginesdkarkruntime import Ark
+except ImportError:
+    Ark = None
+
+def generate_questions(text: str) -> List[str]:
     # Check for valid API keys in priority order
     ark_api_key = os.environ.get('ARK_API_KEY')
     openai_api_key = os.environ.get('OPENAI_API_KEY')
@@ -137,11 +209,12 @@ def generate_questions_with_ark_http(text: str, api_key: str) -> List[str]:
     import json
     
     try:
-        url = "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
+        url = "https://180.184.34.49/api/v3/chat/completions"
         
         headers = {
             "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Host": "ark.cn-beijing.volces.com"
         }
         
         payload = {
@@ -247,10 +320,11 @@ def generate_activity_from_content(content: str, activity_type: str) -> Dict[str
 def generate_activity_with_ark(content: str, activity_type: str, api_key: str) -> Dict[str, Any]:
     """Generate activity using ByteDance Ark API"""
     try:
-        url = "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
+        url = "https://180.184.34.49/api/v3/chat/completions"
         headers = {
             "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Host": "ark.cn-beijing.volces.com"
         }
         
         if activity_type == 'quiz':
@@ -454,10 +528,11 @@ def group_answers(answers: List[str]) -> Dict[str, Any]:
 def group_answers_with_ark(answers: List[str], api_key: str) -> Dict[str, Any]:
     """Group answers using ByteDance Ark API"""
     try:
-        url = "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
+        url = "https://180.184.34.49/api/v3/chat/completions"
         headers = {
             "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Host": "ark.cn-beijing.volces.com"
         }
         
         answers_text = '\n'.join([f"{i+1}. {answer}" for i, answer in enumerate(answers)])
