@@ -3,17 +3,53 @@
 {% block title %}Profile - Classroom Platform{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-lg-8 col-md-10">
-        <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white">
-                <h4 class="card-title mb-0">
-                    <i class="bi bi-person-circle"></i> Personal Information
-                </h4>
-            </div>
-            <div class="card-body p-4">
+<style>
+/* Page wrapper styles to match admin_dashboard */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background: #eef4f8;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    box-sizing: border-box;
+}
+.body-hero {
+    padding: 12px 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    width: 100%;
+}
+.main-panel {
+    width: calc(100vw - 32px);
+    max-width: none;
+    margin: 18px auto;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 28px 36px;
+    box-shadow: 0 40px 90px rgba(8,35,70,0.12);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+}
+</style>
+
+<div class="body-hero">
+    <div class="main-panel">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-md-12">
+                <div class="page-title-card d-flex align-items-center mb-4">
+                    <h4 class="mb-0">
+                        <i class="bi bi-person-circle text-primary"></i>
+                        Personal Information
+                    </h4>
+                </div>
+                <div class="p-4">
                 <div class="row">
-                    <div class="col-md-4 text-center mb-4">
+                    <div class="col-md-3 text-start mb-4">
                         <div class="profile-avatar mb-3">
                             <i class="bi bi-person-circle text-primary" style="font-size: 6rem;"></i>
                         </div>
@@ -162,18 +198,23 @@
                         <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
                     </a>
                 </div>
+                </div>
             </div>
-        </div>
+      </div>
     </div>
+  </div>
 </div>
 
 <style>
 .profile-avatar {
     transition: transform 0.3s ease;
+    margin-left: 0; /* ensure left-aligned */
 }
 .profile-avatar:hover {
     transform: scale(1.05);
 }
+
+.profile-role { text-align: left; margin-top: 0.25rem; }
 
 .info-item {
     padding: 1rem;

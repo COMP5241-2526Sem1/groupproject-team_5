@@ -3,7 +3,71 @@
 {% block title %}Activity Analytics - {{ activity.title }}{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<style>
+/* 与 activity_results / activity_detail 视觉一致（仅样式，不改功能） */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background: #eef4f8;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    box-sizing: border-box;
+}
+
+/* 容器与白卡 */
+.body-hero {
+    padding: 12px 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    width: 100%;
+}
+.main-panel {
+    width: calc(100vw - 32px);
+    max-width: none;
+    margin: 18px auto;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 28px 36px;
+    box-shadow: 0 40px 90px rgba(8,35,70,0.12);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+}
+
+/* 标题与卡片样式一致化 */
+.page-header { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:8px 0 18px; }
+.page-header h2 { margin:0; font-weight:800; color:#153d5a; font-size:24px; line-height:1.2; }
+.card { background: #ffffff; border-radius:12px; box-shadow: 0 8px 30px rgba(12,45,80,0.04); border: 1px solid rgba(12,45,80,0.04); overflow:hidden; }
+.card .card-body { padding:20px; }
+.card .card-header { background: transparent; }
+
+/* Word cloud container styling moved from inline attribute to stylesheet
+   to avoid editor CSS-parser confusion when styles appear inside HTML attributes. */
+.word-cloud-container {
+    width: 100%;
+    height: 500px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    overflow: hidden;
+    position: relative;
+}
+.word-cloud-container canvas { display:block; max-width:100%; max-height:100%; }
+
+@media (max-width: 992px) {
+    .main-panel { padding:20px; width: calc(100vw - 28px); }
+}
+</style>
+
+<div class="body-hero">
+    <div class="main-panel">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2><i class="bi bi-graph-up"></i> Activity Analytics </h2>
         <div>
@@ -66,11 +130,11 @@
                                     <span>{{ option }}</span>
                                     <span class="badge bg-primary">{{ count }}</span>
                                 </div>
-                                <div class="progress">
-                                    <div class="progress-bar" role="progressbar" 
-                                         style="width: {{ (count / analytics.total_responses * 100) if analytics.total_responses > 0 else 0 }}%">
-                                    </div>
-                                </div>
+                                 <div class="progress">
+                                 <div class="progress-bar" role="progressbar" 
+                                     data-width="{{ (count / analytics.total_responses * 100) if analytics.total_responses > 0 else 0 }}">
+                                 </div>
+                              </div>
                             </div>
                             {% endfor %}
                         {% elif activity.type == 'quiz' %}
@@ -87,7 +151,7 @@
                             <div class="mt-3">
                                 <div class="progress">
                                     <div class="progress-bar bg-success" role="progressbar" 
-                                         style="width: {{ analytics.response_distribution.accuracy_rate }}%">
+                                         data-width="{{ analytics.response_distribution.accuracy_rate }}">
                                         {{ "%.1f"|format(analytics.response_distribution.accuracy_rate) }}%
                                     </div>
                                 </div>
@@ -152,120 +216,59 @@
                             </p>
                         </div>
                     </div>
-                    <div class="word-cloud-container" style="
-                        width: 100%;
-                        height: 500px;
-                        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-                        border-radius: 15px;
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        padding: 20px;
-                        overflow: hidden;
-                        position: relative;">
-                        <canvas id="wordcloud-canvas-analytics-{{ activity.id }}"></canvas>
+                    <div class="word-cloud-container">
+                        <canvas id="wordcloud-canvas-analytics"></canvas>
                     </div>
+                    <script id="wordlist-json" type="application/json">{{ analytics.word_analysis.most_common|tojson }}</script>
                     <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.2/src/wordcloud2.min.js"></script>
                     <script>
                     (function() {
                         function generateWordCloud() {
-                            const canvas = document.getElementById('wordcloud-canvas-analytics-{{ activity.id }}');
+                            const canvas = document.getElementById('wordcloud-canvas-analytics');
                             if (!canvas) return;
-                            
                             const container = canvas.parentElement;
-                            // 确保有足够的边距，防止词被裁剪
                             const padding = 30;
-                            const containerWidth = container.offsetWidth - (padding * 2);
-                            const containerHeight = container.offsetHeight - (padding * 2);
-                            
-                            // 设置canvas尺寸，留出边距
+                            const containerWidth = Math.max(100, container.offsetWidth - (padding * 2));
+                            const containerHeight = Math.max(100, container.offsetHeight - (padding * 2));
                             canvas.width = containerWidth;
                             canvas.height = containerHeight;
                             canvas.style.width = containerWidth + 'px';
                             canvas.style.height = containerHeight + 'px';
-                            
-                            {% set word_list = analytics.word_analysis.most_common %}
-                            {% set max_freq = word_list[0][1] if word_list else 1 %}
-                            
-                            const wordList = [
-                                {% for word, freq in word_list %}
-                                ['{{ word }}', {{ freq }}]{% if not loop.last %},{% endif %}
-                                {% endfor %}
-                            ];
-                            
-                            if (wordList.length === 0) return;
-                            
-                            // Color function with random color assignment
-                            const maxFreq = {{ max_freq }};
-                            
-                            // 丰富的颜色调色板
-                            const colorPalette = [
-                                '#0d6efd', // Blue
-                                '#6610f2', // Purple
-                                '#d63384', // Pink
-                                '#dc3545', // Red
-                                '#fd7e14', // Orange
-                                '#ffc107', // Yellow
-                                '#20c997', // Teal
-                                '#198754', // Green
-                                '#0dcaf0', // Cyan
-                                '#6f42c1', // Indigo
-                                '#e83e8c', // Magenta
-                                '#0056b3', // Dark Blue
-                                '#4a148c', // Dark Purple
-                                '#a02669', // Dark Pink
-                                '#b02a37', // Dark Red
-                                '#c4620a', // Dark Orange
-                                '#cc9a00', // Dark Yellow
-                                '#146c43', // Dark Green
-                                '#087990', // Dark Cyan
-                                '#4a0e4e'  // Dark Indigo
-                            ];
-                            
-                            // 为每个词预先分配随机颜色（确保同一词每次都是相同颜色）
+
+                            // Read word list from JSON script
+                            let wordList = [];
+                            try {
+                                const raw = document.getElementById('wordlist-json').textContent || '[]';
+                                const parsed = JSON.parse(raw);
+                                if (Array.isArray(parsed)) { wordList = parsed; }
+                            } catch (e) { console.error('Failed to parse word list JSON', e); return; }
+
+                            if (!wordList || wordList.length === 0) return;
+
+                            const colorPalette = ['#0d6efd','#6610f2','#d63384','#dc3545','#fd7e14','#ffc107','#20c997','#198754','#0dcaf0','#6f42c1','#e83e8c','#0056b3','#4a148c','#a02669','#b02a37','#c4620a','#cc9a00','#146c43','#087990','#4a0e4e'];
                             const wordColorMap = {};
-                            wordList.forEach((wordData, idx) => {
-                                const word = wordData[0];
-                                // 使用词的哈希值来确保同一词总是得到相同颜色
-                                let hash = 0;
-                                for (let i = 0; i < word.length; i++) {
-                                    hash = word.charCodeAt(i) + ((hash << 5) - hash);
-                                }
+                            wordList.forEach((wordData) => {
+                                const word = String(wordData[0]);
+                                let hash = 0; for (let i = 0; i < word.length; i++) { hash = word.charCodeAt(i) + ((hash << 5) - hash); }
                                 wordColorMap[word] = colorPalette[Math.abs(hash) % colorPalette.length];
                             });
-                            
-                            const getColor = function(word, weight, fontSize, distance, theta) {
-                                // 返回预先分配的随机颜色
-                                return wordColorMap[word] || colorPalette[0];
-                            };
-                            
-                            // Generate word cloud
+                            const getColor = function(word) { return wordColorMap[word] || colorPalette[0]; };
+
                             if (typeof WordCloud !== 'undefined') {
-                                // 计算字体大小范围
-                                const maxFreq = Math.max(...wordList.map(w => w[1]));
-                                const minFreq = Math.min(...wordList.map(w => w[1]));
-                                const freqRange = maxFreq - minFreq;
-                                
-                                // 设置字体大小范围：增大高频词字体
-                                const maxFontSize = Math.min(containerWidth / 5, 120); // 最大字体120px，增大高频词
-                                const minFontSize = Math.max(containerWidth / 45, 14); // 最小字体14px
-                                
+                                const freqs = wordList.map(w => w[1]);
+                                const maxFreq = Math.max(...freqs);
+                                const minFreq = Math.min(...freqs);
+                                const freqRange = (maxFreq - minFreq) || 1;
+                                const maxFontSize = Math.min(containerWidth / 5, 120);
+                                const minFontSize = Math.max(containerWidth / 45, 14);
+
                                 WordCloud(canvas, {
                                     list: wordList,
-                                    gridSize: Math.round(6 * containerWidth / 1024), // 减小网格大小，让词更紧密
+                                    gridSize: Math.round(6 * containerWidth / 1024) || 6,
                                     weightFactor: function(size) {
-                                        if (freqRange === 0) return (maxFontSize + minFontSize) / 2;
-                                        
-                                        // 归一化频率 (0-1)
                                         const normalizedFreq = (size - minFreq) / freqRange;
-                                        
-                                        // 使用0.6次方，让高频词更大更突出
                                         const scaledFreq = Math.pow(normalizedFreq, 0.6);
-                                        
-                                        // 计算字体大小
-                                        const fontSize = minFontSize + (maxFontSize - minFontSize) * scaledFreq;
-                                        
-                                        return fontSize;
+                                        return minFontSize + (maxFontSize - minFontSize) * scaledFreq;
                                     },
                                     fontFamily: 'Arial, sans-serif',
                                     color: getColor,
@@ -279,28 +282,28 @@
                                     shuffle: false,
                                     shape: 'circle'
                                 });
-                            } else {
-                                console.error('WordCloud library not loaded');
-                            }
+                            } else { console.error('WordCloud library not loaded'); }
                         }
-                        
-                        // Run on page load and handle resize
-                        function initWordCloud() {
-                            if (document.readyState === 'loading') {
-                                document.addEventListener('DOMContentLoaded', generateWordCloud);
-                            } else {
-                                setTimeout(generateWordCloud, 100);
-                            }
-                        }
-                        
+                        function initWordCloud() { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', generateWordCloud); else setTimeout(generateWordCloud, 100); }
                         initWordCloud();
-                        
-                        // 处理窗口大小变化
-                        let resizeTimer;
-                        window.addEventListener('resize', function() {
-                            clearTimeout(resizeTimer);
-                            resizeTimer = setTimeout(generateWordCloud, 250);
-                        });
+                        let resizeTimer; window.addEventListener('resize', function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(generateWordCloud, 250); });
+                    })();
+                    </script>
+                    <script>
+                    // Set any elements with `data-width` attribute (numeric) to inline style width with percent
+                    (function() {
+                        function applyDataWidths() {
+                            const els = document.querySelectorAll('[data-width]');
+                            els.forEach(function(el) {
+                                try {
+                                    const val = el.getAttribute('data-width');
+                                    if (!val) return;
+                                    const num = Number(val);
+                                    if (!isNaN(num)) el.style.width = num + '%';
+                                } catch (e) { /* noop */ }
+                            });
+                        }
+                        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyDataWidths); else applyDataWidths();
                     })();
                     </script>
                 </div>
@@ -337,6 +340,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
 </div>
 {% endblock %}

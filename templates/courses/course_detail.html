@@ -5,17 +5,15 @@
 {% block content %}
 <style>
 /* 与 course_list / admin_dashboard 视觉一致（仅样式，不改功能） */
-/* 删除：header, .navbar, .site-header, .topbar, .navbar-default { display: none !important; } */
-/* 保留页面样式 */
+/* 保持页面样式，但将背景和主色调整为与 admin_dashboard 一致 */
 html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  background: linear-gradient(135deg,#1e88e5 0%, #6ab7ff 50%, #6dd3c9 100%);
+  background: #eef4f8;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
   box-sizing: border-box;
-  background-attachment: fixed;
 }
 
 /* 容器与白卡 */
@@ -31,7 +29,7 @@ html, body {
   width: calc(100vw - 32px);
   max-width: none;
   margin: 18px auto;
-  background: #ffffff; /* 统一为纯白，避免分层效果 */
+  background: #ffffff;
   border-radius: 14px;
   padding: 28px 36px;
   box-shadow: 0 40px 90px rgba(8,35,70,0.12);
@@ -41,47 +39,47 @@ html, body {
   overflow: auto;
 }
 
-/* 与 course_list / activity_list 一致的 logo 高亮行样式 */
+/* logo 高亮行样式：更柔和的白色高亮，贴合 admin_dashboard */
 .logo-highlight {
   display:flex;
   align-items:center;
   gap:18px;
   padding:12px;
   border-radius:10px;
-  background: linear-gradient(90deg, rgba(240,255,255,0.90), rgba(255,255,255,0.82));
+  background: linear-gradient(90deg, rgba(255,255,255,0.95), rgba(255,255,255,0.9));
   box-shadow: 0 6px 18px rgba(12,45,80,0.04);
   margin-bottom: 16px;
 }
 
-/* 顶部品牌与导航（已由 base 渲染，页内无需重复） */
+/* 顶部品牌与导航（由 base 渲染，页内仅保证文本色一致） */
 .brand { display:flex; align-items:center; gap:14px; }
 .brand .logo { width:56px; height:56px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:#fff; box-shadow: 0 6px 20px rgba(12,45,80,0.05); }
-.brand .wordmark { font-size:22px; font-weight:800; color:#1187d6; }
+.brand .wordmark { font-size:22px; font-weight:800; color:#153d5a; }
 
 .nav-links { display:flex; gap:14px; align-items:center; margin-left:18px; }
 .nav-links a {
-  color:#1565c0;
+  color:#153d5a;
   text-decoration:none;
   font-weight:600;
   font-size:15px;
   padding:8px 12px;
   border-radius:8px;
   background: transparent;
-  border:1px solid rgba(0,0,0,0.02);
+  border:1px solid rgba(0,0,0,0.03);
 }
-.nav-links a:hover { background: rgba(255,255,255,0.14); }
+.nav-links a:hover { background: rgba(21,61,90,0.04); }
 
 /* 右侧用户信息/下拉 */
 .user-area { margin-left:auto; display:flex; align-items:center; gap:12px; }
-.dropdown-toggle { color:#1565c0; font-weight:700; background:transparent; border:none; }
+.dropdown-toggle { color:#153d5a; font-weight:700; background:transparent; border:none; }
 
 /* 页面标题区 */
 .page-header { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:8px 0 18px; }
-.page-header h2 { margin:0; font-weight:800; color:#153d5a;font-size:24px; line-height:1.2;  }
+.page-header h2 { margin:0; font-weight:800; color:#153d5a; font-size:24px; line-height:1.2; }
 
-/* 卡片样式与 course_list 保持一致 */
+/* 卡片样式 */
 .card {
-  background: #ffffff; /* 统一卡片背景为纯白，保持页面整体一致 */
+  background: #ffffff;
   border-radius:12px;
   box-shadow: 0 8px 30px rgba(12,45,80,0.04);
   border: 1px solid rgba(12,45,80,0.04);

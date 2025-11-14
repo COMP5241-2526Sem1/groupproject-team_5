@@ -3,6 +3,44 @@
 {% block title %}Activity List - Classroom Platform{% endblock %}
 
 {% block content %}
+<style>
+.activity-card {
+    transition: all 0.3s ease;
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+    background: #ffffff; /* 外层白色框 */
+    box-shadow: 0 6px 18px rgba(12,45,80,0.04);
+}
+.activity-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.08); }
+.activity-inner {
+    margin: 14px; /* 内间距让白框显现 */
+    border-radius: 12px;
+    padding: 14px;
+    box-sizing: border-box;
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    color: #153d5a; /* 深灰文本 */
+    transition: all 0.25s ease;
+}
+.activity-inner.activity-color-1 { background: linear-gradient(135deg, #f0f9f0 0%, #e8f5e8 50%, #e0f0e0 100%); }
+.activity-inner.activity-color-2 { background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 50%, #ffd9d9 100%); }
+.activity-inner.activity-color-3 { background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 50%, #ddeeff 100%); }
+.activity-inner.activity-color-4 { background: linear-gradient(135deg, #fffef0 0%, #fffae6 50%, #fff6dc 100%); }
+.activity-inner.activity-color-5 { background: linear-gradient(135deg, #faf5ff 0%, #f5ebff 50%, #f0e1ff 100%); }
+.activity-inner.activity-color-6 { background: linear-gradient(135deg, #fff8f0 0%, #fff2e6 50%, #ffebdc 100%); }
+.activity-inner.activity-color-1:hover,
+.activity-inner.activity-color-2:hover,
+.activity-inner.activity-color-3:hover,
+.activity-inner.activity-color-4:hover,
+.activity-inner.activity-color-5:hover,
+.activity-inner.activity-color-6:hover { filter: brightness(0.98); }
+.activity-card .card-body { padding: 0; }
+.activity-card .card-body .card-title a { color: inherit; }
+</style>
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="bi bi-chat-dots"></i> Activity List</h2>
 </div>
@@ -11,42 +49,45 @@
     {% for activity in activities %}
     <div class="col-md-6 col-lg-4 mb-4">
         <div class="card h-100 activity-card">
-            <div class="card-body">
-                <h5 class="card-title">
-                    <a href="{{ url_for('activities.activity_detail', activity_id=activity.id) }}" class="text-decoration-none">
-                        {{ activity.title }}
-                    </a>
-                    {% if activity.is_active %}
-                        <span class="badge bg-success status-badge">Active</span>
-                    {% else %}
-                        <span class="badge bg-secondary status-badge">Ended</span>
-                    {% endif %}
-                </h5>
-                <p class="card-text text-muted">{{ activity.course.name }}</p>
-                <p class="card-text">{{ activity.question[:100] }}{% if activity.question|length > 100 %}...{% endif %}</p>
-                <div class="d-flex justify-content-between align-items-center">
-                    <small class="text-muted">
-                        <i class="bi bi-tag"></i> {{ activity.type }} | 
-                        <i class="bi bi-clock"></i> {{ activity.created_at.strftime('%m-%d %H:%M') }}
-                    </small>
-                    <div class="btn-group btn-group-sm" role="group">
-                        {% if current_user.role in ['admin', 'instructor'] and (current_user.role == 'admin' or activity.course.instructor_id == current_user.id) %}
-                        <a href="{{ url_for('activities.activity_results', activity_id=activity.id) }}" 
-                           class="btn btn-outline-info" title="View Results">
-                            <i class="bi bi-graph-up"></i>
+            <div class="activity-inner activity-color-{{ (loop.index - 1) % 6 + 1 }}">
+                <div class="card-body">
+                    <h5 class="card-title mb-2">
+                        <a href="{{ url_for('activities.activity_detail', activity_id=activity.id) }}" class="text-decoration-none">
+                            {{ activity.title }}
                         </a>
-                        <button type="button" class="btn btn-outline-danger delete-activity-btn" 
-                                data-activity-title="{{ activity.title }}"
-                                data-delete-url="{{ url_for('activities.delete_activity', activity_id=activity.id) }}"
-                                title="Delete Activity">
-                            <i class="bi bi-trash"></i>
-                        </button>
+                        {% if activity.is_active %}
+                            <span class="badge bg-success status-badge">Active</span>
                         {% else %}
-                        <a href="{{ url_for('activities.activity_detail', activity_id=activity.id) }}" 
-                           class="btn btn-outline-primary" title="View Details">
-                            <i class="bi bi-eye"></i>
-                        </a>
+                            <span class="badge bg-secondary status-badge">Ended</span>
                         {% endif %}
+                    </h5>
+                    <p class="card-text text-muted mb-1">{{ activity.course.name }}</p>
+                    <p class="card-text mb-3">{{ activity.question[:100] }}{% if activity.question|length > 100 %}...{% endif %}</p>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="bi bi-tag"></i> {{ activity.type }} | 
+                            <i class="bi bi-clock"></i> {{ activity.created_at.strftime('%m-%d %H:%M') }}
+                        </small>
+                        <div class="btn-group btn-group-sm" role="group">
+                            {% if current_user.role in ['admin', 'instructor'] and (current_user.role == 'admin' or activity.course.instructor_id == current_user.id) %}
+                            <a href="{{ url_for('activities.activity_results', activity_id=activity.id) }}" 
+                               class="btn btn-outline-info" title="View Results">
+                                <i class="bi bi-graph-up"></i>
+                            </a>
+                            <button type="button" class="btn btn-outline-danger delete-activity-btn" 
+                                    data-activity-title="{{ activity.title }}"
+                                    data-delete-url="{{ url_for('activities.delete_activity', activity_id=activity.id) }}"
+                                    title="Delete Activity">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                            {% else %}
+                            <a href="{{ url_for('activities.activity_detail', activity_id=activity.id) }}" 
+                               class="btn btn-outline-primary" title="View Details">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
