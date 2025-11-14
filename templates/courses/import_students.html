@@ -9,7 +9,7 @@ html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  background: linear-gradient(135deg,#1e88e5 0%, #6ab7ff 50%, #6dd3c9 100%);
+  background: #eef4f8;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
   box-sizing: border-box;
@@ -26,31 +26,37 @@ html, body {
   width: 100%;
 }
 .main-panel {
+  /* keep layout positioning but remove the white background so inner card can take that role */
   width: calc(100vw - 32px);
   max-width: none;
   margin: 18px auto;
-  background: #ffffff;
-  border-radius: 14px;
-  padding: 28px 36px;
-  box-shadow: 0 40px 90px rgba(8,35,70,0.12);
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  overflow: auto;
+  overflow: visible;
 }
 
 /* 表单容器样式 */
 .form-container {
-  max-width: 800px;
-  margin: 0 auto;
+  /* allow the inner card to stretch to the former main-panel size */
+  width: 100%;
+  max-width: none;
+  margin: 0;
 }
 
 .card {
+  /* make the card itself act as the main-panel (replace the lower white background) */
+  width: 100%;
   background: #ffffff;
-  border-radius:12px;
-  box-shadow: 0 8px 30px rgba(12,45,80,0.04);
+  border-radius:14px;
+  box-shadow: 0 40px 90px rgba(8,35,70,0.12);
   border: 1px solid rgba(12,45,80,0.04);
   overflow:hidden;
+  box-sizing: border-box;
+  padding: 28px 36px;
 }
 
 .card .card-header {
