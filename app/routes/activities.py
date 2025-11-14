@@ -578,6 +578,7 @@ def activity_results(activity_id):
 @bp.route('/activities/generate_questions', methods=['POST'])
 @login_required
 def generate_questions_route():
+    """AI问题生成路由 - 增强错误处理和日志"""
     if current_user.role not in ['admin', 'instructor']:
         return jsonify({'success': False, 'message': 'Insufficient permissions'})
     
@@ -590,6 +591,7 @@ def generate_questions_route():
         # 验证文件
         is_valid, message = validate_file_upload(file)
         if not is_valid:
+            print(f"❌ File validation failed: {message}")
             return jsonify({'success': False, 'message': message})
         
         # 保存临时文件并提取文本
@@ -600,30 +602,66 @@ def generate_questions_route():
                 file.save(temp_file.name)
                 temp_file_path = temp_file.name
             
+            print(f"📄 Processing file: {file.filename}, extension: {file_extension}")
+            
             # 提取文本
             text = extract_text_from_file(temp_file_path, file_extension)
+            print(f"✅ Extracted {len(text)} characters from file")
             
             # 清理临时文件
             os.unlink(temp_file_path)
             
         except Exception as e:
+            print(f"❌ File processing error: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return jsonify({'success': False, 'message': f'File processing failed: {str(e)}'})
     
     else:
         # 处理JSON请求（原有的文本输入方式）
         data = request.get_json()
         if not data:
+            print("❌ No JSON data provided")
             return jsonify({'success': False, 'message': 'No data provided'})
         text = data.get('text', '').strip()
+        print(f"📝 Received text input: {len(text)} characters")
     
     if not text:
+        print("❌ Empty text provided")
         return jsonify({'success': False, 'message': 'Please enter teaching text or upload a file'})
     
+    # 限制文本长度，避免过长的输入
+    if len(text) > 10000:
+        text = text[:10000]
+        print(f"⚠️  Text truncated to 10000 characters")
+    
     try:
+        print(f"🤖 Starting AI question generation...")
+        print(f"   Text preview: {text[:100]}...")
+        
         questions = generate_questions(text)
+        
+        print(f"✅ Successfully generated {len(questions)} questions")
+        for i, q in enumerate(questions, 1):
+            print(f"   {i}. {q}")
+        
         return jsonify({'success': True, 'questions': questions})
+        
     except Exception as e:
-        return jsonify({'success': False, 'message': f'Generation failed: {str(e)}'})
+        print(f"❌ Question generation error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        # 提供更详细的错误信息
+        error_message = str(e)
+        if 'connection' in error_message.lower():
+            error_message = f"AI service connection failed. Please check network settings. Details: {error_message}"
+        elif 'timeout' in error_message.lower():
+            error_message = f"AI service request timeout. Please try again. Details: {error_message}"
+        elif 'api' in error_message.lower():
+            error_message = f"AI service API error. Details: {error_message}"
+        
+        return jsonify({'success': False, 'message': f'Generation failed: {error_message}'})
 
 @bp.route('/activities/status/<int:activity_id>')
 @login_required

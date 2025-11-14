@@ -53,16 +53,25 @@ def generate_questions(text: str) -> List[str]:
         return generate_questions_fallback(text)
 
 def generate_questions_with_ark(text: str, api_key: str) -> List[str]:
-    """Generate questions using ByteDance Ark API with volcengine SDK"""
+    """Generate questions using ByteDance Ark API with volcengine SDK - Enhanced error handling"""
     try:
         if not Ark:
-            print("Volcengine SDK not available, using fallback")
+            print("⚠️  Volcengine SDK not available, using fallback")
             return generate_questions_fallback(text)
-            
+        
+        print(f"🔧 Initializing ARK client...")
+        print(f"   API Key: {api_key[:10]}...{api_key[-5:]}")
+        print(f"   Base URL: https://ark.cn-beijing.volces.com/api/v3")
+        
         client = Ark(
             base_url="https://ark.cn-beijing.volces.com/api/v3",
             api_key=api_key,
+            timeout=30  # 设置30秒超时
         )
+        
+        print(f"📡 Calling ARK API...")
+        print(f"   Model: doubao-1-5-pro-32k-250115")
+        print(f"   Text length: {len(text)} characters")
         
         completion = client.chat.completions.create(
             model="doubao-1-5-pro-32k-250115",
@@ -73,21 +82,45 @@ def generate_questions_with_ark(text: str, api_key: str) -> List[str]:
                 },
                 {
                     "role": "user",
-                    "content": f"Please generate 3 classroom interaction questions for the following teaching text:\n\n{text}"
+                    "content": f"Please generate 3 classroom interaction questions for the following teaching text:\n\n{text[:2000]}"  # 限制文本长度
                 }
             ]
         )
         
+        print(f"✅ ARK API response received")
+        
         questions_text = completion.choices[0].message.content.strip()
         questions = [q.strip() for q in questions_text.split('\n') if q.strip()]
         
+        print(f"📝 Parsed {len(questions)} questions")
+        
         if len(questions) < 3:
+            print(f"⚠️  Only {len(questions)} questions generated, adding fallback questions")
             questions.extend(generate_questions_fallback(text)[:3-len(questions)])
         
         return questions[:3]
         
     except Exception as e:
-        print(f"Ark API error: {e}")
+        error_msg = str(e)
+        print(f"❌ Ark API error: {error_msg}")
+        
+        # 详细的错误类型判断
+        if 'timeout' in error_msg.lower():
+            print("   Error type: Timeout - API request took too long")
+        elif 'connection' in error_msg.lower():
+            print("   Error type: Connection - Failed to connect to ARK API")
+        elif 'authentication' in error_msg.lower() or '401' in error_msg:
+            print("   Error type: Authentication - Invalid API key")
+        elif 'rate' in error_msg.lower() or '429' in error_msg:
+            print("   Error type: Rate limit - Too many requests")
+        else:
+            print(f"   Error type: Unknown - {error_msg[:200]}")
+        
+        # 打印完整的错误堆栈
+        import traceback
+        traceback.print_exc()
+        
+        print("🔄 Falling back to local question generation")
         return generate_questions_fallback(text)
 
 def generate_questions_with_openai(text: str, api_key: str) -> List[str]:
