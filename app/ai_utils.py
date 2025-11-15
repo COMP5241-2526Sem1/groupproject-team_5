@@ -5,6 +5,7 @@ import openai
 from typing import List, Dict, Any
 from collections import Counter
 import json
+import traceback
 
 # 添加文件处理支持
 try:
@@ -67,32 +68,24 @@ def generate_questions(text: str) -> List[str]:
         return generate_questions_fallback(text)
 
 def generate_questions_with_ark(text: str, api_key: str) -> List[str]:
-    """Generate questions using ByteDance Ark API"""
+    """Generate questions using ByteDance Ark API with official SDK"""
     if not Ark:
         print("❌ [ARK] Ark SDK not available")
         return generate_questions_fallback(text)
     
     try:
-        print(f"🔧 [ARK] Using ARK SDK method...")
+        print(f"🔧 [ARK] Using official ARK SDK method...")
         print(f"   [ARK] API Key: {api_key[:10]}...{api_key[-5:]}")
         print(f"   [ARK] Base URL: https://ark.cn-beijing.volces.com/api/v3")
         
-        # Check proxy settings
-        no_proxy = os.environ.get('no_proxy', '')
-        NO_PROXY = os.environ.get('NO_PROXY', '')
-        print(f"   [ARK] no_proxy env: {no_proxy if no_proxy else 'NOT SET'}")
-        print(f"   [ARK] NO_PROXY env: {NO_PROXY if NO_PROXY else 'NOT SET'}")
+        # Initialize Ark client with official configuration
+        client = Ark(api_key=api_key)
         
-        client = Ark(
-            base_url="https://ark.cn-beijing.volces.com/api/v3",
-            api_key=api_key,
-            timeout=30
-        )
-        
-        print(f"📡 [ARK] Calling ARK API...")
+        print(f"📡 [ARK] Calling ARK API with encryption headers...")
         print(f"   [ARK] Model: doubao-1-5-pro-32k-250115")
         print(f"   [ARK] Text length: {len(text)} characters")
         
+        # Use official SDK pattern with encryption headers
         completion = client.chat.completions.create(
             model="doubao-1-5-pro-32k-250115",
             messages=[
@@ -101,13 +94,16 @@ def generate_questions_with_ark(text: str, api_key: str) -> List[str]:
                     "content": "You are an education expert skilled at generating high-quality classroom interaction questions from teaching text. Please generate 3 questions suitable for classroom interaction based on the given teaching text. Questions should: 1) Test students' understanding of key concepts; 2) Encourage critical thinking; 3) Be suitable for short answer or poll format. Please return 3 questions directly, one per line, without numbering."
                 },
                 {
-                    "role": "user",
+                    "role": "user", 
                     "content": f"Please generate 3 classroom interaction questions for the following teaching text:\n\n{text[:2000]}"
                 }
-            ]
+            ],
+            extra_headers={
+                'x-is-encrypted': 'true'  # Official encryption header
+            }
         )
         
-        print(f"✅ [ARK] ARK API response received")
+        print(f"✅ [ARK] ARK API response received with encryption")
         
         questions_text = completion.choices[0].message.content.strip()
         questions = [q.strip() for q in questions_text.split('\n') if q.strip()]
