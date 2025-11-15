@@ -41,27 +41,47 @@ except ImportError:
     Ark = None
 
 def generate_questions(text: str) -> List[str]:
+    """Generate questions with enhanced logging"""
+    print("=" * 80)
+    print(f"🔍 [AI_UTILS] generate_questions() called")
+    print(f"   [AI_UTILS] Text length: {len(text)} characters")
+    
     # Check for valid API keys in priority order
     ark_api_key = os.environ.get('ARK_API_KEY')
     openai_api_key = os.environ.get('OPENAI_API_KEY')
     
+    print(f"   [AI_UTILS] ARK_API_KEY: {'SET (' + str(len(ark_api_key)) + ' chars)' if ark_api_key else 'NOT SET'}")
+    print(f"   [AI_UTILS] OPENAI_API_KEY: {'SET (' + str(len(openai_api_key)) + ' chars)' if openai_api_key else 'NOT SET'}")
+    
     if ark_api_key and ark_api_key != 'your-bytedance-ark-api-key-here' and len(ark_api_key) > 10:
+        print(f"   [AI_UTILS] ✅ Using ARK API (key length: {len(ark_api_key)})")
+        print("=" * 80)
         return generate_questions_with_ark(text, ark_api_key)
     elif openai_api_key and openai_api_key != 'your-openai-api-key-here' and openai_api_key.startswith('sk-'):
+        print(f"   [AI_UTILS] ✅ Using OpenAI API")
+        print("=" * 80)
         return generate_questions_with_openai(text, openai_api_key)
     else:
+        print(f"   [AI_UTILS] ⚠️  No valid API key found, using fallback")
+        print("=" * 80)
         return generate_questions_fallback(text)
 
 def generate_questions_with_ark(text: str, api_key: str) -> List[str]:
     """Generate questions using ByteDance Ark API"""
     if not Ark:
-        print("❌ Ark SDK not available")
+        print("❌ [ARK] Ark SDK not available")
         return generate_questions_fallback(text)
     
     try:
-        print(f"🔧 Using ARK SDK method...")
-        print(f"   API Key: {api_key[:10]}...{api_key[-5:]}")
-        print(f"   Base URL: https://ark.cn-beijing.volces.com/api/v3")
+        print(f"🔧 [ARK] Using ARK SDK method...")
+        print(f"   [ARK] API Key: {api_key[:10]}...{api_key[-5:]}")
+        print(f"   [ARK] Base URL: https://ark.cn-beijing.volces.com/api/v3")
+        
+        # Check proxy settings
+        no_proxy = os.environ.get('no_proxy', '')
+        NO_PROXY = os.environ.get('NO_PROXY', '')
+        print(f"   [ARK] no_proxy env: {no_proxy if no_proxy else 'NOT SET'}")
+        print(f"   [ARK] NO_PROXY env: {NO_PROXY if NO_PROXY else 'NOT SET'}")
         
         client = Ark(
             base_url="https://ark.cn-beijing.volces.com/api/v3",
@@ -69,9 +89,9 @@ def generate_questions_with_ark(text: str, api_key: str) -> List[str]:
             timeout=30
         )
         
-        print(f"📡 Calling ARK API...")
-        print(f"   Model: doubao-1-5-pro-32k-250115")
-        print(f"   Text length: {len(text)} characters")
+        print(f"📡 [ARK] Calling ARK API...")
+        print(f"   [ARK] Model: doubao-1-5-pro-32k-250115")
+        print(f"   [ARK] Text length: {len(text)} characters")
         
         completion = client.chat.completions.create(
             model="doubao-1-5-pro-32k-250115",
@@ -87,23 +107,27 @@ def generate_questions_with_ark(text: str, api_key: str) -> List[str]:
             ]
         )
         
-        print(f"✅ ARK API response received")
+        print(f"✅ [ARK] ARK API response received")
         
         questions_text = completion.choices[0].message.content.strip()
         questions = [q.strip() for q in questions_text.split('\n') if q.strip()]
         
-        print(f"📝 Parsed {len(questions)} questions")
+        print(f"📝 [ARK] Parsed {len(questions)} questions")
+        for i, q in enumerate(questions, 1):
+            print(f"   [ARK] Q{i}: {q[:60]}{'...' if len(q) > 60 else ''}")
         
         if len(questions) < 3:
-            print(f"⚠️  Only {len(questions)} questions generated, adding fallback")
+            print(f"⚠️  [ARK] Only {len(questions)} questions generated, adding fallback")
             questions.extend(generate_questions_fallback(text)[:3-len(questions)])
         
         return questions[:3]
         
     except Exception as e:
-        print(f"❌ ARK API error: {type(e).__name__}: {str(e)[:100]}")
+        print(f"❌ [ARK] Error: {type(e).__name__}: {str(e)[:200]}")
         import traceback
+        print(f"   [ARK] Full traceback:")
         traceback.print_exc()
+        print(f"   [ARK] Falling back to local questions")
         return generate_questions_fallback(text)
 
 def generate_questions_with_openai(text: str, api_key: str) -> List[str]:

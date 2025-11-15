@@ -636,30 +636,52 @@ def generate_questions_route():
         print(f"⚠️  Text truncated to 10000 characters")
     
     try:
-        print(f"🤖 Starting AI question generation...")
-        print(f"   Text preview: {text[:100]}...")
+        print("=" * 80)
+        print(f"🤖 [ROUTE] Starting AI question generation...")
+        print(f"   [ROUTE] User: {current_user.username} (Role: {current_user.role})")
+        print(f"   [ROUTE] Text length: {len(text)} characters")
+        print(f"   [ROUTE] Text preview: {text[:100]}...")
+        
+        # 检查环境变量
+        import os
+        ark_key = os.environ.get('ARK_API_KEY', '')
+        openai_key = os.environ.get('OPENAI_API_KEY', '')
+        no_proxy = os.environ.get('no_proxy', '')
+        print(f"   [ROUTE] ARK_API_KEY: {'SET (' + ark_key[:10] + '...' + ark_key[-5:] + ')' if ark_key else 'NOT SET'}")
+        print(f"   [ROUTE] OPENAI_API_KEY: {'SET (' + openai_key[:10] + '...)' if openai_key else 'NOT SET'}")
+        print(f"   [ROUTE] no_proxy: {no_proxy if no_proxy else 'NOT SET'}")
+        print(f"   [ROUTE] Calling generate_questions()...")
+        print("=" * 80)
         
         questions = generate_questions(text)
         
-        print(f"✅ Successfully generated {len(questions)} questions")
+        print("=" * 80)
+        print(f"✅ [ROUTE] Successfully generated {len(questions)} questions")
         for i, q in enumerate(questions, 1):
-            print(f"   {i}. {q}")
+            print(f"   [ROUTE] {i}. {q}")
+        print("=" * 80)
         
         return jsonify({'success': True, 'questions': questions})
         
     except Exception as e:
-        print(f"❌ Question generation error: {str(e)}")
+        print("=" * 80)
+        print(f"❌ [ROUTE] Question generation error: {type(e).__name__}: {str(e)}")
         import traceback
+        print(f"   [ROUTE] Full traceback:")
         traceback.print_exc()
+        print("=" * 80)
         
         # 提供更详细的错误信息
         error_message = str(e)
+        error_type = type(e).__name__
         if 'connection' in error_message.lower():
-            error_message = f"AI service connection failed. Please check network settings. Details: {error_message}"
+            error_message = f"[{error_type}] AI service connection failed. Please check network settings. Details: {error_message}"
         elif 'timeout' in error_message.lower():
-            error_message = f"AI service request timeout. Please try again. Details: {error_message}"
+            error_message = f"[{error_type}] AI service request timeout. Please try again. Details: {error_message}"
         elif 'api' in error_message.lower():
-            error_message = f"AI service API error. Details: {error_message}"
+            error_message = f"[{error_type}] AI service API error. Details: {error_message}"
+        else:
+            error_message = f"[{error_type}] {error_message}"
         
         return jsonify({'success': False, 'message': f'Generation failed: {error_message}'})
 
