@@ -257,7 +257,7 @@ def generate_activity_from_content(content: str, activity_type: str) -> Dict[str
     ark_api_key = os.environ.get('ARK_API_KEY')
     openai_api_key = os.environ.get('OPENAI_API_KEY')
     
-    if ark_api_key and ark_api_key != 'your-bytedance-ark-api-key-here' and ark_api_key.startswith('ak-'):
+    if ark_api_key and ark_api_key != 'your-bytedance-ark-api-key-here' and len(ark_api_key) > 10:
         return generate_activity_with_ark(content, activity_type, ark_api_key)
     elif openai_api_key and openai_api_key != 'your-openai-api-key-here' and openai_api_key.startswith('sk-'):
         return generate_activity_with_openai(content, activity_type, openai_api_key)
@@ -464,7 +464,7 @@ def group_answers(answers: List[str]) -> Dict[str, Any]:
     ark_api_key = os.environ.get('ARK_API_KEY')
     openai_api_key = os.environ.get('OPENAI_API_KEY')
     
-    if ark_api_key and ark_api_key != 'your-bytedance-ark-api-key-here' and ark_api_key.startswith('ak-'):
+    if ark_api_key and ark_api_key != 'your-bytedance-ark-api-key-here' and len(ark_api_key) > 10:
         return group_answers_with_ark(answers, ark_api_key)
     elif openai_api_key and openai_api_key != 'your-openai-api-key-here' and openai_api_key.startswith('sk-'):
         return group_answers_with_openai(answers, openai_api_key)
