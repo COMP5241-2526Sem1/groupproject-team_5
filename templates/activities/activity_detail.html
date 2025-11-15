@@ -166,16 +166,16 @@ html, body {
                     {% endif %}
                 </div>
                 
-                {% if activity.type == 'poll' and activity.options %}
+                {% if activity.type == 'poll' and parsed_options %}
                 {% set letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' %}
                 <div class="mt-4">
                     <h6>Options:</h6>
                     <div class="option-stack">
-                        {% for option in activity.options.split('\n') %}
-                        {% if option.strip() %}
+                        {% for option in parsed_options %}
+                        {% if option %}
                         <div class="option-card">
                             <span class="option-label">{{ letters[loop.index0] if loop.index0 < letters|length else loop.index }}</span>
-                            <span class="option-text">{{ option.strip() }}</span>
+                            <span class="option-text">{{ option }}</span>
                         </div>
                         {% endif %}
                         {% endfor %}
@@ -186,15 +186,15 @@ html, body {
                     {% if activity.quiz_type %}
                     <h6>Quiz Type: {{ activity.quiz_type.replace('_', ' ').title() }}</h6>
                     {% endif %}
-                    {% if activity.options %}
+                    {% if parsed_options %}
                     {% set letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' %}
                     <h6>Options:</h6>
                     <div class="option-stack">
-                        {% for option in activity.options.split('\n') %}
-                        {% if option.strip() %}
+                        {% for option in parsed_options %}
+                        {% if option %}
                         <div class="option-card">
                             <span class="option-label">{{ letters[loop.index0] if loop.index0 < letters|length else loop.index }}</span>
-                            <span class="option-text">{{ option.strip() }}</span>
+                            <span class="option-text">{{ option }}</span>
                         </div>
                         {% endif %}
                         {% endfor %}
@@ -243,21 +243,25 @@ html, body {
                             {% if activity.type == 'poll' %}
                             <select id="answer" class="form-select" required>
                                 <option value="">Please select an answer</option>
-                                {% for option in activity.options.split('\n') %}
-                                {% if option.strip() %}
-                                <option value="{{ option.strip() }}">{{ option.strip() }}</option>
+                                {% if parsed_options %}
+                                {% for option in parsed_options %}
+                                {% if option %}
+                                <option value="{{ option }}">{{ option }}</option>
                                 {% endif %}
                                 {% endfor %}
+                                {% endif %}
                             </select>
                             {% elif activity.type == 'quiz' %}
                                 {% if activity.quiz_type == 'multiple_choice' %}
                                 <select id="answer" class="form-select" required>
                                     <option value="">Please select an answer</option>
-                                    {% for option in activity.options.split('\n') %}
-                                    {% if option.strip() %}
-                                    <option value="{{ option.strip() }}">{{ option.strip() }}</option>
+                                    {% if parsed_options %}
+                                    {% for option in parsed_options %}
+                                    {% if option %}
+                                    <option value="{{ option }}">{{ option }}</option>
                                     {% endif %}
                                     {% endfor %}
+                                    {% endif %}
                                 </select>
                                 {% elif activity.quiz_type == 'true_false' %}
                                 <select id="answer" class="form-select" required>

@@ -218,11 +218,27 @@ def activity_detail(activity_id):
         # 数据库存储的是北京时间，传递ISO字符串给前端
         started_at_iso = activity.started_at.isoformat()
     
+    # 解析选项（支持JSON格式和换行符分隔格式）
+    parsed_options = None
+    if activity.options:
+        try:
+            # Try to parse as JSON first
+            parsed = json.loads(activity.options)
+            if isinstance(parsed, list):
+                parsed_options = [str(opt).strip() for opt in parsed if opt]
+            else:
+                # If not a list, treat as newline-separated text
+                parsed_options = [opt.strip() for opt in activity.options.split('\n') if opt.strip()]
+        except (json.JSONDecodeError, ValueError, TypeError):
+            # If not JSON, treat as newline-separated text
+            parsed_options = [opt.strip() for opt in activity.options.split('\n') if opt.strip()]
+    
     return render_template('activities/activity_detail.html', 
                          activity=activity, 
                          my_response=my_response,
                          qr_code=qr_code,
-                         started_at_iso=started_at_iso)
+                         started_at_iso=started_at_iso,
+                         parsed_options=parsed_options)
 
 @bp.route('/activities/<int:activity_id>/start', methods=['POST'])
 @login_required
