@@ -53,75 +53,113 @@ def generate_questions(text: str) -> List[str]:
         return generate_questions_fallback(text)
 
 def generate_questions_with_ark(text: str, api_key: str) -> List[str]:
-    """Generate questions using ByteDance Ark API with volcengine SDK - Enhanced error handling"""
+    """Generate questions using ByteDance Ark API - HTTP method preferred for Render"""
+    
+    # 优先使用HTTP请求方法（更稳定）
     try:
-        if not Ark:
-            print("⚠️  Volcengine SDK not available, using fallback")
-            return generate_questions_fallback(text)
-        
-        print(f"🔧 Initializing ARK client...")
+        print(f"🔧 Using ARK HTTP API method...")
         print(f"   API Key: {api_key[:10]}...{api_key[-5:]}")
         print(f"   Base URL: https://ark.cn-beijing.volces.com/api/v3")
         
-        client = Ark(
-            base_url="https://ark.cn-beijing.volces.com/api/v3",
-            api_key=api_key,
-            timeout=30  # 设置30秒超时
-        )
+        url = "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
         
-        print(f"📡 Calling ARK API...")
-        print(f"   Model: doubao-1-5-pro-32k-250115")
-        print(f"   Text length: {len(text)} characters")
-        
-        completion = client.chat.completions.create(
-            model="doubao-1-5-pro-32k-250115",
-            messages=[
+        payload = {
+            "model": "doubao-1-5-pro-32k-250115",
+            "messages": [
                 {
                     "role": "system",
                     "content": "You are an education expert skilled at generating high-quality classroom interaction questions from teaching text. Please generate 3 questions suitable for classroom interaction based on the given teaching text. Questions should: 1) Test students' understanding of key concepts; 2) Encourage critical thinking; 3) Be suitable for short answer or poll format. Please return 3 questions directly, one per line, without numbering."
                 },
                 {
                     "role": "user",
-                    "content": f"Please generate 3 classroom interaction questions for the following teaching text:\n\n{text[:2000]}"  # 限制文本长度
+                    "content": f"Please generate 3 classroom interaction questions for the following teaching text:\n\n{text[:2000]}"
                 }
-            ]
-        )
+            ],
+            "max_tokens": 500,
+            "temperature": 0.7
+        }
         
-        print(f"✅ ARK API response received")
+        print(f"📡 Calling ARK API via HTTP...")
+        print(f"   Model: doubao-1-5-pro-32k-250115")
+        print(f"   Text length: {len(text)} characters")
         
-        questions_text = completion.choices[0].message.content.strip()
-        questions = [q.strip() for q in questions_text.split('\n') if q.strip()]
+        response = requests.post(url, headers=headers, json=payload, timeout=30)
         
-        print(f"📝 Parsed {len(questions)} questions")
+        print(f"📊 HTTP Response status: {response.status_code}")
         
-        if len(questions) < 3:
-            print(f"⚠️  Only {len(questions)} questions generated, adding fallback questions")
-            questions.extend(generate_questions_fallback(text)[:3-len(questions)])
-        
-        return questions[:3]
-        
-    except Exception as e:
-        error_msg = str(e)
-        print(f"❌ Ark API error: {error_msg}")
-        
-        # 详细的错误类型判断
-        if 'timeout' in error_msg.lower():
-            print("   Error type: Timeout - API request took too long")
-        elif 'connection' in error_msg.lower():
-            print("   Error type: Connection - Failed to connect to ARK API")
-        elif 'authentication' in error_msg.lower() or '401' in error_msg:
-            print("   Error type: Authentication - Invalid API key")
-        elif 'rate' in error_msg.lower() or '429' in error_msg:
-            print("   Error type: Rate limit - Too many requests")
+        if response.status_code == 200:
+            print(f"✅ ARK HTTP API response received")
+            result = response.json()
+            questions_text = result["choices"][0]["message"]["content"].strip()
+            questions = [q.strip() for q in questions_text.split('\n') if q.strip()]
+            
+            print(f"📝 Parsed {len(questions)} questions from HTTP response")
+            
+            if len(questions) < 3:
+                print(f"⚠️  Only {len(questions)} questions generated, adding fallback")
+                questions.extend(generate_questions_fallback(text)[:3-len(questions)])
+            
+            return questions[:3]
         else:
-            print(f"   Error type: Unknown - {error_msg[:200]}")
-        
-        # 打印完整的错误堆栈
+            print(f"⚠️  ARK HTTP returned error status {response.status_code}")
+            print(f"   Response: {response.text[:200]}")
+            
+    except requests.exceptions.ConnectionError as e:
+        print(f"❌ HTTP Connection error: {str(e)[:100]}")
+        print("   Failed to connect to ARK API server")
+    except requests.exceptions.Timeout as e:
+        print(f"❌ HTTP Timeout error: {str(e)[:100]}")
+        print("   Request took longer than 30 seconds")
+    except Exception as e:
+        print(f"❌ HTTP request error: {str(e)[:100]}")
         import traceback
         traceback.print_exc()
-        
-        print("🔄 Falling back to local question generation")
-        return generate_questions_fallback(text)
+    
+    # 如果HTTP失败，尝试SDK方法（备用）
+    if Ark:
+        try:
+            print(f"🔄 Trying ARK SDK as fallback...")
+            
+            client = Ark(
+                base_url="https://ark.cn-beijing.volces.com/api/v3",
+                api_key=api_key,
+                timeout=30
+            )
+            
+            completion = client.chat.completions.create(
+                model="doubao-1-5-pro-32k-250115",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an education expert skilled at generating high-quality classroom interaction questions from teaching text. Please generate 3 questions suitable for classroom interaction based on the given teaching text. Questions should: 1) Test students' understanding of key concepts; 2) Encourage critical thinking; 3) Be suitable for short answer or poll format. Please return 3 questions directly, one per line, without numbering."
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Please generate 3 classroom interaction questions for the following teaching text:\n\n{text[:2000]}"
+                    }
+                ]
+            )
+            
+            print(f"✅ ARK SDK response received")
+            
+            questions_text = completion.choices[0].message.content.strip()
+            questions = [q.strip() for q in questions_text.split('\n') if q.strip()]
+            
+            print(f"📝 Parsed {len(questions)} questions from SDK")
+            
+            if len(questions) >= 3:
+                return questions[:3]
+                
+        except Exception as e:
+            print(f"❌ ARK SDK also failed: {str(e)[:100]}")
+    
+    # 最终降级到本地方案
+    print(f"🔄 Using local fallback question generation")
+    return generate_questions_fallback(text)
 
 def generate_questions_with_openai(text: str, api_key: str) -> List[str]:
     """Generate questions using OpenAI API"""
@@ -151,26 +189,67 @@ def generate_questions_with_openai(text: str, api_key: str) -> List[str]:
         return generate_questions_fallback(text)
 
 def generate_questions_fallback(text: str) -> List[str]:
+    """Improved fallback question generation with better quality"""
+    
+    # 分割句子
     sentences = re.split(r'[.!?。！？]', text)
     sentences = [s.strip() for s in sentences if s.strip() and len(s.strip()) > 10]
     
-    if len(sentences) < 3:
+    # 如果文本太短，返回通用问题
+    if len(sentences) < 2:
         return [
-            "What are the main points of this text?",
-            "What core ideas do you think the author wants to express?",
-            "What are the most important concepts in this content?"
+            "What is the main topic discussed in this text?",
+            "What key concepts or ideas are presented?",
+            "How would you apply this knowledge in practice?"
         ]
     
     questions = []
-    for i, sentence in enumerate(sentences[:3]):
-        if '是' in sentence or '为' in sentence or '有' in sentence:
-            questions.append(f"According to the text, {sentence}?")
-        elif '可以' in sentence or '能够' in sentence:
-            questions.append(f"The text mentions {sentence}, what do you think this means?")
-        else:
-            questions.append(f"Please explain: {sentence}?")
     
-    return questions
+    # 策略1: 基于第一句生成"什么是"问题
+    first_sentence = sentences[0]
+    # 提取主题词（简单方法：取前几个关键词）
+    words = first_sentence.split()[:5]
+    subject = ' '.join(words) if len(words) <= 5 else words[0]
+    questions.append(f"What is {subject} and why is it important?")
+    
+    # 策略2: 基于句子类型生成问题
+    for sentence in sentences[1:min(3, len(sentences))]:
+        sentence_lower = sentence.lower()
+        
+        # 检测定义型句子
+        if any(word in sentence_lower for word in [' is ', ' are ', ' means ', ' refers to ']):
+            # 提取关键术语
+            key_terms = [w for w in sentence.split() if len(w) > 4][:2]
+            if key_terms:
+                questions.append(f"Can you explain the relationship between {' and '.join(key_terms)}?")
+            else:
+                questions.append(f"How would you define the concepts mentioned in: {sentence[:60]}...?")
+        
+        # 检测功能/能力型句子  
+        elif any(word in sentence_lower for word in ['can ', 'enable', 'allow', 'provide', 'help']):
+            questions.append(f"What are the practical applications of: {sentence[:60]}...?")
+        
+        # 检测过程型句子
+        elif any(word in sentence_lower for word in ['process', 'method', 'approach', 'technique', 'way']):
+            questions.append(f"Can you describe how this works: {sentence[:60]}...?")
+        
+        # 通用问题
+        else:
+            questions.append(f"What are your thoughts on: {sentence[:60]}...?")
+        
+        if len(questions) >= 3:
+            break
+    
+    # 如果还不够3个问题，添加批判性思考问题
+    if len(questions) < 3:
+        critical_questions = [
+            "What are the potential limitations or challenges of this approach?",
+            "How does this compare to other methods or concepts you know?",
+            "What questions do you still have about this topic?"
+        ]
+        questions.extend(critical_questions[:3 - len(questions)])
+    
+    return questions[:3]
 
 def generate_activity_from_content(content: str, activity_type: str) -> Dict[str, Any]:
     """Generate a complete activity from teaching content"""
