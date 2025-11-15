@@ -638,7 +638,7 @@ def generate_questions_route():
     try:
         print("=" * 80)
         print(f"🤖 [ROUTE] Starting AI question generation...")
-        print(f"   [ROUTE] User: {current_user.username} (Role: {current_user.role})")
+        print(f"   [ROUTE] User: {current_user.name} (ID: {current_user.id}, Role: {current_user.role})")
         print(f"   [ROUTE] Text length: {len(text)} characters")
         print(f"   [ROUTE] Text preview: {text[:100]}...")
         
