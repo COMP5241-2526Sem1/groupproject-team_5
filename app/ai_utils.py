@@ -53,23 +53,29 @@ def generate_questions(text: str) -> List[str]:
         return generate_questions_fallback(text)
 
 def generate_questions_with_ark(text: str, api_key: str) -> List[str]:
-    """Generate questions using ByteDance Ark API - HTTP method preferred for Render"""
+    """Generate questions using ByteDance Ark API"""
+    if not Ark:
+        print("❌ Ark SDK not available")
+        return generate_questions_fallback(text)
     
-    # 优先使用HTTP请求方法（更稳定）
     try:
-        print(f"🔧 Using ARK HTTP API method...")
+        print(f"🔧 Using ARK SDK method...")
         print(f"   API Key: {api_key[:10]}...{api_key[-5:]}")
         print(f"   Base URL: https://ark.cn-beijing.volces.com/api/v3")
         
-        url = "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
-        }
+        client = Ark(
+            base_url="https://ark.cn-beijing.volces.com/api/v3",
+            api_key=api_key,
+            timeout=30
+        )
         
-        payload = {
-            "model": "doubao-1-5-pro-32k-250115",
-            "messages": [
+        print(f"📡 Calling ARK API...")
+        print(f"   Model: doubao-1-5-pro-32k-250115")
+        print(f"   Text length: {len(text)} characters")
+        
+        completion = client.chat.completions.create(
+            model="doubao-1-5-pro-32k-250115",
+            messages=[
                 {
                     "role": "system",
                     "content": "You are an education expert skilled at generating high-quality classroom interaction questions from teaching text. Please generate 3 questions suitable for classroom interaction based on the given teaching text. Questions should: 1) Test students' understanding of key concepts; 2) Encourage critical thinking; 3) Be suitable for short answer or poll format. Please return 3 questions directly, one per line, without numbering."
@@ -78,88 +84,27 @@ def generate_questions_with_ark(text: str, api_key: str) -> List[str]:
                     "role": "user",
                     "content": f"Please generate 3 classroom interaction questions for the following teaching text:\n\n{text[:2000]}"
                 }
-            ],
-            "max_tokens": 500,
-            "temperature": 0.7
-        }
+            ]
+        )
         
-        print(f"📡 Calling ARK API via HTTP...")
-        print(f"   Model: doubao-1-5-pro-32k-250115")
-        print(f"   Text length: {len(text)} characters")
+        print(f"✅ ARK API response received")
         
-        response = requests.post(url, headers=headers, json=payload, timeout=30)
+        questions_text = completion.choices[0].message.content.strip()
+        questions = [q.strip() for q in questions_text.split('\n') if q.strip()]
         
-        print(f"📊 HTTP Response status: {response.status_code}")
+        print(f"📝 Parsed {len(questions)} questions")
         
-        if response.status_code == 200:
-            print(f"✅ ARK HTTP API response received")
-            result = response.json()
-            questions_text = result["choices"][0]["message"]["content"].strip()
-            questions = [q.strip() for q in questions_text.split('\n') if q.strip()]
-            
-            print(f"📝 Parsed {len(questions)} questions from HTTP response")
-            
-            if len(questions) < 3:
-                print(f"⚠️  Only {len(questions)} questions generated, adding fallback")
-                questions.extend(generate_questions_fallback(text)[:3-len(questions)])
-            
-            return questions[:3]
-        else:
-            print(f"⚠️  ARK HTTP returned error status {response.status_code}")
-            print(f"   Response: {response.text[:200]}")
-            
-    except requests.exceptions.ConnectionError as e:
-        print(f"❌ HTTP Connection error: {str(e)[:100]}")
-        print("   Failed to connect to ARK API server")
-    except requests.exceptions.Timeout as e:
-        print(f"❌ HTTP Timeout error: {str(e)[:100]}")
-        print("   Request took longer than 30 seconds")
+        if len(questions) < 3:
+            print(f"⚠️  Only {len(questions)} questions generated, adding fallback")
+            questions.extend(generate_questions_fallback(text)[:3-len(questions)])
+        
+        return questions[:3]
+        
     except Exception as e:
-        print(f"❌ HTTP request error: {str(e)[:100]}")
+        print(f"❌ ARK API error: {type(e).__name__}: {str(e)[:100]}")
         import traceback
         traceback.print_exc()
-    
-    # 如果HTTP失败，尝试SDK方法（备用）
-    if Ark:
-        try:
-            print(f"🔄 Trying ARK SDK as fallback...")
-            
-            client = Ark(
-                base_url="https://ark.cn-beijing.volces.com/api/v3",
-                api_key=api_key,
-                timeout=30
-            )
-            
-            completion = client.chat.completions.create(
-                model="doubao-1-5-pro-32k-250115",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are an education expert skilled at generating high-quality classroom interaction questions from teaching text. Please generate 3 questions suitable for classroom interaction based on the given teaching text. Questions should: 1) Test students' understanding of key concepts; 2) Encourage critical thinking; 3) Be suitable for short answer or poll format. Please return 3 questions directly, one per line, without numbering."
-                    },
-                    {
-                        "role": "user",
-                        "content": f"Please generate 3 classroom interaction questions for the following teaching text:\n\n{text[:2000]}"
-                    }
-                ]
-            )
-            
-            print(f"✅ ARK SDK response received")
-            
-            questions_text = completion.choices[0].message.content.strip()
-            questions = [q.strip() for q in questions_text.split('\n') if q.strip()]
-            
-            print(f"📝 Parsed {len(questions)} questions from SDK")
-            
-            if len(questions) >= 3:
-                return questions[:3]
-                
-        except Exception as e:
-            print(f"❌ ARK SDK also failed: {str(e)[:100]}")
-    
-    # 最终降级到本地方案
-    print(f"🔄 Using local fallback question generation")
-    return generate_questions_fallback(text)
+        return generate_questions_fallback(text)
 
 def generate_questions_with_openai(text: str, api_key: str) -> List[str]:
     """Generate questions using OpenAI API"""
@@ -266,12 +211,16 @@ def generate_activity_from_content(content: str, activity_type: str) -> Dict[str
 
 def generate_activity_with_ark(content: str, activity_type: str, api_key: str) -> Dict[str, Any]:
     """Generate activity using ByteDance Ark API"""
+    if not Ark:
+        print("❌ Ark SDK not available")
+        return generate_activity_fallback(content, activity_type)
+    
     try:
-        url = "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
-        }
+        client = Ark(
+            base_url="https://ark.cn-beijing.volces.com/api/v3",
+            api_key=api_key,
+            timeout=30
+        )
         
         if activity_type == 'quiz':
             prompt = f"""Based on the following teaching content, create a quiz question with multiple choice options and correct answer.
@@ -321,9 +270,9 @@ Please return a JSON object with:
 
 Format as valid JSON only."""
         
-        payload = {
-            "model": "doubao-1-5-pro-32k-250115",
-            "messages": [
+        completion = client.chat.completions.create(
+            model="doubao-1-5-pro-32k-250115",
+            messages=[
                 {
                     "role": "system",
                     "content": "You are an expert educator creating interactive learning activities. Always return valid JSON format."
@@ -332,17 +281,11 @@ Format as valid JSON only."""
                     "role": "user",
                     "content": prompt
                 }
-            ],
-            "max_tokens": 500,
-            "temperature": 0.7
-        }
+            ]
+        )
         
-        response = requests.post(url, headers=headers, json=payload, timeout=30)
-        response.raise_for_status()
-        
-        result = response.json()
-        activity_data = json.loads(result["choices"][0]["message"]["content"].strip())
-        return activity_data
+        result = json.loads(completion.choices[0].message.content.strip())
+        return result
         
     except Exception as e:
         print(f"Ark API error: {e}")
@@ -473,12 +416,16 @@ def group_answers(answers: List[str]) -> Dict[str, Any]:
 
 def group_answers_with_ark(answers: List[str], api_key: str) -> Dict[str, Any]:
     """Group answers using ByteDance Ark API"""
+    if not Ark:
+        print("❌ Ark SDK not available")
+        return group_answers_fallback(answers)
+    
     try:
-        url = "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
-        }
+        client = Ark(
+            base_url="https://ark.cn-beijing.volces.com/api/v3",
+            api_key=api_key,
+            timeout=30
+        )
         
         answers_text = '\n'.join([f"{i+1}. {answer}" for i, answer in enumerate(answers)])
         
@@ -492,9 +439,9 @@ Student answers:
 
 Format as valid JSON only."""
         
-        payload = {
-            "model": "doubao-1-5-pro-32k-250115",
-            "messages": [
+        completion = client.chat.completions.create(
+            model="doubao-1-5-pro-32k-250115",
+            messages=[
                 {
                     "role": "system",
                     "content": "You are an expert educator analyzing student responses. Group similar answers and provide insights. Always return valid JSON format."
@@ -503,17 +450,11 @@ Format as valid JSON only."""
                     "role": "user",
                     "content": prompt
                 }
-            ],
-            "max_tokens": 800,
-            "temperature": 0.3
-        }
+            ]
+        )
         
-        response = requests.post(url, headers=headers, json=payload, timeout=30)
-        response.raise_for_status()
-        
-        result = response.json()
-        grouped_data = json.loads(result["choices"][0]["message"]["content"].strip())
-        return grouped_data
+        result = json.loads(completion.choices[0].message.content.strip())
+        return result
         
     except Exception as e:
         print(f"Ark API error: {e}")
