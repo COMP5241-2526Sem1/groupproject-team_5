@@ -44,16 +44,20 @@ def list_activities():
     page = request.args.get('page', 1, type=int)
     per_page = 9  # Display 9 activities per page
     
+    # Get courses for create activity dropdown
+    user_courses = []
     if current_user.role == 'admin':
         activities = Activity.query.order_by(Activity.created_at.desc()).paginate(
             page=page, per_page=per_page, error_out=False
         )
+        user_courses = Course.query.order_by(Course.name).all()
     elif current_user.role == 'instructor':
         activities = Activity.query.join(Course).filter(
             Course.instructor_id == current_user.id
         ).order_by(Activity.created_at.desc()).paginate(
             page=page, per_page=per_page, error_out=False
         )
+        user_courses = Course.query.filter_by(instructor_id=current_user.id).order_by(Course.name).all()
     else:
         enrolled_courses = [enrollment.course for enrollment in current_user.enrollments]
         course_ids = [course.id for course in enrolled_courses]
@@ -63,7 +67,7 @@ def list_activities():
             page=page, per_page=per_page, error_out=False
         )
     
-    return render_template('activities/activity_list.html', activities=activities.items, pagination=activities)
+    return render_template('activities/activity_list.html', activities=activities.items, pagination=activities, user_courses=user_courses)
 
 def auto_end_activity(activity_id, duration_seconds, started_at_timestamp):
     """Background task: Automatically end activity
