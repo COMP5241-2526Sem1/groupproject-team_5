@@ -4,82 +4,385 @@
 
 {% block content %}
 <style>
-.leaderboard-header {
-    background: linear-gradient(135deg, #ffffff20, #ffffff10);
-    backdrop-filter: blur(10px);
-    border-radius: 15px;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+/* 优化的排行榜页面样式 - 符合整体柔和渐变风格 */
+.leaderboard-container {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e3f2fd 50%, #bbdefb 100%);
+    min-height: calc(100vh - 100px);
+    padding: 40px 0;
 }
 
+/* 页面标题区优化 */
+.leaderboard-header {
+    background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 24px rgba(33, 150, 243, 0.25);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.leaderboard-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+    animation: rotate 20s linear infinite;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.leaderboard-header:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(33, 150, 243, 0.35);
+}
+
+.leaderboard-header .trophy-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 50%;
+    position: relative;
+    z-index: 1;
+    animation: float 3s ease-in-out infinite, pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.5); }
+    50% { box-shadow: 0 0 40px rgba(255, 255, 255, 0.8); }
+}
+
+.leaderboard-header .trophy-icon i {
+    font-size: 3rem;
+    color: #fff;
+}
+
+.leaderboard-header h2,
+.leaderboard-header p {
+    color: white;
+    position: relative;
+    z-index: 1;
+    margin: 0;
+}
+
+.leaderboard-header h2 {
+    font-weight: 800;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.leaderboard-header p {
+    opacity: 0.95;
+    margin-top: 5px !important;
+}
+
+/* 排行榜主卡片优化 */
 .leaderboard-card {
     border: none;
-    border-radius: 15px;
+    border-radius: 20px;
     overflow: hidden;
-    background: #fff;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    background: #ffffff;
+    box-shadow: 0 8px 30px rgba(33, 150, 243, 0.12);
+    transition: all 0.3s ease;
 }
 
+.leaderboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(33, 150, 243, 0.2);
+}
+
+.leaderboard-card .card-header {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e3f2fd 100%);
+    border-bottom: 2px solid rgba(33, 150, 243, 0.1);
+    padding: 20px 24px;
+}
+
+.leaderboard-card .card-header h5 {
+    font-weight: 700;
+    color: #1565c0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.leaderboard-card .card-header i {
+    color: #2196f3;
+    font-size: 1.3rem;
+}
+
+/* 排行榜项目优化 */
 .leaderboard-item {
-    padding: 1rem;
-    margin: 0.5rem 0;
-    border-radius: 10px;
-    border: none;
+    padding: 18px 20px;
+    margin: 10px 0;
+    border-radius: 15px;
+    border: 2px solid transparent;
     transition: all 0.3s ease;
-    background: #f8f9fa;
+    background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.leaderboard-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 5px;
+    height: 100%;
+    background: linear-gradient(180deg, #2196f3 0%, #1976d2 100%);
+    transition: width 0.3s ease;
 }
 
 .leaderboard-item:hover {
     transform: translateX(10px);
-    background: #fff;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    background: linear-gradient(135deg, #f0f9ff 0%, #e3f2fd 100%);
+    border-color: rgba(33, 150, 243, 0.3);
+    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.15);
 }
 
+.leaderboard-item:hover::before {
+    width: 8px;
+}
+
+/* 排名图标优化 */
 .rank-icon {
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 55px;
+    height: 55px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    font-size: 1.2rem;
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-    color: #495057;
+    font-size: 1.4rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #f5f5f5, #e0e0e0);
+    color: #757575;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    position: relative;
+}
+
+.leaderboard-item:hover .rank-icon {
+    transform: scale(1.1) rotate(5deg);
+}
+
+/* 前三名特殊样式 */
+.rank-1 {
+    background: linear-gradient(135deg, #ffd700 0%, #ffb300 100%);
+    color: #fff;
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+    animation: pulse-gold 2s ease-in-out infinite;
+}
+
+@keyframes pulse-gold {
+    0%, 100% { box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4); }
+    50% { box-shadow: 0 8px 30px rgba(255, 215, 0, 0.6); }
+}
+
+.rank-2 {
+    background: linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%);
+    color: #fff;
+    box-shadow: 0 6px 20px rgba(189, 189, 189, 0.4);
+}
+
+.rank-3 {
+    background: linear-gradient(135deg, #d4a373 0%, #bc6c25 100%);
+    color: #fff;
+    box-shadow: 0 6px 20px rgba(205, 127, 50, 0.4);
+}
+
+.rank-icon i {
+    font-size: 1.6rem;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+/* 学生信息优化 */
+.leaderboard-item h6 {
+    color: #1565c0;
+    font-weight: 700;
+    margin-bottom: 4px;
+    font-size: 1.1rem;
+}
+
+.leaderboard-item small {
+    color: #9e9e9e;
+    font-size: 0.85rem;
+}
+
+/* 响应计数徽章优化 */
+.response-count {
+    background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 25px;
+    font-weight: 700;
+    font-size: 1.3rem;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+    min-width: 80px;
+    text-align: center;
     transition: all 0.3s ease;
 }
 
-.rank-1 { background: linear-gradient(135deg, #ffd700, #ffc107); color: #fff; }
-.rank-2 { background: linear-gradient(135deg, #c0c0c0, #adb5bd); color: #fff; }
-.rank-3 { background: linear-gradient(135deg, #cd7f32, #bc6c25); color: #fff; }
+.leaderboard-item:hover .response-count {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+}
 
-.response-count {
-    background: linear-gradient(135deg, #0d6efd, #0099ff);
-    color: white;
-    padding: 0.5rem 1rem;
+/* 统计卡片优化 */
+.card {
+    border: none;
     border-radius: 20px;
-    font-weight: 600;
-    font-size: 1.1rem;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.12);
+    transition: all 0.3s ease;
+    margin-bottom: 20px;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(33, 150, 243, 0.2);
+}
+
+.card .card-header {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e3f2fd 100%);
+    border-bottom: 2px solid rgba(33, 150, 243, 0.1);
+    padding: 18px 20px;
+}
+
+.card .card-header h5 {
+    font-weight: 700;
+    color: #1565c0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.card .card-header i {
+    color: #2196f3;
+    font-size: 1.2rem;
+}
+
+/* 统计数字优化 */
+.card .row h4 {
+    color: #2196f3;
+    font-weight: 700;
+    font-size: 2.5rem;
+    margin-bottom: 8px;
+    animation: count-up 0.5s ease-out;
+}
+
+@keyframes count-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card small.text-muted {
+    color: #9e9e9e !important;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+/* Top 3 卡片特殊样式 */
+.card .badge {
+    background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+}
+
+.card .badge:hover {
+    transform: scale(1.1);
+}
+
+/* 奖杯图标样式 */
+.text-warning {
+    filter: drop-shadow(0 2px 4px rgba(255, 193, 7, 0.4));
+}
+
+.text-secondary {
+    filter: drop-shadow(0 2px 4px rgba(158, 158, 158, 0.4));
+}
+
+/* 空状态优化 */
+.text-center i.display-1 {
+    animation: float 3s ease-in-out infinite;
+    opacity: 0.3;
+}
+
+/* 响应式优化 */
+@media (max-width: 768px) {
+    .leaderboard-header {
+        padding: 20px;
+    }
+    
+    .leaderboard-header .trophy-icon {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .leaderboard-header .trophy-icon i {
+        font-size: 2rem;
+    }
+    
+    .rank-icon {
+        width: 45px;
+        height: 45px;
+        font-size: 1.2rem;
+    }
+    
+    .response-count {
+        padding: 8px 16px;
+        font-size: 1.1rem;
+    }
 }
 </style>
 
-<div class="leaderboard-header">
-    <div class="d-flex align-items-center gap-3">
-        <i class="bi bi-trophy text-warning" style="font-size: 2.5rem;"></i>
-        <div>
-            <h2 class="mb-0">Student Participation Leaderboard</h2>
-            <p class="text-muted mb-0">Top performers in classroom activities</p>
+<div class="leaderboard-container">
+
+    <div class="container">
+        <div class="leaderboard-header">
+            <div class="d-flex align-items-center gap-3">
+                <div class="trophy-icon">
+                    <i class="bi bi-trophy"></i>
+                </div>
+                <div>
+                    <h2>Student Participation Leaderboard</h2>
+                    <p>Top performers in classroom activities</p>
+                </div>
+            </div>
         </div>
-    </div>
-</div>
 
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="leaderboard-card">
-            <div class="card-header bg-white py-3">
-                <h5 class="mb-0">
-                    <i class="bi bi-list-ol text-primary me-2"></i>
+            <div class="card-header">
+                <h5>
+                    <i class="bi bi-list-ol"></i>
                     Overall Rankings
                 </h5>
             </div>
@@ -179,6 +482,7 @@
                 {% endif %}
             </div>
         </div>
+    </div>
     </div>
 </div>
 {% endblock %}
