@@ -1,5 +1,11 @@
 # 🎓 Q&A Education Platform - Intelligent Q&A Learning System
 
+## 🌐 Live Demo
+
+**🚀 Deployed Application:** [https://qa-platform-zmd.onrender.com](https://qa-platform-zmd.onrender.com)
+
+---
+
 [![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://python.org)
 [![Flask Version](https://img.shields.io/badge/flask-2.3.3-green.svg)](https://flask.palletsprojects.com)
 [![License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
