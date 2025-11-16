@@ -3,18 +3,252 @@
 {% block title %}Create Course - Classroom Interaction Platform{% endblock %}
 
 {% block content %}
-<div class="container mt-3">
-    <div class="row justify-content-center">
-        <div class="col-md-10">
-            <div class="card shadow" style="margin-bottom: 4rem;">
-                <div class="card-body p-5">
-                    <div class="text-center mb-4">
-                        <div class="d-flex justify-content-center align-items-center gap-3 mb-2">
-                            <i class="bi bi-plus-circle text-primary" style="font-size:2.5rem;"></i>
-                            <h3 class="mb-0">Create New Course</h3>
+<style>
+/* 优化的创建课程页面样式 */
+.create-course-container {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e3f2fd 50%, #bbdefb 100%);
+    min-height: calc(100vh - 100px);
+    padding: 40px 0;
+}
+
+.create-course-card {
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(33, 150, 243, 0.15);
+    border: none;
+    overflow: hidden;
+    margin-bottom: 4rem;
+    transition: all 0.3s ease;
+}
+
+.create-course-card:hover {
+    box-shadow: 0 15px 50px rgba(33, 150, 243, 0.25);
+    transform: translateY(-5px);
+}
+
+/* 页面标题区优化 */
+.page-header-create {
+    background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+    padding: 30px;
+    margin: -40px -40px 30px -40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.page-header-create::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: rotate 20s linear infinite;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.page-header-create .icon-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    margin-bottom: 15px;
+    position: relative;
+    z-index: 1;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.page-header-create .icon-wrapper i {
+    font-size: 2.5rem;
+    color: white;
+}
+
+.page-header-create h3 {
+    color: white;
+    font-weight: 700;
+    margin: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.page-header-create p {
+    color: rgba(255, 255, 255, 0.9);
+    margin: 10px 0 0 0;
+    position: relative;
+    z-index: 1;
+}
+
+/* 表单标签优化 */
+.form-label {
+    font-weight: 600;
+    color: #153d5a;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.form-label::before {
+    content: '✦';
+    color: #2196f3;
+    font-size: 0.8rem;
+}
+
+/* 表单输入框优化 */
+.form-control, .form-select {
+    border: 2px solid rgba(33, 150, 243, 0.15);
+    border-radius: 12px;
+    padding: 12px 18px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #2196f3;
+    box-shadow: 0 0 0 0.3rem rgba(33, 150, 243, 0.15), 0 4px 12px rgba(33, 150, 243, 0.1);
+    transform: translateY(-2px);
+    background: white;
+}
+
+.form-control::placeholder {
+    color: #a0b9d0;
+    font-style: italic;
+}
+
+/* 文本域特殊样式 */
+textarea.form-control {
+    resize: vertical;
+    min-height: 120px;
+}
+
+/* 按钮优化 */
+.btn-primary-create {
+    background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+    border: none;
+    padding: 14px 32px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 12px;
+    color: white;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary-create::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn-primary-create:hover::before {
+    width: 400px;
+    height: 400px;
+}
+
+.btn-primary-create:hover {
+    background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+}
+
+.btn-cancel {
+    background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+    border: none;
+    padding: 14px 32px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 12px;
+    color: #424242;
+    transition: all 0.3s ease;
+}
+
+.btn-cancel:hover {
+    background: linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* 错误提示优化 */
+.text-danger {
+    font-size: 0.875rem;
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    animation: shake 0.5s ease;
+}
+
+.text-danger::before {
+    content: '⚠';
+    font-size: 1rem;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* 表单分组动画 */
+.mb-3, .mb-4 {
+    animation: fadeInUp 0.5s ease forwards;
+    opacity: 0;
+}
+
+.mb-3:nth-child(1) { animation-delay: 0.1s; }
+.mb-3:nth-child(2) { animation-delay: 0.2s; }
+.mb-3:nth-child(3) { animation-delay: 0.3s; }
+.mb-4:nth-child(4) { animation-delay: 0.4s; }
+.d-grid { animation-delay: 0.5s; }
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+
+<div class="create-course-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-10 col-lg-8">
+                <div class="card create-course-card">
+                    <div class="card-body p-4 p-md-5">
+                        <div class="page-header-create">
+                            <div class="icon-wrapper">
+                                <i class="bi bi-plus-circle"></i>
+                            </div>
+                            <h3>Create New Course</h3>
+                            <p>Fill out the form below to create a new course.</p>
                         </div>
-                        <p class="text-muted mt-2">Fill out the form below to create a new course.</p>
-                    </div>
 
                     <form method="POST">
                         {{ form.hidden_tag() }}
@@ -56,13 +290,14 @@
                         </div>
 
                         <div class="d-grid gap-2">
-                            {{ form.submit(class="btn btn-primary btn-lg") }}
-                            <a href="{{ url_for('courses.list_courses') }}" class="btn btn-outline-secondary">Cancel</a>
+                            {{ form.submit(class="btn btn-primary-create btn-lg") }}
+                            <a href="{{ url_for('courses.list_courses') }}" class="btn btn-cancel">Cancel</a>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
+    </div>
     </div>
 </div>
 {% endblock %}

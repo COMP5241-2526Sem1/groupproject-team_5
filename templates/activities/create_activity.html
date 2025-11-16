@@ -3,18 +3,334 @@
 {% block title %}Create Activity - {{ course.name }}{% endblock %}
 
 {% block content %}
-<div class="container mt-3">
-    <div class="row justify-content-center">
-        <div class="col-md-10">
-            <div class="card shadow" style="margin-bottom: 4rem;">
-                <div class="card-body p-5">
-                    <div class="text-center mb-4">
-                        <div class="d-flex justify-content-center align-items-center gap-3 mb-2">
-                            <i class="bi bi-plus-circle text-primary" style="font-size:2.5rem;"></i>
-                            <h3 class="mb-0">Create Activity in {{ course.name }}</h3>
+<style>
+/* 优化的创建活动页面样式 */
+.create-activity-container {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e3f2fd 50%, #bbdefb 100%);
+    min-height: calc(100vh - 100px);
+    padding: 40px 0;
+}
+
+.create-activity-card {
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(33, 150, 243, 0.15);
+    border: none;
+    overflow: hidden;
+    margin-bottom: 2rem;
+    transition: all 0.3s ease;
+}
+
+.create-activity-card:hover {
+    box-shadow: 0 15px 50px rgba(33, 150, 243, 0.25);
+}
+
+/* 页面标题区优化 */
+.page-header-activity {
+    background: linear-gradient(135deg, #00bcd4 0%, #0097a7 100%);
+    padding: 30px;
+    margin: -40px -40px 30px -40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.page-header-activity::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: rotate 20s linear infinite;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.page-header-activity .icon-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    margin-bottom: 15px;
+    position: relative;
+    z-index: 1;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.page-header-activity .icon-wrapper i {
+    font-size: 2.5rem;
+    color: white;
+}
+
+.page-header-activity h3 {
+    color: white;
+    font-weight: 700;
+    margin: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.page-header-activity p {
+    color: rgba(255, 255, 255, 0.9);
+    margin: 10px 0 0 0;
+    position: relative;
+    z-index: 1;
+}
+
+/* 表单标签优化 */
+.form-label {
+    font-weight: 600;
+    color: #153d5a;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.form-label::before {
+    content: '✦';
+    color: #00bcd4;
+    font-size: 0.8rem;
+}
+
+/* 表单输入框优化 */
+.form-control, .form-select {
+    border: 2px solid rgba(0, 188, 212, 0.15);
+    border-radius: 12px;
+    padding: 12px 18px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #00bcd4;
+    box-shadow: 0 0 0 0.3rem rgba(0, 188, 212, 0.15), 0 4px 12px rgba(0, 188, 212, 0.1);
+    transform: translateY(-2px);
+    background: white;
+}
+
+.form-control::placeholder {
+    color: #a0b9d0;
+    font-style: italic;
+}
+
+/* 选项行样式优化 */
+.option-row {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 8px;
+    transition: all 0.25s ease;
+}
+
+.option-row:hover {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    transform: translateX(4px);
+}
+
+.option-label {
+    background: linear-gradient(135deg, #00bcd4 0%, #0097a7 100%);
+    color: white;
+    font-weight: 700;
+    border-radius: 8px;
+    min-width: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.remove-option {
+    border-radius: 8px;
+}
+
+/* 按钮优化 */
+.btn-primary-create {
+    background: linear-gradient(135deg, #00bcd4 0%, #0097a7 100%);
+    border: none;
+    padding: 14px 32px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 12px;
+    color: white;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 188, 212, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary-create::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn-primary-create:hover::before {
+    width: 400px;
+    height: 400px;
+}
+
+.btn-primary-create:hover {
+    background: linear-gradient(135deg, #0097a7 0%, #00838f 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 188, 212, 0.4);
+}
+
+.btn-cancel {
+    background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+    border: none;
+    padding: 14px 32px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 12px;
+    color: #424242;
+    transition: all 0.3s ease;
+}
+
+.btn-cancel:hover {
+    background: linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* AI卡片优化 */
+.card-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 2px solid rgba(0, 188, 212, 0.1);
+    padding: 18px 24px;
+    font-weight: 700;
+    color: #153d5a;
+}
+
+.card-header h5 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.card-header i {
+    color: #00bcd4;
+    font-size: 1.3rem;
+}
+
+/* Tab导航优化 */
+.nav-tabs {
+    border-bottom: 2px solid rgba(0, 188, 212, 0.1);
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    border-radius: 10px 10px 0 0;
+    color: #6c757d;
+    font-weight: 600;
+    padding: 12px 24px;
+    transition: all 0.3s ease;
+    margin-right: 8px;
+}
+
+.nav-tabs .nav-link:hover {
+    background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+    color: #00838f;
+}
+
+.nav-tabs .nav-link.active {
+    background: linear-gradient(135deg, #00bcd4 0%, #0097a7 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 188, 212, 0.3);
+}
+
+/* Duration输入组优化 */
+.input-group {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 188, 212, 0.1);
+}
+
+.input-group .form-control {
+    border: none;
+    background: transparent;
+}
+
+.input-group .btn {
+    border: none;
+    background: rgba(0, 188, 212, 0.1);
+    color: #00838f;
+    font-weight: 600;
+    transition: all 0.25s ease;
+}
+
+.input-group .btn:hover {
+    background: rgba(0, 188, 212, 0.2);
+}
+
+/* 小按钮优化 */
+.btn-sm {
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.25s ease;
+}
+
+.btn-outline-primary {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    color: #1565c0;
+    border: none;
+}
+
+.btn-outline-primary:hover {
+    background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Generated questions样式 */
+#generated-questions .card {
+    border-radius: 12px;
+    border: 2px solid rgba(0, 188, 212, 0.1);
+    transition: all 0.25s ease;
+}
+
+#generated-questions .card:hover {
+    border-color: rgba(0, 188, 212, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 188, 212, 0.15);
+    transform: translateX(4px);
+}
+</style>
+
+<div class="create-activity-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="card create-activity-card">
+                    <div class="card-body p-4 p-md-5">
+                        <div class="page-header-activity">
+                            <div class="icon-wrapper">
+                                <i class="bi bi-plus-circle"></i>
+                            </div>
+                            <h3>Create Activity in {{ course.name }}</h3>
+                            <p>Define the activity details and optional AI-assisted generation below.</p>
                         </div>
-                        <p class="text-muted mt-2">Define the activity details and optional AI-assisted generation below.</p>
-                    </div>
 
                     <form method="POST">
                     {{ form.hidden_tag() }}
@@ -137,14 +453,14 @@
                     </div>
                     
                     <div class="d-grid gap-2">
-                        {{ form.submit(class="btn btn-primary btn-lg") }}
-                        <a href="{{ url_for('courses.course_detail', course_id=course.id) }}" class="btn btn-outline-secondary">Cancel</a>
+                        {{ form.submit(class="btn btn-primary-create btn-lg") }}
+                        <a href="{{ url_for('courses.course_detail', course_id=course.id) }}" class="btn btn-cancel">Cancel</a>
                     </div>
                 </form>
                 </div>
             </div>
 
-            <div class="card mt-2 mb-5">
+            <div class="card create-activity-card mt-3 mb-5">
             <div class="card-header">
                 <h5><i class="bi bi-robot"></i> AI-Assisted Question Generation</h5>
             </div>
@@ -203,6 +519,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
 </div>
 
