@@ -13,7 +13,7 @@ bp = Blueprint('courses', __name__)
 @login_required
 def list_courses():
     page = request.args.get('page', 1, type=int)
-    per_page = 6  # 每页显示6个课程
+    per_page = 6  # Display 6 courses per page
     
     if current_user.role == 'admin':
         courses = Course.query.paginate(
@@ -141,17 +141,17 @@ def course_enrollments(course_id):
 @bp.route('/courses/browse')
 @login_required
 def browse_courses():
-    """学生浏览所有可选课程"""
+    """Students browse all available courses"""
     if current_user.role != 'student':
         return redirect(url_for('courses.list_courses'))
     
-    # 获取所有课程
+    # Get all courses
     all_courses = Course.query.all()
     
-    # 获取学生已选课程ID
+    # Get student's enrolled course IDs
     enrolled_course_ids = [enrollment.course_id for enrollment in current_user.enrollments]
     
-    # 筛选出未选修的课程
+    # Filter out courses not yet enrolled
     available_courses = [course for course in all_courses if course.id not in enrolled_course_ids]
     
     return render_template('courses/browse_courses.html', 
@@ -160,14 +160,14 @@ def browse_courses():
 @bp.route('/courses/<int:course_id>/enroll', methods=['POST'])
 @login_required
 def enroll_course(course_id):
-    """学生选修课程"""
+    """Student enrolls in course"""
     if current_user.role != 'student':
         flash('Only students can enroll in courses', 'error')
         return redirect(url_for('courses.list_courses'))
     
     course = Course.query.get_or_404(course_id)
     
-    # 检查是否已经选修
+    # Check if already enrolled
     existing_enrollment = Enrollment.query.filter_by(
         student_id=current_user.id,
         course_id=course_id

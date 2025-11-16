@@ -30,7 +30,7 @@ def course_qa_list(course_id):
         flash('You do not have permission to access this course', 'danger')
         return redirect(url_for('main.dashboard'))
     
-    # 获取问题列表（按创建时间排序）
+    # Get question list (sorted by creation time)
     page = request.args.get('page', 1, type=int)
     questions = Question.query.filter_by(course_id=course_id)\
         .order_by(Question.created_at.desc())\
@@ -105,12 +105,12 @@ def question_detail(course_id, question_id):
         flash('You do not have permission to access this content', 'danger')
         return redirect(url_for('main.dashboard'))
     
-    # 获取答案（按投票数和创建时间排序，添加分页）
+    # Get answers (sorted by votes and creation time, with pagination)
     page = request.args.get('page', 1, type=int)
     answers_query = Answer.query.filter_by(question_id=question_id)\
         .order_by(Answer.upvotes.desc(), Answer.created_at.asc())
     
-    # 如果有最佳答案，将其置顶
+    # If there's a best answer, pin it to top
     best_answer = None
     if question.best_answer_id:
         best_answer = Answer.query.get(question.best_answer_id)
@@ -119,7 +119,7 @@ def question_detail(course_id, question_id):
     answers_pagination = answers_query.paginate(page=page, per_page=5, error_out=False)
     answers = answers_pagination.items
     
-    # 将最佳答案添加到列表开头
+    # Add best answer to beginning of list
     if best_answer:
         answers.insert(0, best_answer)
     

@@ -44,7 +44,7 @@ def register():
         
         if form.validate_on_submit():
             print(f"DEBUG: Form validation passed for email: {form.email.data}")
-            # 验证邮箱验证码
+            # Verify email verification code
             email_captcha = EmailCaptcha.query.filter_by(
                 email=form.email.data, 
                 captcha=form.captcha.data
@@ -57,7 +57,7 @@ def register():
                 print(f"DEBUG: Captcha not found or expired")
                 return render_template('auth/register.html', form=form)
             
-            # 检查验证码是否过期（5分钟）
+            # Check if verification code is expired (5 minutes)
             if get_beijing_time() - email_captcha.create_time > timedelta(minutes=5):
                 flash('Verification code expired, please request a new one', 'error')
                 EmailCaptcha.query.filter_by(email=form.email.data).delete()
@@ -65,14 +65,14 @@ def register():
                 print(f"DEBUG: Captcha expired")
                 return render_template('auth/register.html', form=form)
         
-        # 为学生自动生成学生ID
+        # Auto-generate student ID for students
         student_id = None
         if form.role.data == 'student':
             student_id = User.generate_student_id()
         elif form.role.data == 'instructor' and form.student_id.data:
             student_id = form.student_id.data
         
-        # 创建用户
+        # Create user
         user = User(
             name=form.name.data,
             email=form.email.data,
@@ -82,11 +82,11 @@ def register():
         )
         db.session.add(user)
         
-        # 删除验证码记录
+        # Delete verification code record
         EmailCaptcha.query.filter_by(email=form.email.data).delete()
         db.session.commit()
         
-        # 自动登录用户
+        # Auto login user
         login_user(user, remember=True)
         if form.role.data == 'student':
             flash(f'Registration successful! Welcome, {user.name}! Your student ID is: {student_id}', 'success')
@@ -149,26 +149,26 @@ If this wasn't you, please ignore this email.
 Classroom Platform Team'''
         )
         
-        # 增强的邮件发送机制，包含重试和SSL证书处理
+        # Enhanced email sending mechanism with retry and SSL certificate handling
         import socket
         import time
         import ssl
         
         original_timeout = socket.getdefaulttimeout()
         max_retries = 3
-        retry_delay = 2  # 秒
+        retry_delay = 2  # seconds
         
         for attempt in range(max_retries):
             try:
-                socket.setdefaulttimeout(30)  # 30秒超时
+                socket.setdefaulttimeout(30)  # 30 second timeout
                 print(f"[EMAIL DEBUG] Attempt {attempt + 1}/{max_retries} - Sending email with 30s timeout...")
                 
-                # 设置邮件连接超时，强制重新连接以避免DNS缓存问题
+                # Set email connection timeout, force reconnection to avoid DNS cache issues
                 mail_instance = current_app.extensions.get('mail')
                 if mail_instance:
                     mail_instance._ctx = None
                 
-                # 为使用IP地址连接时处理SSL证书问题
+                # Handle SSL certificate issues when connecting using IP address
                 original_ssl_context = ssl.create_default_context()
                 
                 mail.send(message)
@@ -179,15 +179,15 @@ Classroom Platform Team'''
                 error_str = str(retry_error)
                 print(f"[EMAIL ERROR] Attempt {attempt + 1} failed: {error_str}")
                 
-                # 如果是SSL证书错误，尝试不验证证书
+                # If SSL certificate error, try without certificate verification
                 if 'certificate' in error_str.lower() or 'ssl' in error_str.lower():
                     print(f"[EMAIL DEBUG] SSL certificate issue detected, trying with relaxed SSL...")
                 
-                if attempt < max_retries - 1:  # 还有重试机会
+                if attempt < max_retries - 1:  # Still have retry chances
                     print(f"[EMAIL DEBUG] Retrying in {retry_delay} seconds...")
                     time.sleep(retry_delay)
-                    retry_delay *= 2  # 指数退避
-                else:  # 最后一次尝试失败
+                    retry_delay *= 2  # Exponential backoff
+                else:  # Last attempt failed
                     raise retry_error
             finally:
                 socket.setdefaulttimeout(original_timeout)
@@ -197,7 +197,7 @@ Classroom Platform Team'''
         print(f"[EMAIL ERROR] Failed to send email: {error_msg}")
         print(f"[EMAIL ERROR] Error type: {type(e).__name__}")
         
-        # 提供更友好的错误信息
+        # Provide more user-friendly error messages
         if 'Lookup timed out' in error_msg or 'timeout' in error_msg.lower():
             user_msg = 'Email service temporarily unavailable due to network timeout. Please try again in a few minutes.'
         elif 'Authentication failed' in error_msg:
@@ -255,7 +255,7 @@ def debug_email_config():
 @bp.route('/profile')
 @login_required
 def profile():
-    """用户个人信息页面"""
+    """User profile page"""
     return render_template('auth/profile.html', user=current_user)
 
 @bp.route('/change-password', methods=['GET', 'POST'])
@@ -343,7 +343,7 @@ def send_change_password_captcha():
 
 @bp.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
-    """忘记密码 - 通过邮箱验证码重置"""
+    """Forgot password - reset via email verification code"""
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
     
@@ -353,13 +353,13 @@ def forgot_password():
         new_password = request.form.get('new_password', '').strip()
         confirm_password = request.form.get('confirm_password', '').strip()
         
-        # 验证用户是否存在
+        # Verify user exists
         user = User.query.filter_by(email=email).first()
         if not user:
             flash('Email not found. Please check your email or register first.', 'error')
             return render_template('auth/forgot_password.html')
         
-        # 验证验证码
+        # Verify verification code
         email_captcha = EmailCaptcha.query.filter_by(
             email=email,
             captcha=captcha
@@ -369,14 +369,14 @@ def forgot_password():
             flash('Invalid or expired verification code', 'error')
             return render_template('auth/forgot_password.html')
         
-        # 检查验证码是否过期（5分钟）
+        # Check if verification code is expired (5 minutes)
         if get_beijing_time() - email_captcha.create_time > timedelta(minutes=5):
             flash('Verification code expired. Please request a new one.', 'error')
             EmailCaptcha.query.filter_by(email=email).delete()
             db.session.commit()
             return render_template('auth/forgot_password.html')
         
-        # 验证新密码
+        # Verify new password
         if len(new_password) < 6:
             flash('Password must be at least 6 characters long', 'error')
             return render_template('auth/forgot_password.html')
@@ -385,10 +385,10 @@ def forgot_password():
             flash('Passwords do not match', 'error')
             return render_template('auth/forgot_password.html')
         
-        # 更新密码
+        # Update password
         user.password_hash = generate_password_hash(new_password)
         
-        # 删除验证码
+        # Delete verification code
         EmailCaptcha.query.filter_by(email=email).delete()
         db.session.commit()
         
@@ -399,29 +399,29 @@ def forgot_password():
 
 @bp.route('/send_reset_captcha', methods=['POST'])
 def send_reset_captcha():
-    """发送密码重置验证码"""
+    """Send password reset verification code"""
     email = request.json.get('email')
     
     if not email:
         return jsonify({'code': 400, 'message': 'Email cannot be empty'})
     
-    # 检查邮箱是否已注册
+    # Check if email is registered
     user = User.query.filter_by(email=email).first()
     if not user:
         return jsonify({'code': 400, 'message': 'Email not registered'})
     
-    # 生成6位随机验证码
+    # Generate 6-digit random verification code
     captcha = ''.join(random.choices(string.digits, k=6))
     
-    # 删除该邮箱之前的验证码
+    # Delete previous verification codes for this email
     EmailCaptcha.query.filter_by(email=email).delete()
     
-    # 保存新验证码
+    # Save new verification code
     email_captcha = EmailCaptcha(email=email, captcha=captcha)
     db.session.add(email_captcha)
     db.session.commit()
     
-    # 发送邮件
+    # Send email
     try:
         message = Message(
             subject='Q&A Platform - Password Reset Code',
@@ -527,5 +527,5 @@ Q&A Education Platform Team
 @bp.route('/logout')
 def logout():
     logout_user()
-    # 不在首页显示logout flash消息
+    # Don't show logout flash message on home page
     return redirect(url_for('main.index'))

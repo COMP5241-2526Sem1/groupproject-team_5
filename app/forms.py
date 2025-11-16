@@ -24,7 +24,7 @@ class RegistrationForm(FlaskForm):
             raise ValidationError('This email is already registered')
     
     def validate_student_id(self, student_id):
-        # 只验证重复性，不再要求学生必须输入（会自动生成）
+        # Only validate uniqueness, no longer require students to input (will be auto-generated)
         if student_id.data:
             user = User.query.filter_by(student_id=student_id.data).first()
             if user:

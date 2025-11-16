@@ -7,7 +7,7 @@ from flask_login import UserMixin
 from datetime import datetime, timedelta
 
 class User(UserMixin, db.Model):
-    """用户模型"""
+    """User model"""
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
@@ -25,27 +25,27 @@ class User(UserMixin, db.Model):
     
     @staticmethod
     def generate_student_id():
-        """生成下一个学生ID"""
+        """Generate next student ID"""
         from app import db
-        # 查找最大的学生ID
+        # Find largest student ID
         last_student = db.session.query(User).filter(
             User.student_id.like('2025%'),
             User.role == 'student'
         ).order_by(User.student_id.desc()).first()
         
         if last_student and last_student.student_id:
-            # 从最后一个学生ID中提取数字并加1
+            # Extract number from last student ID and add 1
             try:
                 last_number = int(last_student.student_id)
                 return str(last_number + 1)
             except ValueError:
                 pass
         
-        # 如果没有找到或解析失败，从2025001开始
+        # If not found or parsing failed, start from 2025001
         return '2025001'
 
 class EmailCaptcha(db.Model):
-    """邮箱验证码模型"""
+    """Email verification code model"""
     __tablename__ = 'email_captcha'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     email = db.Column(db.String(100), nullable=False)
@@ -53,7 +53,7 @@ class EmailCaptcha(db.Model):
     create_time = db.Column(db.DateTime, default=lambda: get_beijing_time())
 
 class Course(db.Model):
-    """课程模型"""
+    """Course model"""
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
     semester = db.Column(db.String(50), nullable=False)
@@ -67,7 +67,7 @@ class Course(db.Model):
     questions = db.relationship('Question', backref='course', lazy=True)
 
 class Enrollment(db.Model):
-    """选课记录模型"""
+    """Enrollment record model"""
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
@@ -76,7 +76,7 @@ class Enrollment(db.Model):
     __table_args__ = (db.UniqueConstraint('student_id', 'course_id'),)
 
 class Activity(db.Model):
-    """活动模型"""
+    """Activity model"""
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     question = db.Column(db.Text, nullable=False)
@@ -87,57 +87,57 @@ class Activity(db.Model):
     course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
     instructor_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     is_active = db.Column(db.Boolean, default=False)
-    duration_minutes = db.Column(db.Integer, default=5)  # 活动持续时间（分钟）- 用于向后兼容
-    duration_seconds = db.Column(db.Integer, nullable=True)  # 活动持续时间（秒）- 精确时长
+    duration_minutes = db.Column(db.Integer, default=5)  # Activity duration (minutes) - for backward compatibility
+    duration_seconds = db.Column(db.Integer, nullable=True)  # Activity duration (seconds) - precise duration
     created_at = db.Column(db.DateTime, default=lambda: get_beijing_time())
     started_at = db.Column(db.DateTime, nullable=True)
     ended_at = db.Column(db.DateTime, nullable=True)
     
     # QR Code quick join fields
-    allow_quick_join = db.Column(db.Boolean, default=True)  # 是否允许二维码快速加入
-    join_token = db.Column(db.String(64), unique=True, nullable=True)  # 加入令牌
-    token_expires_at = db.Column(db.DateTime, nullable=True)  # 令牌过期时间
+    allow_quick_join = db.Column(db.Boolean, default=True)  # Whether to allow QR code quick join
+    join_token = db.Column(db.String(64), unique=True, nullable=True)  # Join token
+    token_expires_at = db.Column(db.DateTime, nullable=True)  # Token expiration time
     
     # Relationships
     responses = db.relationship('Response', backref='activity', lazy=True, cascade='all, delete-orphan')
     
     def generate_join_token(self):
-        """生成唯一的加入令牌（使用北京时间）"""
+        """Generate unique join token (using Beijing time)"""
         import secrets
         from datetime import timedelta, timezone
         
         self.join_token = secrets.token_urlsafe(32)
         
-        # 获取当前北京时间（UTC+8）
+        # Get current Beijing time (UTC+8)
         beijing_tz = timezone(timedelta(hours=8))
         now_beijing = datetime.now(beijing_tz)
         
-        # 令牌在活动结束后 24 小时过期
+        # Token expires 24 hours after activity ends
         if self.ended_at:
-            # ended_at 是 naive datetime（无时区），假设为 UTC
+            # ended_at is naive datetime (no timezone), assume UTC
             ended_utc = self.ended_at.replace(tzinfo=timezone.utc)
             ended_beijing = ended_utc.astimezone(beijing_tz)
             expires_beijing = ended_beijing + timedelta(hours=24)
         else:
-            # 如果活动未结束，设置为当前北京时间 + 7 天
+            # If activity hasn't ended, set to current Beijing time + 7 days
             expires_beijing = now_beijing + timedelta(days=7)
         
-        # 转换为 UTC 时间存储（naive datetime，不带时区信息）
+        # Convert to UTC time for storage (naive datetime, no timezone info)
         self.token_expires_at = expires_beijing.astimezone(timezone.utc).replace(tzinfo=None)
         return self.join_token
     
     def is_token_valid(self):
-        """检查令牌是否有效"""
+        """Check if token is valid"""
         if not self.join_token or not self.allow_quick_join:
             return False
         if self.token_expires_at:
-            # 使用北京时间进行比较
+            # Compare using Beijing time
             if get_beijing_time() > self.token_expires_at:
                 return False
         return True
     
     def get_token_expires_beijing_time(self):
-        """获取令牌过期时间的北京时间（用于显示）"""
+        """Get token expiration time in Beijing time (for display)"""
         if not self.token_expires_at:
             return None
         from datetime import timezone, timedelta
@@ -146,7 +146,7 @@ class Activity(db.Model):
         return utc_time.astimezone(beijing_tz)
 
 class Response(db.Model):
-    """活动响应模型"""
+    """Activity response model"""
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     activity_id = db.Column(db.Integer, db.ForeignKey('activity.id'), nullable=False)
@@ -160,7 +160,7 @@ class Response(db.Model):
 
 # Q&A System Models
 class Question(db.Model):
-    """问题模型"""
+    """Question model"""
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     content = db.Column(db.Text, nullable=False)
@@ -177,7 +177,7 @@ class Question(db.Model):
                             foreign_keys='Answer.question_id', cascade='all, delete-orphan')
 
 class Answer(db.Model):
-    """回答模型"""
+    """Answer model"""
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
     question_id = db.Column(db.Integer, db.ForeignKey('question.id'), nullable=False)
@@ -191,7 +191,7 @@ class Answer(db.Model):
     votes = db.relationship('AnswerVote', backref='answer', lazy=True, cascade='all, delete-orphan')
 
 class AnswerVote(db.Model):
-    """回答投票模型"""
+    """Answer vote model"""
     id = db.Column(db.Integer, primary_key=True)
     answer_id = db.Column(db.Integer, db.ForeignKey('answer.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)

@@ -134,14 +134,18 @@ html, body {
             <div class="card-body">
                 {% if results.options %}
                     {% for option, count in results.options.items() %}
+                    {% set percentage = (count / results.total_responses * 100) if results.total_responses > 0 else 0 %}
                     <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <span>{{ option }}</span>
                             <span class="badge bg-primary">{{ count }} votes</span>
                         </div>
-                        <div class="progress">
+                        <div class="progress" style="height: 8px;">
                             <div class="progress-bar" role="progressbar" 
-                                 data-width="{{ (count / results.total_responses * 100) if results.total_responses > 0 else 0 }}">
+                                 style="width: {{ percentage }}%;"
+                                 aria-valuenow="{{ percentage }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
                             </div>
                         </div>
                     </div>
@@ -176,6 +180,31 @@ html, body {
                     </div>
                 </div>
                 
+                {% if results.quiz_type == 'multiple_choice' and results.options and results.options_list %}
+                <div class="mb-4">
+                    <h6 class="mb-3"><i class="bi bi-bar-chart"></i> Option Statistics</h6>
+                    {% for option in results.options_list %}
+                    {% set count = results.options.get(option, 0) %}
+                    {% set percentage = (count / results.total_responses * 100) if results.total_responses > 0 else 0 %}
+                    {% set label = results.option_labels.get(option, '') %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span><strong>{{ label }}:</strong> {{ option }}</span>
+                            <span class="badge bg-primary">{{ count }}</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar" role="progressbar" 
+                                 style="width: {{ percentage }}%;"
+                                 aria-valuenow="{{ percentage }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
                 <div class="table-responsive">
                     <table class="table table-striped">
                         <thead>
@@ -190,7 +219,13 @@ html, body {
                             {% for response in results.responses %}
                             <tr>
                                 <td>{{ response.student }}</td>
-                                <td>{{ response.answer }}</td>
+                                <td>
+                                    {% if results.quiz_type == 'multiple_choice' and response.answer_label %}
+                                        <strong>{{ response.answer_label }}:</strong> {{ response.answer }}
+                                    {% else %}
+                                        {{ response.answer }}
+                                    {% endif %}
+                                </td>
                                 <td>
                                     {% if response.is_correct %}
                                         <span class="badge bg-success">Correct</span>

@@ -7,7 +7,7 @@ from collections import Counter
 import json
 import traceback
 
-# 添加文件处理支持
+# Add file processing support
 try:
     from docx import Document
 except ImportError:
@@ -28,14 +28,14 @@ try:
 except ImportError:
     Presentation = None
 
-# 添加dotenv支持
+# Add dotenv support
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
     pass
 
-# 添加火山引擎SDK支持
+# Add Volcengine SDK support
 try:
     from volcenginesdkarkruntime import Ark
 except ImportError:
@@ -156,11 +156,11 @@ def generate_questions_with_openai(text: str, api_key: str) -> List[str]:
 def generate_questions_fallback(text: str) -> List[str]:
     """Improved fallback question generation with better quality"""
     
-    # 分割句子
+    # Split sentences
     sentences = re.split(r'[.!?。！？]', text)
     sentences = [s.strip() for s in sentences if s.strip() and len(s.strip()) > 10]
     
-    # 如果文本太短，返回通用问题
+    # If text is too short, return generic questions
     if len(sentences) < 2:
         return [
             "What is the main topic discussed in this text?",
@@ -170,42 +170,42 @@ def generate_questions_fallback(text: str) -> List[str]:
     
     questions = []
     
-    # 策略1: 基于第一句生成"什么是"问题
+    # Strategy 1: Generate "What is" questions based on first sentence
     first_sentence = sentences[0]
-    # 提取主题词（简单方法：取前几个关键词）
+    # Extract topic words (simple method: take first few keywords)
     words = first_sentence.split()[:5]
     subject = ' '.join(words) if len(words) <= 5 else words[0]
     questions.append(f"What is {subject} and why is it important?")
     
-    # 策略2: 基于句子类型生成问题
+    # Strategy 2: Generate questions based on sentence type
     for sentence in sentences[1:min(3, len(sentences))]:
         sentence_lower = sentence.lower()
         
-        # 检测定义型句子
+        # Detect definition-type sentences
         if any(word in sentence_lower for word in [' is ', ' are ', ' means ', ' refers to ']):
-            # 提取关键术语
+            # Extract key terms
             key_terms = [w for w in sentence.split() if len(w) > 4][:2]
             if key_terms:
                 questions.append(f"Can you explain the relationship between {' and '.join(key_terms)}?")
             else:
                 questions.append(f"How would you define the concepts mentioned in: {sentence[:60]}...?")
         
-        # 检测功能/能力型句子  
+        # Detect function/capability-type sentences  
         elif any(word in sentence_lower for word in ['can ', 'enable', 'allow', 'provide', 'help']):
             questions.append(f"What are the practical applications of: {sentence[:60]}...?")
         
-        # 检测过程型句子
+        # Detect process-type sentences
         elif any(word in sentence_lower for word in ['process', 'method', 'approach', 'technique', 'way']):
             questions.append(f"Can you describe how this works: {sentence[:60]}...?")
         
-        # 通用问题
+        # Generic questions
         else:
             questions.append(f"What are your thoughts on: {sentence[:60]}...?")
         
         if len(questions) >= 3:
             break
     
-    # 如果还不够3个问题，添加批判性思考问题
+    # If still not 3 questions, add critical thinking questions
     if len(questions) < 3:
         critical_questions = [
             "What are the potential limitations or challenges of this approach?",
@@ -543,8 +543,8 @@ def group_answers_fallback(answers: List[str]) -> Dict[str, Any]:
 
 def extract_text_from_file(file_path: str, file_extension: str) -> str:
     """
-    从上传的文件中提取文本内容
-    支持的文件格式：.docx, .pdf, .pptx
+    Extract text content from uploaded file
+    Supported file formats: .docx, .pdf, .pptx
     """
     try:
         if file_extension.lower() == '.docx':
@@ -559,7 +559,7 @@ def extract_text_from_file(file_path: str, file_extension: str) -> str:
         raise Exception(f"Failed to extract text from file: {str(e)}")
 
 def extract_text_from_docx(file_path: str) -> str:
-    """从Word文档中提取文本"""
+    """Extract text from Word document"""
     if not Document:
         raise ImportError("python-docx library not installed")
     
@@ -567,12 +567,12 @@ def extract_text_from_docx(file_path: str) -> str:
         doc = Document(file_path)
         full_text = []
         
-        # 提取段落文本
+        # Extract paragraph text
         for paragraph in doc.paragraphs:
             if paragraph.text.strip():
                 full_text.append(paragraph.text.strip())
         
-        # 提取表格文本
+        # Extract table text
         for table in doc.tables:
             for row in table.rows:
                 for cell in row.cells:
@@ -588,10 +588,10 @@ def extract_text_from_docx(file_path: str) -> str:
         raise Exception(f"Error reading Word document: {str(e)}")
 
 def extract_text_from_pdf(file_path: str) -> str:
-    """从PDF文件中提取文本，优先使用pdfplumber，回退到PyPDF2"""
+    """Extract text from PDF file, prefer pdfplumber, fallback to PyPDF2"""
     text = ""
     
-    # 优先使用pdfplumber，它对复杂PDF的处理更好
+    # Prefer pdfplumber as it handles complex PDFs better
     if pdfplumber:
         try:
             with pdfplumber.open(file_path) as pdf:
@@ -604,7 +604,7 @@ def extract_text_from_pdf(file_path: str) -> str:
         except Exception as e:
             print(f"pdfplumber failed: {e}, trying PyPDF2...")
     
-    # 回退到PyPDF2
+    # Fallback to PyPDF2
     if PyPDF2:
         try:
             with open(file_path, 'rb') as file:
@@ -624,7 +624,7 @@ def extract_text_from_pdf(file_path: str) -> str:
     return text
 
 def extract_text_from_pptx(file_path: str) -> str:
-    """从PowerPoint文档中提取文本"""
+    """Extract text from PowerPoint document"""
     if not Presentation:
         raise ImportError("python-pptx library not installed")
     
@@ -632,16 +632,16 @@ def extract_text_from_pptx(file_path: str) -> str:
         presentation = Presentation(file_path)
         full_text = []
         
-        # 遍历所有幻灯片
+        # Iterate through all slides
         for slide_num, slide in enumerate(presentation.slides, 1):
             slide_text = []
             
-            # 提取幻灯片中的所有文本
+            # Extract all text from slide
             for shape in slide.shapes:
                 if hasattr(shape, "text") and shape.text.strip():
                     slide_text.append(shape.text.strip())
                 
-                # 如果是表格，提取表格中的文本
+                # If it's a table, extract text from table
                 if shape.has_table:
                     table = shape.table
                     for row in table.rows:
@@ -649,11 +649,11 @@ def extract_text_from_pptx(file_path: str) -> str:
                             if cell.text.strip():
                                 slide_text.append(cell.text.strip())
             
-            # 如果幻灯片有内容，添加幻灯片标题
+            # If slide has content, add slide title
             if slide_text:
                 full_text.append(f"=== Slide {slide_num} ===")
                 full_text.extend(slide_text)
-                full_text.append("")  # 添加空行分隔
+                full_text.append("")  # Add blank line separator
         
         text = '\n'.join(full_text)
         if not text.strip():
@@ -665,7 +665,7 @@ def extract_text_from_pptx(file_path: str) -> str:
 
 def validate_file_upload(file, allowed_extensions=None):
     """
-    验证上传的文件
+    Validate uploaded file
     """
     if allowed_extensions is None:
         allowed_extensions = {'.pdf', '.docx', '.pptx'}
@@ -673,15 +673,15 @@ def validate_file_upload(file, allowed_extensions=None):
     if not file or not file.filename:
         return False, "No file selected"
     
-    # 检查文件扩展名
+    # Check file extension
     file_extension = os.path.splitext(file.filename)[1].lower()
     if file_extension not in allowed_extensions:
         return False, f"Unsupported file format. Allowed formats: {', '.join(allowed_extensions)}"
     
-    # 检查文件大小（限制为10MB）
-    file.seek(0, 2)  # 移动到文件末尾
+    # Check file size (limit 10MB)
+    file.seek(0, 2)  # Move to end of file
     file_size = file.tell()
-    file.seek(0)  # 重置文件指针
+    file.seek(0)  # Reset file pointer
     
     max_size = 10 * 1024 * 1024  # 10MB
     if file_size > max_size:

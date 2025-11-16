@@ -4,7 +4,7 @@ Utility functions for the application
 
 from datetime import datetime, timezone, timedelta
 
-# 北京时区 UTC+8
+# Beijing timezone UTC+8
 BEIJING_TZ = timezone(timedelta(hours=8))
 
 

@@ -42,7 +42,7 @@ STOPWORDS = {
 @login_required
 def list_activities():
     page = request.args.get('page', 1, type=int)
-    per_page = 9  # 每页显示9个活动
+    per_page = 9  # Display 9 activities per page
     
     if current_user.role == 'admin':
         activities = Activity.query.order_by(Activity.created_at.desc()).paginate(
@@ -66,34 +66,34 @@ def list_activities():
     return render_template('activities/activity_list.html', activities=activities.items, pagination=activities)
 
 def auto_end_activity(activity_id, duration_seconds, started_at_timestamp):
-    """后台任务：自动结束活动
+    """Background task: Automatically end activity
     
     Args:
-        activity_id: 活动ID
-        duration_seconds: 持续秒数
-        started_at_timestamp: 活动启动时的时间戳(用于验证是否是当前启动)
+        activity_id: Activity ID
+        duration_seconds: Duration in seconds
+        started_at_timestamp: Timestamp when activity was started (used to verify if it's the current start)
     """
     print(f"[AUTO-END] Starting timer for activity {activity_id}, will end in {duration_seconds} seconds")
     print(f"[AUTO-END] Started at timestamp: {started_at_timestamp}")
     time.sleep(duration_seconds)
     
     try:
-        # 使用全局的db和socketio，避免循环导入
+        # Use global db and socketio to avoid circular imports
         from app import db, socketio
         from app.models import Activity
         from datetime import datetime
         
-        # 不需要app_context，因为我们在同一个应用进程中
+        # No need for app_context as we're in the same application process
         activity = Activity.query.get(activity_id)
         if activity:
-            # 检查活动的started_at是否与任务启动时一致
+            # Check if activity's started_at matches when the task was launched
             current_started_timestamp = activity.started_at.timestamp() if activity.started_at else 0
             
             print(f"[AUTO-END] Activity {activity_id} current started_at: {activity.started_at}")
             print(f"[AUTO-END] Current timestamp: {current_started_timestamp}")
             print(f"[AUTO-END] Expected timestamp: {started_at_timestamp}")
             
-            # 只有当时间戳匹配时才结束(说明是当前这次启动的任务)
+            # Only end if timestamp matches (indicates this is the current start task)
             if activity.is_active and abs(current_started_timestamp - started_at_timestamp) < 1:
                 print(f"[AUTO-END] Auto-ending activity {activity_id}")
                 activity.is_active = False
@@ -102,7 +102,7 @@ def auto_end_activity(activity_id, duration_seconds, started_at_timestamp):
                 
                 print(f"[AUTO-END] Activity {activity_id} ended at {activity.ended_at}")
                 
-                # 通知所有用户活动已结束
+                # Notify all users that activity has ended
                 socketio.emit('activity_update', {
                     'activity_id': activity_id,
                     'update_type': 'auto_ended',
@@ -134,9 +134,9 @@ def create_activity(course_id):
     
     form = ActivityForm()
     if form.validate_on_submit():
-        # 读取活动时长（秒）
-        duration_seconds = int(request.form.get('duration_seconds', 300))  # 默认5分钟=300秒
-        duration_minutes = max(1, round(duration_seconds / 60))  # 计算分钟数用于向后兼容
+        # Read activity duration (in seconds)
+        duration_seconds = int(request.form.get('duration_seconds', 300))  # Default 5 minutes = 300 seconds
+        duration_minutes = max(1, round(duration_seconds / 60))  # Calculate minutes for backward compatibility
         
         options = None
         correct_answer = None
@@ -150,7 +150,7 @@ def create_activity(course_id):
             if quiz_type == 'multiple_choice' and form.options.data:
                 options = form.options.data
         
-        # 获取快速加入选项
+        # Get quick join option
         allow_quick_join = request.form.get('allow_quick_join') == 'on'
         
         activity = Activity(
@@ -162,12 +162,12 @@ def create_activity(course_id):
             correct_answer=correct_answer,
             course_id=course_id,
             instructor_id=current_user.id,
-            duration_minutes=duration_minutes,  # 用于向后兼容和显示
-            duration_seconds=duration_seconds,  # 精确时长（秒）
+            duration_minutes=duration_minutes,  # For backward compatibility and display
+            duration_seconds=duration_seconds,  # Precise duration (in seconds)
             allow_quick_join=allow_quick_join
         )
         
-        # 如果允许快速加入，生成token
+        # Generate token if quick join is allowed
         if allow_quick_join:
             activity.generate_join_token()
         
@@ -196,11 +196,11 @@ def activity_detail(activity_id):
     if current_user.role == 'student':
         my_response = Response.query.filter_by(student_id=current_user.id, activity_id=activity_id).first()
     
-    # 为教师和管理员生成二维码
+    # Generate QR code for instructors and admins
     qr_code = None
     if current_user.role in ['admin', 'instructor']:
         if current_user.role == 'admin' or activity.course.instructor_id == current_user.id:
-            # 如果活动允许快速加入且有token，生成二维码
+            # Generate QR code if activity allows quick join and has token
             if activity.allow_quick_join:
                 if not activity.join_token:
                     activity.generate_join_token()
@@ -210,15 +210,15 @@ def activity_detail(activity_id):
                     from app.qr_utils import generate_activity_qr_code
                     qr_code = generate_activity_qr_code(activity, _external=True)
                 except ImportError:
-                    pass  # qrcode库未安装
+                    pass  # qrcode library not installed
     
-    # 传递活动开始时间给前端（使用ISO格式字符串）
+    # Pass activity start time to frontend (using ISO format string)
     started_at_iso = None
     if activity.started_at:
-        # 数据库存储的是北京时间，传递ISO字符串给前端
+        # Database stores Beijing time, pass ISO string to frontend
         started_at_iso = activity.started_at.isoformat()
     
-    # 解析选项（支持JSON格式和换行符分隔格式）
+    # Parse options (supports JSON format and newline-separated format)
     parsed_options = None
     if activity.options:
         try:
@@ -250,25 +250,25 @@ def start_activity(activity_id):
     
     activity.is_active = True
     activity.started_at = get_beijing_time()
-    # 清除之前的结束时间，活动现在是活跃的
+    # Clear previous end time, activity is now active
     activity.ended_at = None
     db.session.commit()
     
     print(f"[START] Activity {activity_id} started at {activity.started_at}")
     print(f"[START] is_active: {activity.is_active}")
     
-    # 获取启动时间戳,用于验证自动结束任务
+    # Get start timestamp for verifying auto-end task
     started_at_timestamp = activity.started_at.timestamp()
     
-    # 计算活动时长（秒），优先使用 duration_seconds，否则使用 duration_minutes * 60
+    # Calculate activity duration (in seconds), prefer duration_seconds, otherwise use duration_minutes * 60
     duration_seconds = activity.duration_seconds if activity.duration_seconds else (activity.duration_minutes * 60)
     
-    # 计算预计结束时间（仅用于显示）
+    # Calculate expected end time (for display only)
     from datetime import timedelta
     will_end_at = activity.started_at + timedelta(seconds=duration_seconds)
     
-    # 启动后台任务，在指定时间后自动结束活动
-    # 传递时间戳,确保只有当前启动的任务会结束活动
+    # Start background task to automatically end activity after specified time
+    # Pass timestamp to ensure only the current start task will end the activity
     socketio.start_background_task(
         target=auto_end_activity, 
         activity_id=activity_id, 
@@ -283,8 +283,8 @@ def start_activity(activity_id):
         'data': {
             'is_active': True,
             'started_at': activity.started_at.isoformat(),
-            'duration_seconds': duration_seconds,  # 发送秒数
-            'duration_minutes': activity.duration_minutes,  # 向后兼容
+            'duration_seconds': duration_seconds,  # Send seconds
+            'duration_minutes': activity.duration_minutes,  # Backward compatibility
             'will_end_at': will_end_at.isoformat()
         }
     }, room=f'activity_{activity_id}')
@@ -292,8 +292,8 @@ def start_activity(activity_id):
     return jsonify({
         'success': True, 
         'message': f'Activity started for {duration_seconds} seconds',
-        'duration_seconds': duration_seconds,  # 发送秒数
-        'duration_minutes': activity.duration_minutes,  # 向后兼容
+        'duration_seconds': duration_seconds,  # Send seconds
+        'duration_minutes': activity.duration_minutes,  # Backward compatibility
         'will_end_at': will_end_at.isoformat()
     })
 
@@ -329,12 +329,12 @@ def reset_activity(activity_id):
     if current_user.role not in ['admin', 'instructor'] or (current_user.role == 'instructor' and activity.course.instructor_id != current_user.id):
         return jsonify({'success': False, 'message': 'Insufficient permissions'})
     
-    # 重置活动状态
+    # Reset activity status
     activity.is_active = False
     activity.started_at = None
     activity.ended_at = None
     
-    # 清除所有学生的回答记录 (可选)
+    # Clear all student response records (optional)
     Response.query.filter_by(activity_id=activity_id).delete()
     
     db.session.commit()
@@ -359,7 +359,7 @@ def submit_response(activity_id):
     
     activity = Activity.query.get_or_404(activity_id)
     
-    # 添加调试信息
+    # Add debug information
     print(f"[DEBUG] Activity {activity_id} submission attempt")
     print(f"[DEBUG] is_active: {activity.is_active}")
     print(f"[DEBUG] started_at: {activity.started_at}")
@@ -505,13 +505,58 @@ def activity_results(activity_id):
             correct_count = sum(1 for r in responses if r.is_correct)
             average_score = sum(r.score or 0 for r in responses) / len(responses) if responses else 0
             
+            # Parse options for multiple choice quiz
+            options = []
+            option_counts = {}
+            option_labels = {}  # Map option text to label (A, B, C, D, ...)
+            options_list = []  # Keep ordered list of options for display
+            
+            if activity.quiz_type == 'multiple_choice' and activity.options:
+                try:
+                    parsed_options = json.loads(activity.options)
+                    if isinstance(parsed_options, list):
+                        options = [str(opt).strip() for opt in parsed_options if opt]
+                    else:
+                        # If not a list, treat as newline-separated text
+                        options = [opt.strip() for opt in activity.options.split('\n') if opt.strip()]
+                except (json.JSONDecodeError, ValueError, TypeError):
+                    # If not JSON, treat as newline-separated text
+                    options = [opt.strip() for opt in activity.options.split('\n') if opt.strip()]
+                
+                # Create label mapping and initialize counts (A, B, C, D, ...)
+                for idx, option in enumerate(options):
+                    label = chr(65 + idx)  # 65 is 'A' in ASCII
+                    option_labels[option] = label
+                    option_counts[option] = 0
+                    options_list.append(option)  # Keep order
+            
+            # Count responses for each option (for multiple choice quiz)
+            if activity.quiz_type == 'multiple_choice' and options:
+                for response in responses:
+                    if response.answer:
+                        answer = response.answer.strip()
+                        # Try exact match first
+                        if answer in option_counts:
+                            option_counts[answer] += 1
+                        else:
+                            # Try case-insensitive match
+                            for option in option_counts.keys():
+                                if answer.lower() == option.lower():
+                                    option_counts[option] += 1
+                                    break
+            
             results = {
                 'type': 'quiz',
+                'quiz_type': activity.quiz_type,
                 'correct_count': correct_count,
                 'total_responses': len(responses),
                 'average_score': average_score,
+                'options': option_counts if activity.quiz_type == 'multiple_choice' else None,
+                'options_list': options_list if activity.quiz_type == 'multiple_choice' else None,  # Ordered list
+                'option_labels': option_labels if activity.quiz_type == 'multiple_choice' else None,
                 'responses': [{
                     'answer': r.answer or '', 
+                    'answer_label': option_labels.get(r.answer or '', '') if activity.quiz_type == 'multiple_choice' and r.answer else '',
                     'is_correct': r.is_correct or False, 
                     'score': r.score or 0, 
                     'student': r.student.name if r.student else 'Unknown'
@@ -594,25 +639,25 @@ def activity_results(activity_id):
 @bp.route('/activities/generate_questions', methods=['POST'])
 @login_required
 def generate_questions_route():
-    """AI问题生成路由 - 增强错误处理和日志"""
+    """AI question generation route - Enhanced error handling and logging"""
     if current_user.role not in ['admin', 'instructor']:
         return jsonify({'success': False, 'message': 'Insufficient permissions'})
     
     text = ""
     
-    # 检查是否是文件上传请求
+    # Check if it's a file upload request
     if 'file' in request.files:
         file = request.files['file']
         
-        # 验证文件
+        # Validate file
         is_valid, message = validate_file_upload(file)
         if not is_valid:
             print(f"❌ File validation failed: {message}")
             return jsonify({'success': False, 'message': message})
         
-        # 保存临时文件并提取文本
+        # Save temporary file and extract text
         try:
-            # 创建临时文件
+            # Create temporary file
             file_extension = os.path.splitext(secure_filename(file.filename))[1]
             with tempfile.NamedTemporaryFile(delete=False, suffix=file_extension) as temp_file:
                 file.save(temp_file.name)
@@ -620,11 +665,11 @@ def generate_questions_route():
             
             print(f"📄 Processing file: {file.filename}, extension: {file_extension}")
             
-            # 提取文本
+            # Extract text
             text = extract_text_from_file(temp_file_path, file_extension)
             print(f"✅ Extracted {len(text)} characters from file")
             
-            # 清理临时文件
+            # Clean up temporary file
             os.unlink(temp_file_path)
             
         except Exception as e:
@@ -634,7 +679,7 @@ def generate_questions_route():
             return jsonify({'success': False, 'message': f'File processing failed: {str(e)}'})
     
     else:
-        # 处理JSON请求（原有的文本输入方式）
+        # Process JSON request (original text input method)
         data = request.get_json()
         if not data:
             print("❌ No JSON data provided")
@@ -646,7 +691,7 @@ def generate_questions_route():
         print("❌ Empty text provided")
         return jsonify({'success': False, 'message': 'Please enter teaching text or upload a file'})
     
-    # 限制文本长度，避免过长的输入
+    # Limit text length to avoid overly long input
     if len(text) > 10000:
         text = text[:10000]
         print(f"⚠️  Text truncated to 10000 characters")
@@ -658,7 +703,7 @@ def generate_questions_route():
         print(f"   [ROUTE] Text length: {len(text)} characters")
         print(f"   [ROUTE] Text preview: {text[:100]}...")
         
-        # 检查环境变量
+        # Check environment variables
         import os
         ark_key = os.environ.get('ARK_API_KEY', '')
         openai_key = os.environ.get('OPENAI_API_KEY', '')
@@ -687,7 +732,7 @@ def generate_questions_route():
         traceback.print_exc()
         print("=" * 80)
         
-        # 提供更详细的错误信息
+        # Provide more detailed error information
         error_message = str(e)
         error_type = type(e).__name__
         if 'connection' in error_message.lower():
@@ -973,7 +1018,7 @@ def delete_activity(activity_id):
 #     
 #     # Permission check
 #     if current_user.role == 'admin':
-#         # 管理员可以编辑所有活动
+#         # Admin can edit all activities
 #         pass
 #     elif current_user.role == 'instructor' and course.instructor_id == current_user.id:
 #         # Instructor can edit activities in their own courses
@@ -1008,28 +1053,28 @@ def delete_activity(activity_id):
 
 @bp.route('/activity/join/<token>')
 def quick_join(token):
-    """通过二维码令牌快速加入活动"""
-    # 查找活动
+    """Quick join activity via QR code token"""
+    # Find activity
     activity = Activity.query.filter_by(join_token=token).first()
     
     if not activity:
         flash('Invalid activity link', 'error')
         return redirect(url_for('main.index'))
     
-    # 检查令牌是否有效
+    # Check if token is valid
     if not activity.is_token_valid():
         flash('This activity link has expired or been disabled', 'error')
         return redirect(url_for('main.index'))
     
-    # 如果已登录
+    # If already logged in
     if current_user.is_authenticated:
-        # 检查是否已选课
+        # Check if already enrolled
         enrollment = Enrollment.query.filter_by(
             student_id=current_user.id,
             course_id=activity.course_id
         ).first()
         
-        # 如果未选课，自动选课
+        # If not enrolled, automatically enroll
         if not enrollment:
             enrollment = Enrollment(
                 student_id=current_user.id,
@@ -1039,28 +1084,28 @@ def quick_join(token):
             db.session.commit()
             flash(f'Automatically enrolled in course: {activity.course.name}', 'success')
         
-        # 重定向到活动详情页
+        # Redirect to activity detail page
         return redirect(url_for('activities.activity_detail', activity_id=activity.id))
     
-    # 如果未登录，跳转到快速注册页面
+    # If not logged in, redirect to quick register page
     return redirect(url_for('activities.quick_register', token=token))
 
 
 @bp.route('/activity/quick-register/<token>', methods=['GET', 'POST'])
 def quick_register(token):
-    """快速注册并加入活动"""
-    # 如果已登录，直接跳转到加入流程
+    """Quick register and join activity"""
+    # If already logged in, directly redirect to join flow
     if current_user.is_authenticated:
         return redirect(url_for('activities.quick_join', token=token))
     
-    # 查找活动
+    # Find activity
     activity = Activity.query.filter_by(join_token=token).first()
     
     if not activity:
         flash('Invalid activity link', 'error')
         return redirect(url_for('main.index'))
     
-    # 检查令牌是否有效
+    # Check if token is valid
     if not activity.is_token_valid():
         flash('This activity link has expired or been disabled', 'error')
         return redirect(url_for('main.index'))
@@ -1075,16 +1120,16 @@ def quick_register(token):
                                  activity=activity, 
                                  course=activity.course)
         
-        # 检查邮箱是否已存在
+        # Check if email already exists
         existing_user = User.query.filter_by(email=email).first()
         
         if existing_user:
-            # 如果用户已存在,提示用户登录
+            # If user already exists, prompt user to login
             flash(f'This email is already registered, please login with password', 'info')
             return redirect(url_for('auth.login', next=url_for('activities.quick_join', token=token)))
         else:
-            # 创建新用户
-            # 生成易读的随机密码（8位，包含字母和数字）
+            # Create new user
+            # Generate readable random password (8 characters, letters and numbers)
             characters = string.ascii_letters + string.digits
             temp_password = ''.join(secrets.choice(characters) for _ in range(8))
             
@@ -1097,28 +1142,28 @@ def quick_register(token):
             )
             db.session.add(user)
             
-            # 先不提交，等邮件发送成功后再提交
-            db.session.flush()  # 获取user.id但不提交
+            # Don't commit yet, wait for email to be sent successfully
+            db.session.flush()  # Get user.id but don't commit
             
-            # 发送临时密码到邮箱 (设置超时,不阻塞)
+            # Send temporary password to email (with timeout, non-blocking)
             email_sent = False
             email_error = None
             
             try:
                 import signal
                 
-                # 定义超时处理
+                # Define timeout handler
                 def timeout_handler(signum, frame):
                     raise TimeoutError("Email sending timeout")
                 
-                # 设置10秒超时(仅Unix系统)
+                # Set 10 second timeout (Unix systems only)
                 try:
                     signal.signal(signal.SIGALRM, timeout_handler)
                     signal.alarm(10)
                     email_sent = send_temp_password_email(email, name, temp_password)
-                    signal.alarm(0)  # 取消超时
+                    signal.alarm(0)  # Cancel timeout
                 except (AttributeError, ValueError):
-                    # Windows系统不支持signal.SIGALRM,直接发送
+                    # Windows doesn't support signal.SIGALRM, send directly
                     email_sent = send_temp_password_email(email, name, temp_password)
                     
             except TimeoutError:
@@ -1144,14 +1189,11 @@ def quick_register(token):
                                          activity=activity, 
                                          course=activity.course)
             else:
-                # 邮件发送失败,回滚用户创建
+                # Email sending failed, rollback user creation
                 db.session.rollback()
                 flash('❌ Account creation failed: Unable to send verification email', 'error')
                 flash(f'🔍 Reason: {email_error}', 'warning')
                 flash('💡 Please check:', 'info')
-                flash('   1. Make sure your email address is valid and active', 'info')
-                flash('   2. Check your internet connection', 'info')
-                flash('   3. Try again in a few moments', 'info')
                 flash('   1. Make sure your email address is valid and active', 'info')
                 flash('   2. Check your internet connection', 'info')
                 flash('   3. Try again in a few moments', 'info')
@@ -1167,11 +1209,11 @@ def quick_register(token):
 @bp.route('/activity/<int:activity_id>/regenerate-qr', methods=['POST'])
 @login_required
 def regenerate_qr_code(activity_id):
-    """重新生成活动的二维码令牌"""
+    """Regenerate QR code token for activity"""
     activity = Activity.query.get_or_404(activity_id)
     course = Course.query.get_or_404(activity.course_id)
     
-    # 权限检查
+    # Permission check
     if current_user.role == 'admin':
         pass
     elif current_user.role == 'instructor' and course.instructor_id == current_user.id:
@@ -1179,7 +1221,7 @@ def regenerate_qr_code(activity_id):
     else:
         return jsonify({'success': False, 'message': 'Permission denied'}), 403
     
-    # 重新生成令牌
+    # Regenerate token
     activity.generate_join_token()
     db.session.commit()
     
@@ -1193,11 +1235,11 @@ def regenerate_qr_code(activity_id):
 @bp.route('/activity/<int:activity_id>/toggle-quick-join', methods=['POST'])
 @login_required
 def toggle_quick_join(activity_id):
-    """切换活动的快速加入功能"""
+    """Toggle quick join feature for activity"""
     activity = Activity.query.get_or_404(activity_id)
     course = Course.query.get_or_404(activity.course_id)
     
-    # 权限检查
+    # Permission check
     if current_user.role == 'admin':
         pass
     elif current_user.role == 'instructor' and course.instructor_id == current_user.id:
@@ -1205,10 +1247,10 @@ def toggle_quick_join(activity_id):
     else:
         return jsonify({'success': False, 'message': 'Permission denied'}), 403
     
-    # 切换状态
+    # Toggle status
     activity.allow_quick_join = not activity.allow_quick_join
     
-    # 如果启用快速加入但没有令牌，生成一个
+    # If enabling quick join but no token exists, generate one
     if activity.allow_quick_join and not activity.join_token:
         activity.generate_join_token()
     

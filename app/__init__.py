@@ -12,7 +12,7 @@ import os
 from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
 
-# 加载环境变量
+# Load environment variables
 load_dotenv()
 
 # Initialize extensions
@@ -44,16 +44,16 @@ def create_app():
     PASSWORD = os.getenv('MYSQL_PASSWORD', '1234')
     DATABASE = os.getenv('MYSQL_DATABASE', 'platform')
     
-    # 构建数据库 URI
-    # 生产环境（Railway）需要 SSL 配置
+    # Build database URI
+    # Production environment (Railway) requires SSL configuration
     if 'railway' in HOSTNAME or 'rlwy.net' in HOSTNAME or os.getenv('FLASK_ENV') == 'production':
-        # Railway 连接配置
+        # Railway connection configuration
         app.config['SQLALCHEMY_DATABASE_URI'] = (
             f'mysql+pymysql://{USERNAME}:{PASSWORD}@{HOSTNAME}:{PORT}/{DATABASE}'
             f'?charset=utf8mb4&ssl_ca=&ssl_verify_cert=false'
         )
     else:
-        # 本地开发连接
+        # Local development connection
         app.config['SQLALCHEMY_DATABASE_URI'] = (
             f'mysql+pymysql://{USERNAME}:{PASSWORD}@{HOSTNAME}:{PORT}/{DATABASE}'
             f'?charset=utf8mb4'
@@ -61,35 +61,35 @@ def create_app():
     
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        'pool_recycle': 280,  # 避免 MySQL 连接超时
-        'pool_pre_ping': True,  # 连接前测试可用性
-        'pool_size': 10,  # 连接池大小
-        'max_overflow': 20,  # 最大溢出连接数
+        'pool_recycle': 280,  # Avoid MySQL connection timeout
+        'pool_pre_ping': True,  # Test availability before connection
+        'pool_size': 10,  # Connection pool size
+        'max_overflow': 20,  # Maximum overflow connections
         'connect_args': {
-            'connect_timeout': 30,  # 连接超时30秒（增加超时时间）
-            'read_timeout': 30,     # 读取超时30秒
-            'write_timeout': 30     # 写入超时30秒
+            'connect_timeout': 30,  # Connection timeout 30 seconds (increased timeout)
+            'read_timeout': 30,     # Read timeout 30 seconds
+            'write_timeout': 30     # Write timeout 30 seconds
         }
     }
     
-    # Email Configuration - QQ邮箱 (使用IP地址绕过DNS解析)
-    # 由于Render平台DNS解析问题，直接使用IP地址连接
+    # Email Configuration - QQ Mail (using IP address to bypass DNS resolution)
+    # Due to Render platform DNS resolution issues, connect directly using IP address
     
-    # QQ邮箱SMTP服务器IP地址 (从dig smtp.qq.com获取)
-    app.config['MAIL_SERVER'] = '43.129.255.54'  # QQ SMTP服务器IP
-    app.config['MAIL_PORT'] = 465  # SSL端口
-    app.config['MAIL_USE_SSL'] = True  # 启用SSL
-    app.config['MAIL_USE_TLS'] = False  # 465端口不需要TLS
-    app.config['MAIL_USERNAME'] = '2966602258@qq.com'  # QQ邮箱账号
-    app.config['MAIL_PASSWORD'] = 'ldjbtknevwftdcid'  # QQ邮箱SMTP授权码
+    # QQ Mail SMTP server IP address (obtained from dig smtp.qq.com)
+    app.config['MAIL_SERVER'] = '43.129.255.54'  # QQ SMTP server IP
+    app.config['MAIL_PORT'] = 465  # SSL port
+    app.config['MAIL_USE_SSL'] = True  # Enable SSL
+    app.config['MAIL_USE_TLS'] = False  # Port 465 doesn't need TLS
+    app.config['MAIL_USERNAME'] = '2966602258@qq.com'  # QQ Mail account
+    app.config['MAIL_PASSWORD'] = 'ldjbtknevwftdcid'  # QQ Mail SMTP authorization code
     app.config['MAIL_DEFAULT_SENDER'] = '2966602258@qq.com'
     
-    # 备用IP地址: 43.163.178.76 (如果主IP不工作可以手动切换)
+    # Backup IP address: 43.163.178.76 (can manually switch if primary IP doesn't work)
     # app.config['MAIL_SERVER'] = '43.163.178.76'
     
-    # 注意：使用IP地址可能会有SSL证书验证问题，但对于邮件发送通常可以正常工作
+    # Note: Using IP address may have SSL certificate verification issues, but usually works fine for email sending
     
-    # 备用方案：163邮箱
+    # Backup option: 163 Mail
     # app.config['MAIL_SERVER'] = 'smtp.163.com'
     # app.config['MAIL_PORT'] = 465
     # app.config['MAIL_USE_SSL'] = True
@@ -98,7 +98,7 @@ def create_app():
     # app.config['MAIL_PASSWORD'] = 'your163authcode'
     # app.config['MAIL_DEFAULT_SENDER'] = 'your163@163.com'
     
-    # 方案3：Gmail用IP (如果DNS有问题)
+    # Option 3: Gmail with IP (if DNS has issues)
     # app.config['MAIL_SERVER'] = '64.233.184.108'  # Gmail SMTP IP
     # app.config['MAIL_PORT'] = 465
     # app.config['MAIL_USE_SSL'] = True
@@ -107,7 +107,7 @@ def create_app():
     # app.config['MAIL_PASSWORD'] = 'tccaqoeqxbqjjnpl'
     # app.config['MAIL_DEFAULT_SENDER'] = 'zhangPandada@gmail.com'
     
-    # 邮件调试设置
+    # Email debug settings
     app.config['MAIL_SUPPRESS_SEND'] = False
     app.config['MAIL_DEBUG'] = True
     
@@ -119,7 +119,7 @@ def create_app():
     db.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
-    login_manager.login_message = '请登录以访问此页面'
+    login_manager.login_message = 'Please login to access this page'
     socketio.init_app(app, cors_allowed_origins="*")
     mail.init_app(app)
     
@@ -129,21 +129,21 @@ def create_app():
     def load_user(user_id):
         return User.query.get(int(user_id))
     
-    # 添加时区转换函数
+    # Add timezone conversion functions
     @app.template_filter('local_time')
     def local_time_filter(time_obj):
-        """显示时间（已经是北京时间，无需转换）"""
+        """Display time (already in Beijing time, no conversion needed)"""
         if time_obj is None:
             return ''
-        # 直接格式化显示，因为数据库存储的已经是北京时间
+        # Format directly for display, database already stores Beijing time
         return time_obj.strftime('%Y-%m-%d %H:%M')
     
     @app.template_filter('local_date')
     def local_date_filter(time_obj):
-        """显示日期（已经是北京时间，无需转换）"""
+        """Display date (already in Beijing time, no conversion needed)"""
         if time_obj is None:
             return ''
-        # 直接格式化显示，因为数据库存储的已经是北京时间
+        # Format directly for display, database already stores Beijing time
         return time_obj.strftime('%Y-%m-%d')
     
     # Register blueprints

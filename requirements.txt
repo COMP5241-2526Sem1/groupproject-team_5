@@ -26,9 +26,9 @@ email-validator==2.2.0
 requests==2.31.0
 
 # Production server
-gunicorn==21.2.0  # 生产环境 WSGI 服务器
+gunicorn==21.2.0  # Production WSGI server
 eventlet==0.33.3  # Async worker for Gunicorn (required for Socket.IO)
-python-dotenv==1.0.0  # 环境变量管理
+python-dotenv==1.0.0  # Environment variable management
 
 # AI features (optional, for question generation)
 openai>=1.0.0  # OpenAI API support (imported in code)

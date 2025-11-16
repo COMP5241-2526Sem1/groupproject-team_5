@@ -1,6 +1,6 @@
 """
 QR Code Generation Utilities
-用于生成活动快速加入的二维码
+For generating QR codes for quick activity join
 """
 
 import qrcode
@@ -11,15 +11,15 @@ from flask import url_for, request
 
 def generate_qr_code(data, size=10, border=2):
     """
-    生成二维码图片
+    Generate QR code image
     
     Args:
-        data: 要编码的数据（通常是 URL）
-        size: 二维码大小（box_size）
-        border: 边框大小
+        data: Data to encode (usually URL)
+        size: QR code size (box_size)
+        border: Border size
     
     Returns:
-        base64 编码的图片字符串，可直接用于 HTML img src
+        base64 encoded image string, can be directly used in HTML img src
     """
     qr = qrcode.QRCode(
         version=1,
@@ -32,7 +32,7 @@ def generate_qr_code(data, size=10, border=2):
     
     img = qr.make_image(fill_color="black", back_color="white")
     
-    # 转换为 base64
+    # Convert to base64
     buffered = BytesIO()
     img.save(buffered, format="PNG")
     img_str = base64.b64encode(buffered.getvalue()).decode()
@@ -42,19 +42,19 @@ def generate_qr_code(data, size=10, border=2):
 
 def generate_activity_qr_code(activity, _external=True):
     """
-    为活动生成二维码
+    Generate QR code for activity
     
     Args:
-        activity: Activity 模型实例
-        _external: 是否生成完整的外部 URL
+        activity: Activity model instance
+        _external: Whether to generate full external URL
     
     Returns:
-        base64 编码的二维码图片
+        base64 encoded QR code image
     """
     if not activity.join_token:
         activity.generate_join_token()
     
-    # 生成加入链接
+    # Generate join URL
     join_url = url_for(
         'activities.quick_join',
         token=activity.join_token,
@@ -66,14 +66,14 @@ def generate_activity_qr_code(activity, _external=True):
 
 def get_activity_join_url(activity, _external=True):
     """
-    获取活动的快速加入 URL
+    Get quick join URL for activity
     
     Args:
-        activity: Activity 模型实例
-        _external: 是否生成完整的外部 URL
+        activity: Activity model instance
+        _external: Whether to generate full external URL
     
     Returns:
-        加入 URL 字符串
+        Join URL string
     """
     if not activity.join_token:
         return None
