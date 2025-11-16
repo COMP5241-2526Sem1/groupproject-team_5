@@ -704,7 +704,6 @@ def generate_questions_route():
         print(f"   [ROUTE] Text preview: {text[:100]}...")
         
         # Check environment variables
-        import os
         ark_key = os.environ.get('ARK_API_KEY', '')
         openai_key = os.environ.get('OPENAI_API_KEY', '')
         no_proxy = os.environ.get('no_proxy', '')
