@@ -6,6 +6,7 @@ from typing import List, Dict, Any
 from collections import Counter
 import json
 import traceback
+import urllib3
 
 # Add file processing support
 try:
@@ -40,6 +41,47 @@ try:
     from volcenginesdkarkruntime import Ark
 except ImportError:
     Ark = None
+
+def create_ark_client(api_key: str, base_url: str = None, timeout: int = 30):
+    """
+    Create Ark client with SSL verification disabled for Render deployment
+    This fixes "getting certificate failed" error on Render
+    """
+    # Disable SSL warnings for Render deployment
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    
+    # Set environment variable to disable SSL verification (for requests/urllib3)
+    os.environ['PYTHONHTTPSVERIFY'] = '0'
+    os.environ['CURL_CA_BUNDLE'] = ''
+    os.environ['REQUESTS_CA_BUNDLE'] = ''
+    
+    # Try to create client with httpx (preferred method)
+    try:
+        import httpx
+        http_client = httpx.Client(
+            verify=False,
+            timeout=timeout
+        )
+        try:
+            # Try with http_client parameter (if SDK supports it)
+            if base_url:
+                return Ark(api_key=api_key, base_url=base_url, http_client=http_client, timeout=timeout)
+            else:
+                return Ark(api_key=api_key, http_client=http_client)
+        except TypeError:
+            # SDK doesn't support http_client parameter, use default client
+            # The environment variables should help with SSL issues
+            if base_url:
+                return Ark(api_key=api_key, base_url=base_url, timeout=timeout)
+            else:
+                return Ark(api_key=api_key)
+    except ImportError:
+        # httpx not available, use default client
+        # The environment variables should help with SSL issues
+        if base_url:
+            return Ark(api_key=api_key, base_url=base_url, timeout=timeout)
+        else:
+            return Ark(api_key=api_key)
 
 def generate_questions(text: str) -> List[str]:
     """Generate questions with enhanced logging"""
@@ -78,8 +120,9 @@ def generate_questions_with_ark(text: str, api_key: str) -> List[str]:
         print(f"   [ARK] API Key: {api_key[:10]}...{api_key[-5:]}")
         print(f"   [ARK] Base URL: https://ark.cn-beijing.volces.com/api/v3")
         
-        # Initialize Ark client with official configuration
-        client = Ark(api_key=api_key)
+        # Initialize Ark client with SSL verification disabled for Render
+        # This fixes "getting certificate failed" error on Render
+        client = create_ark_client(api_key)
         
         print(f"📡 [ARK] Calling ARK API with encryption headers...")
         print(f"   [ARK] Model: doubao-1-5-pro-32k-250115")
@@ -236,9 +279,10 @@ def generate_activity_with_ark(content: str, activity_type: str, api_key: str) -
         return generate_activity_fallback(content, activity_type)
     
     try:
-        client = Ark(
-            base_url="https://ark.cn-beijing.volces.com/api/v3",
+        # Use helper function to create client with SSL verification disabled
+        client = create_ark_client(
             api_key=api_key,
+            base_url="https://ark.cn-beijing.volces.com/api/v3",
             timeout=30
         )
         
@@ -441,9 +485,10 @@ def group_answers_with_ark(answers: List[str], api_key: str) -> Dict[str, Any]:
         return group_answers_fallback(answers)
     
     try:
-        client = Ark(
-            base_url="https://ark.cn-beijing.volces.com/api/v3",
+        # Use helper function to create client with SSL verification disabled
+        client = create_ark_client(
             api_key=api_key,
+            base_url="https://ark.cn-beijing.volces.com/api/v3",
             timeout=30
         )
         

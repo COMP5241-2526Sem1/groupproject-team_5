@@ -18,7 +18,15 @@ load_dotenv()
 # Initialize extensions
 db = SQLAlchemy()
 login_manager = LoginManager()
-socketio = SocketIO()
+
+# Initialize SocketIO with threading mode for Python 3.12+ compatibility
+# This avoids eventlet SSL issues with Python 3.12+
+import sys
+if sys.version_info >= (3, 12):
+    socketio = SocketIO(async_mode='threading')
+else:
+    socketio = SocketIO()  # Auto-detect for older Python versions
+
 mail = Mail()
 
 # Timezone utility - Beijing Time (UTC+8)
@@ -120,7 +128,10 @@ def create_app():
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please login to access this page'
+    
+    # Initialize SocketIO
     socketio.init_app(app, cors_allowed_origins="*")
+    
     mail.init_app(app)
     
     # User loader
