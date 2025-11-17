@@ -24,10 +24,11 @@ python-engineio>=4.8.0
 # Other utilities
 email-validator==2.2.0
 requests==2.31.0
+httpx>=0.24.0  # HTTP client for Ark SDK with SSL support
 
 # Production server
 gunicorn==21.2.0  # Production WSGI server
-eventlet==0.33.3  # Async worker for Gunicorn (required for Socket.IO)
+eventlet>=0.36.0  # Async worker for Gunicorn (required for Socket.IO) - updated for Python 3.12+ compatibility
 python-dotenv==1.0.0  # Environment variable management
 
 # AI features (optional, for question generation)
